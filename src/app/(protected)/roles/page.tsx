@@ -7,6 +7,7 @@ import { RoleFormDialog } from "@/modules/identity/presentation/components/roles
 import { PermissionMatrix } from "@/modules/identity/presentation/components/roles/PermissionMatrix";
 import { ConfirmDialog } from "@/modules/identity/presentation/components/shared/ConfirmDialog";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
@@ -133,16 +134,19 @@ export default function RolesPage() {
       />
 
       <div className="flex flex-col gap-4 lg:flex-row">
-        <div className="w-full shrink-0 rounded-md border bg-card p-3 lg:w-56">
-          <h2 className="mb-2 text-sm font-medium">Daftar Role</h2>
-          <RoleList
-            roles={roles}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-          />
-        </div>
+        <Card className="w-full shrink-0 rounded-2xl shadow-sm lg:w-56">
+          <CardContent className="p-4">
+            <h2 className="mb-2 text-sm font-medium">Daftar Role</h2>
+            <RoleList
+              roles={roles}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+            />
+          </CardContent>
+        </Card>
 
-        <div className="min-w-0 flex-1 space-y-6 rounded-md border bg-card p-4">
+        <Card className="min-w-0 flex-1 rounded-2xl shadow-sm">
+          <CardContent className="space-y-6 p-6">
           {selected ? (
             <>
               <div className="space-y-2">
@@ -204,7 +208,8 @@ export default function RolesPage() {
               Pilih role di samping untuk mengedit.
             </p>
           )}
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       <RoleFormDialog

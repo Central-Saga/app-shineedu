@@ -12,6 +12,11 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Pencil, UserCog, Trash2 } from "lucide-react";
 
 interface UserTableProps {
@@ -67,7 +72,14 @@ export function UserTable({
                   <TableCell className="font-medium">{u.name}</TableCell>
                   <TableCell>{u.email}</TableCell>
                   <TableCell>
-                    <Badge variant={u.status === "Aktif" ? "default" : "secondary"}>
+                    <Badge
+                      variant="outline"
+                      className={
+                        u.status === "Aktif"
+                          ? "border-emerald-300 bg-emerald-100 text-emerald-800"
+                          : "border-slate-200 bg-slate-100 text-slate-700"
+                      }
+                    >
                       {u.status}
                     </Badge>
                   </TableCell>
@@ -77,33 +89,45 @@ export function UserTable({
                       <div className="flex gap-1">
                         {canUpdate && (
                           <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => onEdit(u)}
-                              title="Edit"
-                            >
-                              <Pencil className="size-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => onChangeRole(u)}
-                              title="Ubah Role"
-                            >
-                              <UserCog className="size-4" />
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => onEdit(u)}
+                                >
+                                  <Pencil className="size-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Edit</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => onChangeRole(u)}
+                                >
+                                  <UserCog className="size-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Ubah Role</TooltipContent>
+                            </Tooltip>
                           </>
                         )}
                         {canDelete && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onDelete(u)}
-                            title="Hapus"
-                          >
-                            <Trash2 className="size-4 text-destructive" />
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => onDelete(u)}
+                              >
+                                <Trash2 className="size-4 text-destructive" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Hapus</TooltipContent>
+                          </Tooltip>
                         )}
                       </div>
                     </TableCell>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,6 +28,7 @@ type Form = z.infer<typeof schema>;
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [logoError, setLogoError] = useState(false);
   const {
     register,
     handleSubmit,
@@ -49,9 +51,23 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+      <Card className="w-full max-w-md rounded-2xl shadow-sm">
         <CardHeader>
+          <div className="mb-2 flex justify-center">
+            {!logoError ? (
+              <Image
+                src="/logo.png"
+                alt="SHINE"
+                width={100}
+                height={32}
+                className="object-contain"
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <span className="font-semibold text-primary">SHINE</span>
+            )}
+          </div>
           <CardTitle>Login</CardTitle>
           <CardDescription>Masuk ke Admin Panel Shine Education</CardDescription>
         </CardHeader>

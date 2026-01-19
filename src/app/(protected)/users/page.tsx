@@ -7,6 +7,7 @@ import { UserFormDialog } from "@/modules/identity/presentation/components/users
 import { UserRoleDialog } from "@/modules/identity/presentation/components/users/UserRoleDialog";
 import { ConfirmDialog } from "@/modules/identity/presentation/components/shared/ConfirmDialog";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import * as usersUsecase from "@/modules/identity/application/usecases/users.usecase";
 import * as rolesUsecase from "@/modules/identity/application/usecases/roles.usecase";
@@ -132,22 +133,26 @@ export default function UsersPage() {
         }
       />
 
-      <UserTable
-        users={users}
-        meta={meta}
-        onPageChange={setPage}
-        onEdit={openEdit}
-        onChangeRole={(u) => {
-          setRoleUser(u);
-          setRoleDialogOpen(true);
-        }}
-        onDelete={(u) => {
-          setDeleteUser(u);
-          setDeleteOpen(true);
-        }}
-        canUpdate={canUpdate}
-        canDelete={canDelete}
-      />
+      <Card className="rounded-2xl shadow-sm">
+        <CardContent className="pt-6">
+          <UserTable
+            users={users}
+            meta={meta}
+            onPageChange={setPage}
+            onEdit={openEdit}
+            onChangeRole={(u) => {
+              setRoleUser(u);
+              setRoleDialogOpen(true);
+            }}
+            onDelete={(u) => {
+              setDeleteUser(u);
+              setDeleteOpen(true);
+            }}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
+          />
+        </CardContent>
+      </Card>
 
       <UserFormDialog
         open={formOpen}

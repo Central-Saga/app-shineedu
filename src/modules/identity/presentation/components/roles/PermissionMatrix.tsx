@@ -14,7 +14,10 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { CheckSquare, Square } from "lucide-react";
 
 interface PermissionMatrixProps {
   masterPermissions: Permission[];
@@ -30,6 +33,7 @@ export function PermissionMatrix({
   disabled = false,
 }: PermissionMatrixProps) {
   const [search, setSearch] = useState("");
+  const [showSelectedOnly, setShowSelectedOnly] = useState(false);
 
   const matrix = useMemo(
     () => buildMatrix(masterPermissions),
@@ -39,10 +43,19 @@ export function PermissionMatrix({
   const selectedSet = useSet(selectedPermissions);
 
   const filteredModules = useMemo(() => {
+    let list = matrix.modules;
+    if (showSelectedOnly) {
+      list = list.filter((m) =>
+        actions.some((a) => {
+          const n = matrix.getPermissionName(m, a);
+          return n != null && selectedSet.has(n);
+        })
+      );
+    }
     const q = search.trim().toLowerCase();
-    if (!q) return matrix.modules;
-    return matrix.modules.filter((m) => m.toLowerCase().includes(q));
-  }, [matrix.modules, search]);
+    if (q) list = list.filter((m) => m.toLowerCase().includes(q));
+    return list;
+  }, [matrix.modules, matrix, actions, search, showSelectedOnly, selectedSet]);
 
   function add(names: string[]) {
     const next = new Set(selectedPermissions);
@@ -60,14 +73,12 @@ export function PermissionMatrix({
     else add([name]);
   }
 
-  // Row: all permission names for this module that exist in master
   function getRowNames(module: string): string[] {
     return actions
       .map((a) => matrix.getPermissionName(module, a))
       .filter((n): n is string => n != null);
   }
 
-  // Column: all permission names for this action across filtered modules
   function getColumnNames(action: string): string[] {
     return filteredModules
       .map((m) => matrix.getPermissionName(m, action))
@@ -81,13 +92,31 @@ export function PermissionMatrix({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <Input
-          placeholder="Cari module…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
-        />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-3">
+          <Input
+            placeholder="Cari module…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-xs"
+          />
+          <span className="text-sm text-slate-600">
+            Selected: {selectedPermissions.length}
+          </span>
+          <div className="flex items-center gap-2">
+            <Switch
+              id="show-selected-only"
+              checked={showSelectedOnly}
+              onCheckedChange={setShowSelectedOnly}
+            />
+            <Label
+              htmlFor="show-selected-only"
+              className="cursor-pointer text-sm text-slate-600"
+            >
+              Show selected only
+            </Label>
+          </div>
+        </div>
         <div className="flex gap-2">
           <Button
             type="button"
@@ -96,6 +125,7 @@ export function PermissionMatrix({
             onClick={() => add(allMasterNames)}
             disabled={disabled}
           >
+            <CheckSquare className="mr-1.5 size-4" />
             Select All
           </Button>
           <Button
@@ -105,37 +135,46 @@ export function PermissionMatrix({
             onClick={() => onChange([])}
             disabled={disabled}
           >
+            <Square className="mr-1.5 size-4" />
             Clear All
           </Button>
         </div>
       </div>
 
-      <ScrollArea className="w-full whitespace-nowrap rounded-md border">
+      <ScrollArea className="max-h-[70vh] w-full whitespace-nowrap rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="min-w-[140px]">Module</TableHead>
+              <TableHead className="sticky left-0 top-0 z-20 min-w-[140px] bg-slate-50">
+                Module
+              </TableHead>
               {actions.map((action) => (
-                <TableHead key={action} className="text-center">
+                <TableHead
+                  key={action}
+                  className="sticky top-0 z-10 bg-slate-50 text-center"
+                >
                   <div className="flex flex-col gap-1">
                     <span className="capitalize">{action}</span>
                     {!disabled && (
-                      <div className="flex justify-center gap-1 text-xs font-normal">
-                        <button
+                      <div className="flex justify-center gap-1">
+                        <Button
                           type="button"
-                          className="text-primary hover:underline"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-xs"
                           onClick={() => add(getColumnNames(action))}
                         >
                           All
-                        </button>
-                        <span>|</span>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
-                          className="text-muted-foreground hover:underline"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-xs text-muted-foreground"
                           onClick={() => remove(getColumnNames(action))}
                         >
                           Clear
-                        </button>
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -148,26 +187,29 @@ export function PermissionMatrix({
               const rowNames = getRowNames(module);
               return (
                 <TableRow key={module}>
-                  <TableCell className="font-medium">
+                  <TableCell className="sticky left-0 z-10 bg-background font-medium">
                     <div className="flex flex-col gap-1">
                       <span className="capitalize">{module}</span>
                       {!disabled && (
-                        <div className="flex gap-1 text-xs font-normal">
-                          <button
+                        <div className="flex gap-1">
+                          <Button
                             type="button"
-                            className="text-primary hover:underline"
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-xs"
                             onClick={() => add(rowNames)}
                           >
                             All
-                          </button>
-                          <span>|</span>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
-                            className="text-muted-foreground hover:underline"
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-xs text-muted-foreground"
                             onClick={() => remove(rowNames)}
                           >
                             Clear
-                          </button>
+                          </Button>
                         </div>
                       )}
                     </div>

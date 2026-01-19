@@ -5,10 +5,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import { LogOut, ChevronDown } from "lucide-react";
 
@@ -16,7 +19,9 @@ export function AppTopbar() {
   const router = useRouter();
   const user = authStore.getState().user;
   const name = user?.name ?? "User";
+  const email = user?.email ?? "";
   const initial = name.slice(0, 1).toUpperCase();
+  const roleName = user?.roles?.[0]?.name;
 
   async function handleLogout() {
     await authStore.logout();
@@ -24,8 +29,9 @@ export function AppTopbar() {
   }
 
   return (
-    <header className="flex h-14 items-center border-b bg-background px-4">
-      <div className="flex-1" />
+    <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-background px-4">
+      <h1 className="text-lg font-semibold text-slate-900">Shine Edu Admin</h1>
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="flex items-center gap-2">
@@ -36,7 +42,23 @@ export function AppTopbar() {
             <ChevronDown className="size-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel>Akun</DropdownMenuLabel>
+          <div className="px-2 py-1.5">
+            <p className="text-sm font-medium">{name}</p>
+            {email && (
+              <p className="text-xs text-muted-foreground">{email}</p>
+            )}
+            {roleName && (
+              <Badge
+                variant="outline"
+                className="mt-1.5 border-amber-300 bg-amber-50 text-amber-800"
+              >
+                {roleName}
+              </Badge>
+            )}
+          </div>
+          <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout} variant="destructive">
             <LogOut className="mr-2 size-4" />
             Logout

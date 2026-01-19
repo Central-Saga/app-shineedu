@@ -5,7 +5,7 @@ export default function DashboardPage() {
     <div>
       <h1 className="mb-6 text-2xl font-semibold tracking-tight">Dashboard</h1>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
+        <Card className="rounded-2xl">
           <CardHeader>
             <CardTitle>Selamat datang</CardTitle>
             <CardDescription>Admin Panel Shine Education Bali</CardDescription>
