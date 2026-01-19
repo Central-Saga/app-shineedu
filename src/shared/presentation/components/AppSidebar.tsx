@@ -42,7 +42,7 @@ export function AppSidebar() {
             height={32}
             className="shrink-0 object-contain"
           />
-          <span className="font-semibold text-slate-900">Shine Edu</span>
+          <span className="font-semibold text-slate-900">Shine Edu Admin</span>
         </Link>
       </div>
       <Separator />

@@ -1,7 +1,6 @@
 "use client";
 
-import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,13 +15,22 @@ import { Badge } from "@/components/ui/badge";
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import { LogOut, ChevronDown } from "lucide-react";
 
+const PAGE_TITLES: Record<string, string> = {
+  "/dashboard": "Dashboard",
+  "/users": "Users",
+  "/roles": "Roles",
+  "/permissions": "Permissions",
+};
+
 export function AppTopbar() {
+  const pathname = usePathname();
   const router = useRouter();
   const user = authStore.getState().user;
   const name = user?.name ?? "User";
   const email = user?.email ?? "";
   const initial = name.slice(0, 1).toUpperCase();
   const roleName = user?.roles?.[0]?.name;
+  const pageTitle = PAGE_TITLES[pathname] ?? null;
 
   async function handleLogout() {
     await authStore.logout();
@@ -31,15 +39,10 @@ export function AppTopbar() {
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-background px-4">
-      <div className="flex items-center gap-2">
-        <Image
-          src="/logo-tanpa-nama.png"
-          alt=""
-          width={28}
-          height={28}
-          className="shrink-0 object-contain"
-        />
-        <h1 className="text-lg font-semibold text-slate-900">Shine Edu Admin</h1>
+      <div className="min-w-0 flex-1">
+        {pageTitle && (
+          <span className="text-sm font-medium text-slate-600">{pageTitle}</span>
+        )}
       </div>
 
       <DropdownMenu>
