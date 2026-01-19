@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -26,7 +25,6 @@ const identityNav = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const [logoError, setLogoError] = useState(false);
   const hasAny = (p: string | null) =>
     !p || authStore.hasAnyPermission([p]);
 
@@ -37,18 +35,14 @@ export function AppSidebar() {
           href="/dashboard"
           className="flex items-center gap-2"
         >
-          {!logoError ? (
-            <Image
-              src="/logo.png"
-              alt="SHINE"
-              width={100}
-              height={32}
-              className="object-contain"
-              onError={() => setLogoError(true)}
-            />
-          ) : (
-            <span className="font-semibold text-primary">SHINE</span>
-          )}
+          <Image
+            src="/logo-tanpa-nama.png"
+            alt=""
+            width={32}
+            height={32}
+            className="shrink-0 object-contain"
+          />
+          <span className="font-semibold text-slate-900">Shine Edu</span>
         </Link>
       </div>
       <Separator />
@@ -66,14 +60,14 @@ export function AppSidebar() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
+                    "flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors",
                     active
                       ? "bg-red-50 text-red-700"
                       : "text-slate-600 hover:bg-slate-100"
                   )}
                 >
                   <Icon
-                    className={cn("size-4 shrink-0", active && "text-primary")}
+                    className={cn("size-4 shrink-0 text-slate-500", active && "text-red-600")}
                   />
                   {item.label}
                 </Link>
@@ -95,14 +89,14 @@ export function AppSidebar() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
+                    "flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors",
                     active
                       ? "bg-red-50 text-red-700"
                       : "text-slate-600 hover:bg-slate-100"
                   )}
                 >
                   <Icon
-                    className={cn("size-4 shrink-0", active && "text-primary")}
+                    className={cn("size-4 shrink-0 text-slate-500", active && "text-red-600")}
                   />
                   {item.label}
                 </Link>

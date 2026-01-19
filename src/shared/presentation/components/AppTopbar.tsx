@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
@@ -30,7 +31,16 @@ export function AppTopbar() {
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-background px-4">
-      <h1 className="text-lg font-semibold text-slate-900">Shine Edu Admin</h1>
+      <div className="flex items-center gap-2">
+        <Image
+          src="/logo-tanpa-nama.png"
+          alt=""
+          width={28}
+          height={28}
+          className="shrink-0 object-contain"
+        />
+        <h1 className="text-lg font-semibold text-slate-900">Shine Edu Admin</h1>
+      </div>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -52,7 +62,7 @@ export function AppTopbar() {
             {roleName && (
               <Badge
                 variant="outline"
-                className="mt-1.5 border-amber-300 bg-amber-50 text-amber-800"
+                className="mt-1.5 border-amber-300/80 bg-amber-50 text-amber-800"
               >
                 {roleName}
               </Badge>

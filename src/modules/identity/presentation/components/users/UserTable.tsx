@@ -83,7 +83,14 @@ export function UserTable({
                       {u.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{role(u)}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className="border-amber-300/80 bg-amber-50 text-amber-800"
+                    >
+                      {role(u)}
+                    </Badge>
+                  </TableCell>
                   {(canUpdate || canDelete) && (
                     <TableCell>
                       <div className="flex gap-1">
