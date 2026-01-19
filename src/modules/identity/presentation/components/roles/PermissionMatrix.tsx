@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { buildMatrix, getActions } from "../../../domain/permission-matrix";
 import type { Permission } from "../../../domain/entities";
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -16,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { CheckSquare, Square } from "lucide-react";
 
 interface PermissionMatrixProps {
@@ -91,7 +89,7 @@ export function PermissionMatrix({
   );
 
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 space-y-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-3">
           <Input
@@ -141,17 +139,19 @@ export function PermissionMatrix({
         </div>
       </div>
 
-      <ScrollArea className="max-h-[70vh] w-full whitespace-nowrap rounded-md border">
-        <Table>
+      <div className="relative max-h-[70vh] overflow-auto rounded-xl border border-slate-200 bg-white">
+        <table className="w-full table-fixed caption-bottom text-sm">
           <TableHeader>
             <TableRow>
-              <TableHead className="sticky left-0 top-0 z-20 min-w-[140px] bg-slate-50">
+              <TableHead
+                className="sticky left-0 top-0 z-20 w-[220px] bg-slate-50"
+              >
                 Module
               </TableHead>
               {actions.map((action) => (
                 <TableHead
                   key={action}
-                  className="sticky top-0 z-10 bg-slate-50 text-center"
+                  className="sticky top-0 z-10 w-[120px] bg-slate-50 text-center"
                 >
                   <div className="flex flex-col gap-1">
                     <span className="capitalize">{action}</span>
@@ -186,8 +186,10 @@ export function PermissionMatrix({
             {filteredModules.map((module) => {
               const rowNames = getRowNames(module);
               return (
-                <TableRow key={module}>
-                  <TableCell className="sticky left-0 z-10 bg-background font-medium">
+                <TableRow key={module} className="group">
+                  <TableCell
+                    className="sticky left-0 z-10 w-[220px] bg-white font-medium group-hover:bg-slate-50"
+                  >
                     <div className="flex flex-col gap-1">
                       <span className="capitalize">{module}</span>
                       {!disabled && (
@@ -216,9 +218,15 @@ export function PermissionMatrix({
                   </TableCell>
                   {actions.map((action) => {
                     const name = matrix.getPermissionName(module, action);
-                    if (!name) return <TableCell key={action} />;
+                    if (!name)
+                      return (
+                        <TableCell key={action} className="w-[120px] text-center" />
+                      );
                     return (
-                      <TableCell key={action} className="text-center">
+                      <TableCell
+                        key={action}
+                        className="w-[120px] text-center"
+                      >
                         <div className="flex justify-center">
                           <Checkbox
                             checked={selectedSet.has(name)}
@@ -233,9 +241,8 @@ export function PermissionMatrix({
               );
             })}
           </TableBody>
-        </Table>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+        </table>
+      </div>
     </div>
   );
 }
