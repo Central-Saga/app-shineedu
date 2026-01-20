@@ -9,6 +9,16 @@ import {
   ValidationError,
 } from "./errors";
 
+/**
+ * Build querystring from params. Skips null, undefined, and empty string.
+ */
+export function buildQuery(params: object): string {
+  return Object.entries(params)
+    .filter(([, v]) => v != null && v !== "")
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+    .join("&");
+}
+
 const BASE =
   (typeof process !== "undefined" &&
     process.env?.NEXT_PUBLIC_API_BASE_URL) ||
@@ -45,12 +55,35 @@ async function handleResponse<T>(res: Response): Promise<T> {
   const message = (json?.message ?? res.statusText) || "Terjadi kesalahan";
 
   if (res.ok) {
+    if (json?.success === false) {
+      // Backend returns 2xx but success=false → treat as error by status
+      const payload = json;
+      switch (res.status) {
+        case 401:
+          onUnauthorized?.();
+          throw new UnauthorizedError(message, payload?.errors);
+        case 403:
+          toast.error(message || "Tidak punya akses");
+          throw new ForbiddenError(message, payload?.errors);
+        case 409:
+          toast.error(message);
+          throw new ConflictError(message, payload?.errors);
+        case 422:
+          toast.error(message);
+          throw new ValidationError(
+            message,
+            payload?.errors as Record<string, string[] | { message: string }> | undefined
+          );
+        default:
+          toast.error(message);
+          throw new AppError(message, undefined, res.status, payload?.errors);
+      }
+    }
     return (json?.data as T) ?? (undefined as T);
   }
 
-  // success === false or HTTP error
-  const success = json?.success ?? false;
-  const payload = success ? undefined : json;
+  // HTTP error
+  const payload = json;
 
   switch (res.status) {
     case 401: {
@@ -110,52 +143,91 @@ export async function get<T>(path: string): Promise<T> {
   return request<T>("GET", path);
 }
 
+const DEFAULT_META: PaginatedMeta = {
+  current_page: 1,
+  per_page: 15,
+  total: 0,
+  last_page: 1,
+  from: null,
+  to: null,
+};
+
 export async function getPaginated<T>(
-  path: string
+  path: string,
+  query?: object
 ): Promise<{ data: T; meta: PaginatedMeta }> {
-  const url = `${BASE.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+  let fullPath = `${BASE.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+  if (query && Object.keys(query).length > 0) {
+    const qs = buildQuery(query);
+    if (qs) fullPath += `?${qs}`;
+  }
   const headers: Record<string, string> = {
     Accept: "application/json",
     ...getAuthHeaders(),
   };
-  const res = await fetch(url, { method: "GET", headers });
-  const json = (await res.json()) as ApiResponse<T> & { meta?: PaginatedMeta };
-  if (!res.ok) {
-    const message = (json?.message ?? res.statusText) || "Terjadi kesalahan";
-    switch (res.status) {
-      case 401:
-        onUnauthorized?.();
-        throw new UnauthorizedError(message, json?.errors);
-      case 403:
-        toast.error(message || "Tidak punya akses");
-        throw new ForbiddenError(message, json?.errors);
-      case 404:
-        throw new NotFoundError(message, json?.errors);
-      case 409:
-        toast.error(message);
-        throw new ConflictError(message, json?.errors);
-      case 422:
-        toast.error(message);
-        throw new ValidationError(
-          message,
-          json?.errors as Record<string, string[] | { message: string }> | undefined
-        );
-      default:
-        toast.error(message);
-        throw new AppError(message, undefined, res.status, json?.errors);
+  const res = await fetch(fullPath, { method: "GET", headers });
+  const text = await res.text();
+  let json: (ApiResponse<T> & { meta?: PaginatedMeta }) | null = null;
+  if (text) {
+    try {
+      json = JSON.parse(text) as ApiResponse<T> & { meta?: PaginatedMeta };
+    } catch {
+      // ignore
     }
   }
-  return {
-    data: json.data as T,
-    meta: (json.meta ?? {
-      current_page: 1,
-      per_page: 15,
-      total: 0,
-      last_page: 1,
-      from: null,
-      to: null,
-    }) as PaginatedMeta,
-  };
+  const message = (json?.message ?? res.statusText) || "Terjadi kesalahan";
+
+  if (res.ok) {
+    if (json?.success === false) {
+      switch (res.status) {
+        case 401:
+          onUnauthorized?.();
+          throw new UnauthorizedError(message, json?.errors);
+        case 403:
+          toast.error(message || "Tidak punya akses");
+          throw new ForbiddenError(message, json?.errors);
+        case 409:
+          toast.error(message);
+          throw new ConflictError(message, json?.errors);
+        case 422:
+          toast.error(message);
+          throw new ValidationError(
+            message,
+            json?.errors as Record<string, string[] | { message: string }> | undefined
+          );
+        default:
+          toast.error(message);
+          throw new AppError(message, undefined, res.status, json?.errors);
+      }
+    }
+    return {
+      data: (json?.data as T) ?? ([] as T),
+      meta: (json?.meta ?? DEFAULT_META) as PaginatedMeta,
+    };
+  }
+
+  switch (res.status) {
+    case 401:
+      onUnauthorized?.();
+      throw new UnauthorizedError(message, json?.errors);
+    case 403:
+      toast.error(message || "Tidak punya akses");
+      throw new ForbiddenError(message, json?.errors);
+    case 404:
+      throw new NotFoundError(message, json?.errors);
+    case 409:
+      toast.error(message);
+      throw new ConflictError(message, json?.errors);
+    case 422:
+      toast.error(message);
+      throw new ValidationError(
+        message,
+        json?.errors as Record<string, string[] | { message: string }> | undefined
+      );
+    default:
+      toast.error(message);
+      throw new AppError(message, undefined, res.status, json?.errors);
+  }
 }
 
 export async function post<T>(path: string, body: unknown): Promise<T> {

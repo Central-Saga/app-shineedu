@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { LogOut, ChevronDown } from "lucide-react";
 
 const PAGE_TITLES: Record<string, string> = {
@@ -38,7 +39,8 @@ export function AppTopbar() {
   }
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-background px-4">
+    <header className="flex h-14 shrink-0 items-center gap-2 border-b border-slate-200 bg-background px-4">
+      <SidebarTrigger className="-ml-1" />
       <div className="min-w-0 flex-1">
         {pageTitle && (
           <span className="text-sm font-medium text-slate-600">{pageTitle}</span>

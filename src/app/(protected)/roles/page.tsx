@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { PageHeader } from "@/modules/identity/presentation/components/shared/PageHeader";
 import { RoleList } from "@/modules/identity/presentation/components/roles/RoleList";
 import { RoleFormDialog } from "@/modules/identity/presentation/components/roles/RoleFormDialog";
 import { PermissionMatrix } from "@/modules/identity/presentation/components/roles/PermissionMatrix";
 import { ConfirmDialog } from "@/modules/identity/presentation/components/shared/ConfirmDialog";
+import { useDebouncedValue } from "@/shared/presentation/hooks/useDebouncedValue";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,14 +15,16 @@ import { Label } from "@/components/ui/label";
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import * as rolesUsecase from "@/modules/identity/application/usecases/roles.usecase";
 import * as permissionsUsecase from "@/modules/identity/application/usecases/permissions.usecase";
+import { ForbiddenError } from "@/shared/infrastructure/api/errors";
 import type { Role, Permission } from "@/modules/identity/domain/entities";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, ArrowUpDown } from "lucide-react";
 import { toast } from "sonner";
 
 const canManage = () =>
   authStore.hasAnyPermission(["roles.manage", "roles.update"]);
 
 export default function RolesPage() {
+  const router = useRouter();
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +35,9 @@ export default function RolesPage() {
   const [savingPerms, setSavingPerms] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [roleSearch, setRoleSearch] = useState("");
+  const debouncedRoleSearch = useDebouncedValue(roleSearch, 350);
+  const [roleSort, setRoleSort] = useState<"asc" | "desc">("asc");
 
   const selected = roles.find((r) => r.id === selectedId);
 
@@ -38,12 +45,22 @@ export default function RolesPage() {
     setLoading(true);
     try {
       const [r, p] = await Promise.all([
-        rolesUsecase.getRolesUsecase(),
+        rolesUsecase.getRolesUsecase({
+          page: 1,
+          per_page: 100,
+          q: debouncedRoleSearch || undefined,
+          sort_by: "name",
+          sort_dir: roleSort,
+        }),
         permissionsUsecase.getPermissionsUsecase(),
       ]);
-      setRoles(r);
+      setRoles(r.roles);
       setPermissions(p);
-    } catch {
+    } catch (e) {
+      if (e instanceof ForbiddenError) {
+        router.push("/dashboard");
+        return;
+      }
       toast.error("Gagal memuat data");
     } finally {
       setLoading(false);
@@ -52,7 +69,7 @@ export default function RolesPage() {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [debouncedRoleSearch, roleSort]);
 
   useEffect(() => {
     if (selected) {
@@ -135,8 +152,24 @@ export default function RolesPage() {
 
       <div className="flex flex-col gap-4 lg:flex-row">
         <Card className="w-full shrink-0 rounded-2xl shadow-sm lg:w-56">
-          <CardContent className="p-4">
-            <h2 className="mb-2 text-sm font-medium">Daftar Role</h2>
+          <CardContent className="p-4 space-y-3">
+            <h2 className="text-sm font-medium">Daftar Role</h2>
+            <Input
+              placeholder="Cari role…"
+              value={roleSearch}
+              onChange={(e) => setRoleSearch(e.target.value)}
+              className="h-9"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full justify-between gap-2"
+              onClick={() => setRoleSort((d) => (d === "asc" ? "desc" : "asc"))}
+            >
+              <span>{roleSort === "asc" ? "A–Z" : "Z–A"}</span>
+              <ArrowUpDown className="size-4 shrink-0" />
+            </Button>
             <RoleList
               roles={roles}
               selectedId={selectedId}
@@ -146,21 +179,23 @@ export default function RolesPage() {
         </Card>
 
         <Card className="min-w-0 flex-1 rounded-2xl shadow-sm">
-          <CardContent className="space-y-6 p-6">
+          <CardContent className="p-4 space-y-4">
           {selected ? (
             <>
               <div className="space-y-2">
                 <Label>Nama Role</Label>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Input
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
                     onBlur={handleSaveName}
                     disabled={!canManage()}
+                    className="min-w-[200px] flex-1"
                   />
                   {canManage() && (
                     <Button
                       variant="secondary"
+                      size="sm"
                       onClick={handleSaveName}
                       disabled={savingName || editName === selected.name}
                     >
@@ -171,7 +206,7 @@ export default function RolesPage() {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <Label>Permission Matrix</Label>
                   {canManage() && (
                     <Button
@@ -195,6 +230,7 @@ export default function RolesPage() {
                 <div>
                   <Button
                     variant="destructive"
+                    size="sm"
                     onClick={() => setDeleteOpen(true)}
                   >
                     <Trash2 className="mr-2 size-4" />

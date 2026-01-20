@@ -1,11 +1,12 @@
 import * as repo from "../../infrastructure/identity.repository";
+import type { ListUsersParams } from "../../infrastructure/identity.repository";
 import type { IdentityUser } from "../../domain/entities";
 import type { PaginatedMeta } from "@/shared/domain/types";
 
 export async function getUsersUsecase(
-  page: number
+  params: ListUsersParams
 ): Promise<{ users: IdentityUser[]; meta: PaginatedMeta }> {
-  const { data, meta } = await repo.listUsers(page);
+  const { data, meta } = await repo.listUsers(params);
   return { users: data ?? [], meta };
 }
 

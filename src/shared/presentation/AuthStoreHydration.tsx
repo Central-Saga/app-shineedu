@@ -8,8 +8,12 @@ import {
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
 
 export function AuthStoreHydration() {
-  useEffect(() => {
+  // Hydrate token from localStorage before children (e.g. useAuthGuard) run
+  if (typeof window !== "undefined") {
     authStore.hydrate();
+  }
+
+  useEffect(() => {
     setTokenGetter(() => authStore.getState().token);
     setOnUnauthorized(() => {
       authStore.clearSession();

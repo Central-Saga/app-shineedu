@@ -1,8 +1,13 @@
 import * as repo from "../../infrastructure/identity.repository";
+import type { ListRolesParams } from "../../infrastructure/identity.repository";
 import type { Role } from "../../domain/entities";
+import type { PaginatedMeta } from "@/shared/domain/types";
 
-export async function getRolesUsecase(): Promise<Role[]> {
-  return repo.listRoles();
+export async function getRolesUsecase(
+  params?: ListRolesParams
+): Promise<{ roles: Role[]; meta: PaginatedMeta }> {
+  const { data, meta } = await repo.listRoles(params ?? {});
+  return { roles: data ?? [], meta };
 }
 
 export async function createRoleUsecase(payload: {

@@ -8,10 +8,29 @@ import {
 import type { PaginatedMeta } from "@/shared/domain/types";
 import type { Role, Permission, IdentityUser } from "../domain/entities";
 
+export interface ListRolesParams {
+  page?: number;
+  per_page?: number;
+  q?: string;
+  sort_by?: "name" | "created_at" | "updated_at";
+  sort_dir?: "asc" | "desc";
+}
+
+export interface ListUsersParams {
+  page?: number;
+  per_page?: number;
+  q?: string;
+  status?: "Aktif" | "Non Aktif";
+  role?: string;
+  sort_by?: "name" | "email" | "status" | "created_at" | "updated_at";
+  sort_dir?: "asc" | "desc";
+}
+
 // Roles
-export async function listRoles(): Promise<Role[]> {
-  const data = await get<Role[]>("roles");
-  return (data ?? []) as Role[];
+export async function listRoles(
+  params?: ListRolesParams
+): Promise<{ data: Role[]; meta: PaginatedMeta }> {
+  return getPaginated<Role[]>("roles", params ?? {});
 }
 
 export async function createRole(payload: {
@@ -41,9 +60,9 @@ export async function syncRolePermissions(
 
 // Users
 export async function listUsers(
-  page: number
+  params: ListUsersParams
 ): Promise<{ data: IdentityUser[]; meta: PaginatedMeta }> {
-  return getPaginated<IdentityUser[]>(`users?page=${page}`);
+  return getPaginated<IdentityUser[]>("users", params);
 }
 
 export async function createUser(payload: {
