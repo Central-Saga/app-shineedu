@@ -51,6 +51,11 @@ export async function updateRole(
   return put<Role>(`roles/${id}`, payload) as Promise<Role>;
 }
 
+export async function getRole(id: number): Promise<Role> {
+  const data = await get<Role>(`roles/${id}`);
+  return data as Role;
+}
+
 export async function deleteRole(id: number): Promise<void> {
   await del(`roles/${id}`);
 }
@@ -69,6 +74,11 @@ export async function listUsers(
   const qs = buildQuery(params);
   const res = await getResponse<IdentityUser[]>(qs ? `users?${qs}` : "users");
   return { items: (res.data ?? []) as IdentityUser[], meta: res.meta ?? DEFAULT_META };
+}
+
+export async function getUser(id: number): Promise<IdentityUser> {
+  const data = await get<IdentityUser>(`users/${id}`);
+  return data as IdentityUser;
 }
 
 export async function createUser(payload: {

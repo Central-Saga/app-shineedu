@@ -10,6 +10,10 @@ export async function getRolesUsecase(
   return { items, meta };
 }
 
+export async function getRoleUsecase(id: number): Promise<Role> {
+  return repo.getRole(id);
+}
+
 export async function createRoleUsecase(payload: {
   name: string;
   permissions?: string[];

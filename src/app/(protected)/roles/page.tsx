@@ -1,62 +1,62 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AppBreadcrumbs } from "@/shared/presentation/components/AppBreadcrumbs";
 import { PageHeader } from "@/shared/presentation/components/PageHeader";
-import { RoleList } from "@/modules/identity/presentation/components/roles/RoleList";
-import { RoleFormDialog } from "@/modules/identity/presentation/components/roles/RoleFormDialog";
-import { PermissionMatrix } from "@/modules/identity/presentation/components/roles/PermissionMatrix";
-import { ConfirmDialog } from "@/modules/identity/presentation/components/shared/ConfirmDialog";
-import { useDebouncedValue } from "@/shared/presentation/hooks/useDebouncedValue";
+import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGuard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import * as rolesUsecase from "@/modules/identity/application/usecases/roles.usecase";
 import * as permissionsUsecase from "@/modules/identity/application/usecases/permissions.usecase";
 import { ForbiddenError } from "@/shared/infrastructure/api/errors";
-import type { Role, Permission } from "@/modules/identity/domain/entities";
-import { Plus, Trash2, ArrowUpDown } from "lucide-react";
+import type { Role } from "@/modules/identity/domain/entities";
+import { Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 
-const canManage = () =>
-  authStore.hasAnyPermission(["roles.manage", "roles.update"]);
-
 export default function RolesPage() {
+  const { allowed } = usePermissionGuard("roles.view");
   const router = useRouter();
   const [roles, setRoles] = useState<Role[]>([]);
-  const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [permissionsCount, setPermissionsCount] = useState(0);
+  const [totalRoles, setTotalRoles] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
-  const [editName, setEditName] = useState("");
-  const [savingName, setSavingName] = useState(false);
-  const [savingPerms, setSavingPerms] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [roleSearch, setRoleSearch] = useState("");
-  const debouncedRoleSearch = useDebouncedValue(roleSearch, 350);
-  const [roleSort, setRoleSort] = useState<"asc" | "desc">("asc");
 
-  const selected = roles.find((r) => r.id === selectedId);
+  const canCreate = authStore.hasPermission("roles.create");
+  const canUpdate = authStore.hasPermission("roles.update");
 
   async function load() {
-    if (!authStore.hasPermission("roles.view")) return;
+    if (!allowed) return;
     setLoading(true);
     try {
-      const [r, p] = await Promise.all([
+      const [r, perms] = await Promise.all([
         rolesUsecase.getRolesUsecase({
           page: 1,
           per_page: 100,
-          q: debouncedRoleSearch || undefined,
           sort_by: "name",
-          sort_dir: roleSort,
+          sort_dir: "asc",
         }),
         permissionsUsecase.getPermissionsUsecase(),
       ]);
       setRoles(r.items);
-      setPermissions(p);
+      setTotalRoles(r.meta.total);
+      setPermissionsCount(perms.length);
     } catch (e) {
       if (e instanceof ForbiddenError) {
         toast.error(e.message || "Tidak punya akses");
@@ -70,207 +70,119 @@ export default function RolesPage() {
   }
 
   useEffect(() => {
-    if (!authStore.hasPermission("roles.view")) {
-      toast.error("Tidak punya akses");
-      router.replace("/dashboard");
-      return;
-    }
+    if (!allowed) return;
     load();
-  }, [debouncedRoleSearch, roleSort, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load is stable
+  }, [allowed]);
 
-  useEffect(() => {
-    if (selected) {
-      setEditName(selected.name);
-      setSelectedPermissions(
-        (selected.permissions ?? []).map((x) => x.name)
-      );
-    } else {
-      setEditName("");
-      setSelectedPermissions([]);
-    }
-  }, [selected?.id, selected?.name, selected?.permissions]);
-
-  async function handleCreate(p: { name: string; permissions?: string[] }) {
-    await rolesUsecase.createRoleUsecase(p);
-    toast.success("Role berhasil dibuat");
-    load();
-    setCreateOpen(false);
-  }
-
-  async function handleSaveName() {
-    if (!selected || !canManage() || editName === selected.name) return;
-    setSavingName(true);
-    try {
-      await rolesUsecase.updateRoleUsecase(selected.id, { name: editName });
-      toast.success("Nama role berhasil diupdate");
-      load();
-    } catch {
-      // toast by httpClient
-    } finally {
-      setSavingName(false);
-    }
-  }
-
-  async function handleSavePermissions() {
-    if (!selected || !canManage()) return;
-    setSavingPerms(true);
-    try {
-      await rolesUsecase.syncRolePermissionsUsecase(selected.id, selectedPermissions);
-      toast.success("Permissions berhasil disinkronkan");
-      load();
-    } catch {
-      // toast by httpClient
-    } finally {
-      setSavingPerms(false);
-    }
-  }
-
-  async function handleDelete() {
-    if (!selected) return;
-    try {
-      await rolesUsecase.deleteRoleUsecase(selected.id);
-      toast.success("Role berhasil dihapus");
-      setDeleteOpen(false);
-      setSelectedId(null);
-      load();
-    } catch {
-      // toast by httpClient
-    }
-  }
-
-  if (loading) {
-    return <div className="p-4">Memuat…</div>;
-  }
+  if (!allowed) return null;
 
   return (
     <div>
+      <AppBreadcrumbs
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Roles" },
+        ]}
+      />
       <PageHeader
         title="Roles"
         description="Kelola role dan permission"
         actions={
-          canManage() ? (
-            <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="mr-2 size-4" />
-              Tambah Role
+          canCreate ? (
+            <Button asChild>
+              <Link href="/roles/new">
+                <Plus className="mr-2 size-4" />
+                Tambah Role
+              </Link>
             </Button>
           ) : undefined
         }
       />
 
-      <div className="flex flex-col gap-4 lg:flex-row">
-        <Card className="w-full shrink-0 rounded-2xl shadow-sm lg:w-56">
-          <CardContent className="p-4 space-y-3">
-            <h2 className="text-sm font-medium">Daftar Role</h2>
-            <Input
-              placeholder="Cari role…"
-              value={roleSearch}
-              onChange={(e) => setRoleSearch(e.target.value)}
-              className="h-9"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="w-full justify-between gap-2"
-              onClick={() => setRoleSort((d) => (d === "asc" ? "desc" : "asc"))}
-            >
-              <span>{roleSort === "asc" ? "A–Z" : "Z–A"}</span>
-              <ArrowUpDown className="size-4 shrink-0" />
-            </Button>
-            <RoleList
-              roles={roles}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-            />
+      <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+        <Card className="rounded-xl">
+          <CardContent className="pt-4">
+            <p className="text-muted-foreground text-sm">Total Roles</p>
+            <p className="text-2xl font-semibold">{totalRoles}</p>
           </CardContent>
         </Card>
-
-        <Card className="min-w-0 flex-1 rounded-2xl shadow-sm">
-          <CardContent className="p-4 space-y-4">
-          {selected ? (
-            <>
-              <div className="space-y-2">
-                <Label>Nama Role</Label>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Input
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    onBlur={handleSaveName}
-                    disabled={!canManage()}
-                    className="min-w-[200px] flex-1"
-                  />
-                  {canManage() && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={handleSaveName}
-                      disabled={savingName || editName === selected.name}
-                    >
-                      {savingName ? "…" : "Simpan"}
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <Label>Permission Matrix</Label>
-                  {canManage() && (
-                    <Button
-                      size="sm"
-                      onClick={handleSavePermissions}
-                      disabled={savingPerms}
-                    >
-                      {savingPerms ? "Menyimpan…" : "Save Permissions"}
-                    </Button>
-                  )}
-                </div>
-                <PermissionMatrix
-                  masterPermissions={permissions}
-                  selectedPermissions={selectedPermissions}
-                  onChange={setSelectedPermissions}
-                  disabled={!canManage()}
-                />
-              </div>
-
-              {canManage() && (
-                <div>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => setDeleteOpen(true)}
-                  >
-                    <Trash2 className="mr-2 size-4" />
-                    Hapus Role
-                  </Button>
-                </div>
-              )}
-            </>
-          ) : (
-            <p className="text-muted-foreground text-sm">
-              Pilih role di samping untuk mengedit.
-            </p>
-          )}
+        <Card className="rounded-xl">
+          <CardContent className="pt-4">
+            <p className="text-muted-foreground text-sm">Module Permissions</p>
+            <p className="text-2xl font-semibold">{permissionsCount}</p>
           </CardContent>
         </Card>
       </div>
 
-      <RoleFormDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        permissions={permissions}
-        onSubmit={handleCreate}
-      />
-
-      <ConfirmDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        title="Hapus Role"
-        description={`Anda yakin ingin menghapus role "${selected?.name}"?`}
-        confirmLabel="Hapus"
-        variant="destructive"
-        onConfirm={handleDelete}
-      />
+      <Card className="rounded-2xl shadow-sm">
+        <CardContent className="pt-6">
+          <div className="w-full overflow-x-auto">
+            <Table className="min-w-[900px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nama</TableHead>
+                  <TableHead>Jumlah Permission</TableHead>
+                  <TableHead className="w-[100px]">Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <Skeleton className="h-6 w-32" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-6 w-16" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-6 w-12" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : roles.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={3}
+                      className="h-24 text-center text-muted-foreground"
+                    >
+                      Tidak ada data.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  roles.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell className="font-medium">{r.name}</TableCell>
+                      <TableCell>
+                        {(r.permissions ?? []).length}
+                      </TableCell>
+                      <TableCell>
+                        {canUpdate && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  router.push(`/roles/${r.id}/edit`)
+                                }
+                              >
+                                <Pencil className="size-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Edit</TooltipContent>
+                          </Tooltip>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

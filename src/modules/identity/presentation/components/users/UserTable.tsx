@@ -17,13 +17,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pencil, UserCog, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 interface UserTableProps {
   users: IdentityUser[];
   loading?: boolean;
   onEdit: (user: IdentityUser) => void;
-  onChangeRole: (user: IdentityUser) => void;
   onDelete: (user: IdentityUser) => void;
   canUpdate: boolean;
   canDelete: boolean;
@@ -33,7 +32,6 @@ export function UserTable({
   users,
   loading = false,
   onEdit,
-  onChangeRole,
   onDelete,
   canUpdate,
   canDelete,
@@ -107,32 +105,18 @@ export function UserTable({
                   <TableCell>
                     <div className="flex gap-1">
                       {canUpdate && (
-                        <>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => onEdit(u)}
-                              >
-                                <Pencil className="size-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Edit</TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => onChangeRole(u)}
-                              >
-                                <UserCog className="size-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Ubah Role</TooltipContent>
-                          </Tooltip>
-                        </>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => onEdit(u)}
+                            >
+                              <Pencil className="size-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Edit</TooltipContent>
+                        </Tooltip>
                       )}
                       {canDelete && (
                         <Tooltip>

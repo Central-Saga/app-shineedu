@@ -1,3 +1,11 @@
+export const KATEGORI_KARYAWAN_VALUES = ["tetap", "kontrak", "freelance"] as const;
+export const SUBTIPE_KONTRAK_VALUES = ["full_time", "part_time"] as const;
+export const TIPE_GAJI_VALUES = ["bulanan", "per_sesi"] as const;
+
+export type KategoriKaryawan = (typeof KATEGORI_KARYAWAN_VALUES)[number];
+export type SubtipeKontrak = (typeof SUBTIPE_KONTRAK_VALUES)[number];
+export type TipeGaji = (typeof TIPE_GAJI_VALUES)[number];
+
 export interface EmployeeUser {
   id: number;
   name: string;

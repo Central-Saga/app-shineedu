@@ -10,6 +10,10 @@ export async function getUsersUsecase(
   return { users: items, meta };
 }
 
+export async function getUserUsecase(id: number): Promise<IdentityUser> {
+  return repo.getUser(id);
+}
+
 export async function createUserUsecase(payload: {
   name: string;
   email: string;

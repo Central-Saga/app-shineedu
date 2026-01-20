@@ -1,18 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AppBreadcrumbs } from "@/shared/presentation/components/AppBreadcrumbs";
 import { PageHeader } from "@/shared/presentation/components/PageHeader";
+import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGuard";
 import { DataTableToolbar } from "@/shared/presentation/components/table/DataTableToolbar";
 import { DataTablePagination } from "@/shared/presentation/components/table/DataTablePagination";
 import { useDebouncedValue } from "@/shared/presentation/hooks/useDebouncedValue";
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import { getEmployeesUsecase } from "@/modules/employees/application/usecases/getEmployees.usecase";
-import { createEmployeeUsecase } from "@/modules/employees/application/usecases/createEmployee.usecase";
-import { updateEmployeeUsecase } from "@/modules/employees/application/usecases/updateEmployee.usecase";
 import { deleteEmployeeUsecase } from "@/modules/employees/application/usecases/deleteEmployee.usecase";
-import { getUsersUsecase } from "@/modules/identity/application/usecases/users.usecase";
-import { EmployeeFormDialog } from "@/modules/employees/presentation/components/EmployeeFormDialog";
 import { EmployeeTable } from "@/modules/employees/presentation/components/EmployeeTable";
 import { ConfirmDialog } from "@/modules/identity/presentation/components/shared/ConfirmDialog";
 import {
@@ -21,8 +20,6 @@ import {
   AppError,
 } from "@/shared/infrastructure/api/errors";
 import type { Employee } from "@/modules/employees/domain/entities";
-import type { CreateEmployeePayload, UpdateEmployeePayload } from "@/modules/employees/domain/entities";
-import type { IdentityUser } from "@/modules/identity/domain/entities";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -49,20 +46,20 @@ const SORT_OPTIONS = [
 type SortKey = (typeof SORT_OPTIONS)[number]["value"];
 
 const KATEGORI_OPTIONS = [
-  { label: "Guru", value: "Guru" },
-  { label: "Staff", value: "Staff" },
-  { label: "Admin", value: "Admin" },
+  { label: "Tetap", value: "tetap" },
+  { label: "Kontrak", value: "kontrak" },
+  { label: "Freelance", value: "freelance" },
 ];
 
 const TIPE_GAJI_OPTIONS = [
-  { label: "Bulanan", value: "Bulanan" },
-  { label: "Harian", value: "Harian" },
-  { label: "Borongan", value: "Borongan" },
+  { label: "Bulanan", value: "bulanan" },
+  { label: "Per Sesi", value: "per_sesi" },
 ];
 
 const PER_PAGE_OPTIONS = [15, 30, 50, 100];
 
 export default function EmployeesPage() {
+  const { allowed } = usePermissionGuard("employees.view");
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(15);
@@ -74,7 +71,6 @@ export default function EmployeesPage() {
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [users, setUsers] = useState<IdentityUser[]>([]);
   const [meta, setMeta] = useState({
     current_page: 1,
     per_page: 15,
@@ -83,9 +79,13 @@ export default function EmployeesPage() {
     from: null as number | null,
     to: null as number | null,
   });
+  const [stats, setStats] = useState({
+    total: 0,
+    tetap: 0,
+    kontrak: 0,
+    freelance: 0,
+  });
   const [loading, setLoading] = useState(true);
-  const [formOpen, setFormOpen] = useState(false);
-  const [formEmployee, setFormEmployee] = useState<Employee | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteEmployee, setDeleteEmployee] = useState<Employee | null>(null);
 
@@ -133,17 +133,8 @@ export default function EmployeesPage() {
     setMeta(m);
   }
 
-  async function loadUsers() {
-    const { users: u } = await getUsersUsecase({ page: 1, per_page: 100 });
-    setUsers(u);
-  }
-
   useEffect(() => {
-    if (!authStore.hasPermission("employees.view")) {
-      toast.error("Tidak punya akses");
-      router.replace("/dashboard");
-      return;
-    }
+    if (!allowed) return;
     setLoading(true);
     const searchJustChanged = prevDebouncedQ.current !== debouncedQ;
     if (searchJustChanged) {
@@ -152,10 +143,27 @@ export default function EmployeesPage() {
     }
     const pageToUse = searchJustChanged ? 1 : page;
     const params = buildParams(pageToUse);
-    Promise.all([loadEmployees(params), loadUsers()])
-      .catch(handleError)
-      .finally(() => setLoading(false));
+
+    Promise.all([
+      loadEmployees(params),
+      (async () => {
+        const [all, t, k, f] = await Promise.all([
+          getEmployeesUsecase({ per_page: 1 }),
+          getEmployeesUsecase({ per_page: 1, kategori_karyawan: "tetap" }),
+          getEmployeesUsecase({ per_page: 1, kategori_karyawan: "kontrak" }),
+          getEmployeesUsecase({ per_page: 1, kategori_karyawan: "freelance" }),
+        ]);
+        setStats({
+          total: all.meta.total,
+          tetap: t.meta.total,
+          kontrak: k.meta.total,
+          freelance: f.meta.total,
+        });
+      })(),
+    ]).catch(handleError).finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- buildParams, loadEmployees, handleError are stable
   }, [
+    allowed,
     page,
     perPage,
     debouncedQ,
@@ -164,33 +172,7 @@ export default function EmployeesPage() {
     filterTipeGaji,
     sortKey,
     sortDir,
-    router,
   ]);
-
-  function openCreate() {
-    setFormEmployee(null);
-    setFormOpen(true);
-  }
-
-  function openEdit(em: Employee) {
-    setFormEmployee(em);
-    setFormOpen(true);
-  }
-
-  async function handleCreate(p: CreateEmployeePayload) {
-    await createEmployeeUsecase(p);
-    toast.success("Karyawan berhasil ditambahkan");
-    setFormOpen(false);
-    loadEmployees(buildParams()).catch(handleError);
-  }
-
-  async function handleUpdate(id: number, p: UpdateEmployeePayload) {
-    await updateEmployeeUsecase(id, p);
-    toast.success("Karyawan berhasil diupdate");
-    setFormOpen(false);
-    setFormEmployee(null);
-    loadEmployees(buildParams()).catch(handleError);
-  }
 
   async function handleDelete() {
     if (!deleteEmployee) return;
@@ -201,24 +183,57 @@ export default function EmployeesPage() {
     loadEmployees(buildParams()).catch(handleError);
   }
 
-  if (!authStore.hasPermission("employees.view")) {
-    return null;
-  }
+  if (!allowed) return null;
 
   return (
     <div>
+      <AppBreadcrumbs
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Karyawan" },
+        ]}
+      />
       <PageHeader
         title="Karyawan"
         description="Daftar karyawan"
         actions={
           canCreate ? (
-            <Button onClick={openCreate}>
-              <Plus className="mr-2 size-4" />
-              Tambah Karyawan
+            <Button asChild>
+              <Link href="/employees/new">
+                <Plus className="mr-2 size-4" />
+                Tambah Karyawan
+              </Link>
             </Button>
           ) : undefined
         }
       />
+
+      <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+        <Card className="rounded-xl">
+          <CardContent className="pt-4">
+            <p className="text-muted-foreground text-sm">Total Karyawan</p>
+            <p className="text-2xl font-semibold">{stats.total}</p>
+          </CardContent>
+        </Card>
+        <Card className="rounded-xl">
+          <CardContent className="pt-4">
+            <p className="text-muted-foreground text-sm">Tetap</p>
+            <p className="text-2xl font-semibold">{stats.tetap}</p>
+          </CardContent>
+        </Card>
+        <Card className="rounded-xl">
+          <CardContent className="pt-4">
+            <p className="text-muted-foreground text-sm">Kontrak</p>
+            <p className="text-2xl font-semibold">{stats.kontrak}</p>
+          </CardContent>
+        </Card>
+        <Card className="rounded-xl">
+          <CardContent className="pt-4">
+            <p className="text-muted-foreground text-sm">Freelance</p>
+            <p className="text-2xl font-semibold">{stats.freelance}</p>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card className="rounded-2xl shadow-sm">
         <CardContent className="space-y-4 pt-6">
@@ -313,7 +328,7 @@ export default function EmployeesPage() {
           <EmployeeTable
             employees={employees}
             loading={loading}
-            onEdit={openEdit}
+            onEdit={(em) => router.push(`/employees/${em.id}/edit`)}
             onDelete={(em) => {
               setDeleteEmployee(em);
               setDeleteOpen(true);
@@ -322,21 +337,9 @@ export default function EmployeesPage() {
             canDelete={canDelete}
           />
 
-          <DataTablePagination
-            meta={meta}
-            onPageChange={(p) => setPage(p)}
-          />
+          <DataTablePagination meta={meta} onPageChange={(p) => setPage(p)} />
         </CardContent>
       </Card>
-
-      <EmployeeFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        users={users}
-        employee={formEmployee}
-        onSubmitCreate={handleCreate}
-        onSubmitUpdate={handleUpdate}
-      />
 
       <ConfirmDialog
         open={deleteOpen}

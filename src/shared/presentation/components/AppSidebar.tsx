@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Users,
   Shield,
-  KeyRound,
   UserCircle,
 } from "lucide-react";
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
@@ -35,12 +34,6 @@ const mainNav = [
 const identityNav = [
   { href: "/users", label: "Users", icon: Users, permission: "users.view" },
   { href: "/roles", label: "Roles", icon: Shield, permission: "roles.view" },
-  {
-    href: "/permissions",
-    label: "Permissions",
-    icon: KeyRound,
-    permission: "permissions.view",
-  },
 ];
 
 const hrNav = [

@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AppBreadcrumbs } from "@/shared/presentation/components/AppBreadcrumbs";
 import { PageHeader } from "@/shared/presentation/components/PageHeader";
+import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGuard";
 import { UserTable } from "@/modules/identity/presentation/components/users/UserTable";
-import { UserFormDialog } from "@/modules/identity/presentation/components/users/UserFormDialog";
-import { UserRoleDialog } from "@/modules/identity/presentation/components/users/UserRoleDialog";
 import { ConfirmDialog } from "@/modules/identity/presentation/components/shared/ConfirmDialog";
 import { DataTableToolbar } from "@/shared/presentation/components/table/DataTableToolbar";
 import { DataTablePagination } from "@/shared/presentation/components/table/DataTablePagination";
@@ -43,6 +44,7 @@ const ROLE_FALLBACK = ["Admin", "Teacher", "Student", "Superadmin"];
 const PER_PAGE_OPTIONS = [15, 30, 50, 100];
 
 export default function UsersPage() {
+  const { allowed } = usePermissionGuard("users.view");
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(15);
@@ -55,12 +57,9 @@ export default function UsersPage() {
     from: null as number | null,
     to: null as number | null,
   });
+  const [stats, setStats] = useState({ total: 0, aktif: 0, nonAktif: 0 });
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
-  const [formOpen, setFormOpen] = useState(false);
-  const [formUser, setFormUser] = useState<IdentityUser | null>(null);
-  const [roleDialogOpen, setRoleDialogOpen] = useState(false);
-  const [roleUser, setRoleUser] = useState<IdentityUser | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteUser, setDeleteUser] = useState<IdentityUser | null>(null);
 
@@ -116,7 +115,8 @@ export default function UsersPage() {
   }
 
   useEffect(() => {
-    if (!authStore.hasPermission("users.view")) return;
+    if (!allowed) return;
+    // Loading state for fetch-in-effect pattern
     setLoading(true);
     const searchJustChanged = prevDebouncedQ.current !== debouncedSearch;
     if (searchJustChanged) {
@@ -126,10 +126,24 @@ export default function UsersPage() {
     const pageToUse = searchJustChanged ? 1 : page;
     const params = buildUserParams(pageToUse);
 
-    Promise.all([loadUsers(params), loadRoles()])
-      .catch(handleLoadError)
-      .finally(() => setLoading(false));
-  }, [page, perPage, debouncedSearch, filterStatus, filterRole, sortKey, sortDir]);
+    Promise.all([
+      loadUsers(params),
+      loadRoles(),
+      (async () => {
+        const [a, b, c] = await Promise.all([
+          usersUsecase.getUsersUsecase({ per_page: 1 }),
+          usersUsecase.getUsersUsecase({ per_page: 1, status: "Aktif" }),
+          usersUsecase.getUsersUsecase({ per_page: 1, status: "Non Aktif" }),
+        ]);
+        setStats({
+          total: a.meta.total,
+          aktif: b.meta.total,
+          nonAktif: c.meta.total,
+        });
+      })(),
+    ]).catch(handleLoadError).finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- buildUserParams, loadUsers, handleLoadError are stable
+  }, [allowed, page, perPage, debouncedSearch, filterStatus, filterRole, sortKey, sortDir]);
 
   const roleOptions = useMemo(() => {
     const names = roles.map((r) => r.name);
@@ -137,47 +151,6 @@ export default function UsersPage() {
       return ROLE_FALLBACK.map((n) => ({ label: n, value: n }));
     return [...new Set(names)].map((n) => ({ label: n, value: n }));
   }, [roles]);
-
-  function openCreate() {
-    setFormUser(null);
-    setFormOpen(true);
-  }
-
-  function openEdit(u: IdentityUser) {
-    setFormUser(u);
-    setFormOpen(true);
-  }
-
-  async function handleCreate(p: {
-    name: string;
-    email: string;
-    password: string;
-    status: string;
-    role: string;
-  }) {
-    await usersUsecase.createUserUsecase(p);
-    toast.success("User berhasil dibuat");
-    setFormOpen(false);
-    loadUsers(buildUserParams()).catch(handleLoadError);
-  }
-
-  async function handleUpdate(
-    id: number,
-    p: { name: string; email: string; status: string; password?: string }
-  ) {
-    await usersUsecase.updateUserUsecase(id, p);
-    toast.success("User berhasil diupdate");
-    setFormOpen(false);
-    loadUsers(buildUserParams()).catch(handleLoadError);
-  }
-
-  async function handleChangeRole(userId: number, roleName: string) {
-    await usersUsecase.updateUserRoleUsecase(userId, roleName);
-    toast.success("Role berhasil diupdate");
-    setRoleDialogOpen(false);
-    setRoleUser(null);
-    loadUsers(buildUserParams()).catch(handleLoadError);
-  }
 
   async function handleDelete() {
     if (!deleteUser) return;
@@ -188,31 +161,51 @@ export default function UsersPage() {
     loadUsers(buildUserParams()).catch(handleLoadError);
   }
 
-  function handlePageChange(p: number) {
-    setPage(p);
-  }
-
-  useEffect(() => {
-    if (!authStore.hasPermission("users.view")) {
-      toast.error("Tidak punya akses");
-      router.replace("/dashboard");
-    }
-  }, [router]);
+  if (!allowed) return null;
 
   return (
     <div>
+      <AppBreadcrumbs
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Users" },
+        ]}
+      />
       <PageHeader
         title="Users"
         description="Kelola user dan role"
         actions={
           canCreate ? (
-            <Button onClick={openCreate}>
-              <Plus className="mr-2 size-4" />
-              Tambah User
+            <Button asChild>
+              <Link href="/users/new">
+                <Plus className="mr-2 size-4" />
+                Tambah User
+              </Link>
             </Button>
           ) : undefined
         }
       />
+
+      <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+        <Card className="rounded-xl">
+          <CardContent className="pt-4">
+            <p className="text-muted-foreground text-sm">Total Users</p>
+            <p className="text-2xl font-semibold">{stats.total}</p>
+          </CardContent>
+        </Card>
+        <Card className="rounded-xl">
+          <CardContent className="pt-4">
+            <p className="text-muted-foreground text-sm">Aktif</p>
+            <p className="text-2xl font-semibold">{stats.aktif}</p>
+          </CardContent>
+        </Card>
+        <Card className="rounded-xl">
+          <CardContent className="pt-4">
+            <p className="text-muted-foreground text-sm">Non Aktif</p>
+            <p className="text-2xl font-semibold">{stats.nonAktif}</p>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card className="rounded-2xl shadow-sm">
         <CardContent className="space-y-4 pt-6">
@@ -294,11 +287,7 @@ export default function UsersPage() {
           <UserTable
             users={users}
             loading={loading}
-            onEdit={openEdit}
-            onChangeRole={(u) => {
-              setRoleUser(u);
-              setRoleDialogOpen(true);
-            }}
+            onEdit={(u) => router.push(`/users/${u.id}/edit`)}
             onDelete={(u) => {
               setDeleteUser(u);
               setDeleteOpen(true);
@@ -307,26 +296,9 @@ export default function UsersPage() {
             canDelete={canDelete}
           />
 
-          <DataTablePagination meta={meta} onPageChange={handlePageChange} />
+          <DataTablePagination meta={meta} onPageChange={(p) => setPage(p)} />
         </CardContent>
       </Card>
-
-      <UserFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        roles={roles}
-        user={formUser}
-        onSubmitCreate={handleCreate}
-        onSubmitUpdate={handleUpdate}
-      />
-
-      <UserRoleDialog
-        open={roleDialogOpen}
-        onOpenChange={setRoleDialogOpen}
-        user={roleUser}
-        roles={roles}
-        onSubmit={handleChangeRole}
-      />
 
       <ConfirmDialog
         open={deleteOpen}
