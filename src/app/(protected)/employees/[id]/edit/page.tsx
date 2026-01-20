@@ -10,8 +10,13 @@ import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.sto
 import { PageHeader } from "@/shared/presentation/components/PageHeader";
 import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGuard";
 import { ConfirmDialog } from "@/modules/identity/presentation/components/shared/ConfirmDialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -21,16 +26,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { ValidationError } from "@/shared/infrastructure/api/errors";
 import { applyValidationErrors } from "@/shared/lib/applyValidationErrors";
 import { getEmployeeUsecase } from "@/modules/employees/application/usecases/getEmployee.usecase";
 import { updateEmployeeUsecase } from "@/modules/employees/application/usecases/updateEmployee.usecase";
 import { deleteEmployeeUsecase } from "@/modules/employees/application/usecases/deleteEmployee.usecase";
-import { getUsersUsecase } from "@/modules/identity/application/usecases/users.usecase";
+import { getUserUsecase, updateUserUsecase, updateUserRoleUsecase } from "@/modules/identity/application/usecases/users.usecase";
+import { getRolesUsecase } from "@/modules/identity/application/usecases/roles.usecase";
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import type { Employee } from "@/modules/employees/domain/entities";
-import type { IdentityUser } from "@/modules/identity/domain/entities";
+import type { Role } from "@/modules/identity/domain/entities";
 import { NotFoundError } from "@/shared/infrastructure/api/errors";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -102,7 +107,7 @@ export default function EmployeesEditPage() {
   const params = useParams();
   const router = useRouter();
   const id = Number(params.id);
-  const [users, setUsers] = useState<IdentityUser[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -134,6 +139,10 @@ export default function EmployeesEditPage() {
     },
   });
 
+  const { register: registerUser, watch: watchUser, setValue: setUserValue, reset: resetUser, formState: { errors: userErrors } } = useForm({
+    defaultValues: { name: "", email: "", password: "", status: "Aktif", role: "" }
+  });
+
   const { setItems } = useBreadcrumbStore();
 
   useEffect(() => {
@@ -146,27 +155,45 @@ export default function EmployeesEditPage() {
 
   useEffect(() => {
     if (!allowed || !id || Number.isNaN(id)) return;
-    Promise.all([
-      getEmployeeUsecase(id),
-      getUsersUsecase({ page: 1, per_page: 100 }),
-    ])
-      .then(([emp, usersRes]) => {
-        setUsers(usersRes.users);
+    
+    const fetchData = async () => {
+      try {
+        const [emp, rolesRes] = await Promise.all([
+          getEmployeeUsecase(id),
+          getRolesUsecase({ page: 1, per_page: 100 }),
+        ]);
+        
+        setRoles(rolesRes.items);
         reset(mapEmployeeToForm(emp));
-      })
-      .catch((e) => {
+        
+        if (emp.user) {
+          const user = await getUserUsecase(emp.user.id);
+          resetUser({
+            name: user.name,
+            email: user.email,
+            password: "",
+            status: (user.status as any) ?? "Aktif",
+            role: user.roles?.[0]?.name ?? "",
+          });
+        }
+      } catch (e) {
         if (e instanceof NotFoundError) {
           toast.error("Karyawan tidak ditemukan");
           router.replace("/employees");
         } else {
-          toast.error("Gagal memuat karyawan");
+          toast.error("Gagal memuat data karyawan");
         }
-      })
-      .finally(() => setLoading(false));
-  }, [allowed, id, reset, router]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [allowed, id, reset, resetUser, router]);
 
   async function onSave(values: Form) {
     try {
+      // 1. Update Employee
       await updateEmployeeUsecase(id, {
         kode_karyawan: values.kode_karyawan,
         user_id: values.user_id ?? undefined,
@@ -179,9 +206,22 @@ export default function EmployeesEditPage() {
         nomor_hp: values.nomor_hp || null,
         alamat: values.alamat || null,
         tanggal_lahir: values.tanggal_lahir || null,
-        status: values.status ?? null,
+        status: "aktif",
       });
-      toast.success("Karyawan berhasil diupdate");
+
+      // 2. Update linked User if exists
+      if (values.user_id) {
+        const userValues = watchUser();
+        await updateUserUsecase(values.user_id, {
+          name: userValues.name,
+          email: userValues.email,
+          status: userValues.status,
+          ...(userValues.password ? { password: userValues.password } : {}),
+        });
+        await updateUserRoleUsecase(values.user_id, userValues.role);
+      }
+
+      toast.success("Data Karyawan & User berhasil diupdate");
       router.push("/employees");
     } catch (e) {
       if (e instanceof ValidationError && e.validationErrors) {
@@ -208,173 +248,208 @@ export default function EmployeesEditPage() {
   if (!allowed) return null;
   if (loading) return <div className="p-4">Memuat…</div>;
 
-  return (
-    <div>
-      <PageHeader title="Edit Karyawan" description="Ubah data karyawan" />
+  const kategori = watch("kategori_karyawan");
 
-      <Card className="rounded-2xl shadow-sm">
-        <CardContent className="space-y-4 pt-6">
-          <form onSubmit={handleSubmit(onSave)} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="kode_karyawan">Kode Karyawan</Label>
-                <Input id="kode_karyawan" {...register("kode_karyawan")} />
-                {errors.kode_karyawan && (
-                  <p className="text-destructive text-sm">{errors.kode_karyawan.message}</p>
+  return (
+    <div className="w-full">
+      <PageHeader title="Edit Karyawan" description={`Ubah data untuk "${watchUser("name") || watch("kode_karyawan")}"`} />
+
+      <form onSubmit={handleSubmit(onSave)} className="space-y-6">
+        <Accordion defaultValue="data-karyawan" className="w-full">
+          {/* Panel 1: Akun User */}
+          <AccordionItem value="akun-user">
+            <AccordionTrigger description="Informasi kredensial login">
+              Akun User
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Nama Lengkap</Label>
+                  <Input {...registerUser("name")} placeholder="Nama lengkap user" />
+                  {userErrors.name && <p className="text-destructive text-sm">{userErrors.name.message as string}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input type="email" {...registerUser("email")} placeholder="email@contoh.com" />
+                  {userErrors.email && <p className="text-destructive text-sm">{userErrors.email.message as string}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label>Password</Label>
+                  <Input type="password" {...registerUser("password")} placeholder="Kosongkan jika tidak diubah" />
+                  <p className="text-[11px] text-muted-foreground">Minimal 8 karakter unik</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Role</Label>
+                  <Select
+                    value={watchUser("role")}
+                    onValueChange={(v) => setUserValue("role", v as any)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roles.map((r) => (
+                        <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {userErrors.role && <p className="text-destructive text-sm">{userErrors.role.message as string}</p>}
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Panel 2: Data Karyawan */}
+          <AccordionItem value="data-karyawan">
+            <AccordionTrigger description="Identitas dasar dan kode karyawan">
+              Data Karyawan
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Kode Karyawan</Label>
+                  <Input {...register("kode_karyawan")} readOnly className="bg-slate-50 font-mono" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Kategori Karyawan</Label>
+                  <Select
+                    value={watch("kategori_karyawan") ?? "tetap"}
+                    onValueChange={(v) => {
+                      setValue("kategori_karyawan", v as any);
+                      if (v !== "kontrak") setValue("subtipe_kontrak", null);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="tetap">Tetap</SelectItem>
+                      <SelectItem value="kontrak">Kontrak</SelectItem>
+                      <SelectItem value="freelance">Freelance</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {kategori === "kontrak" && (
+                  <div className="space-y-2 animate-in fade-in slide-in-from-left-2">
+                    <Label>Subtipe Kontrak</Label>
+                    <Select
+                      value={watch("subtipe_kontrak") ?? ""}
+                      onValueChange={(v) => setValue("subtipe_kontrak", v as any)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih subtipe" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="full_time">Full Time</SelectItem>
+                        <SelectItem value="part_time">Part Time</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 )}
               </div>
-              <div className="space-y-2">
-                <Label>User</Label>
-                <Select
-                  value={watch("user_id") != null ? String(watch("user_id")) : ""}
-                  onValueChange={(v) => setValue("user_id", v ? Number(v) : null)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih user" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((u) => (
-                      <SelectItem key={u.id} value={String(u.id)}>
-                        {u.name} ({u.email})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            </AccordionContent>
+          </AccordionItem>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Kategori Karyawan</Label>
-                <Select
-                  value={watch("kategori_karyawan") ?? "tetap"}
-                  onValueChange={(v) => setValue("kategori_karyawan", v as Form["kategori_karyawan"])}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {KATEGORI_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          {/* Panel 3: Kontrak & Gaji */}
+          <AccordionItem value="payroll">
+            <AccordionTrigger description="Informasi penggajian dan tipe kontrak">
+              Kontrak & Gaji
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Tipe Gaji</Label>
+                  <Select
+                    value={watch("tipe_gaji") ?? ""}
+                    onValueChange={(v) => setValue("tipe_gaji", v as any)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih tipe gaji" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bulanan">Bulanan</SelectItem>
+                      <SelectItem value="per_sesi">Per Sesi</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Gaji Pokok</Label>
+                  <Input type="number" {...register("gaji_pokok")} placeholder="0" />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Subtipe Kontrak</Label>
-                <Select
-                  value={watch("subtipe_kontrak") ?? "__none__"}
-                  onValueChange={(v) => setValue("subtipe_kontrak", v === "__none__" ? null : (v as Form["subtipe_kontrak"]))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="—" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">—</SelectItem>
-                    {SUBTIPE_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            </AccordionContent>
+          </AccordionItem>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Tipe Gaji</Label>
-                <Select
-                  value={watch("tipe_gaji") ?? "__none__"}
-                  onValueChange={(v) => setValue("tipe_gaji", v === "__none__" ? null : (v as Form["tipe_gaji"]))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="—" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">—</SelectItem>
-                    {TIPE_GAJI_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          {/* Panel 4: Bank */}
+          <AccordionItem value="bank">
+            <AccordionTrigger description="Rekening bank untuk pencairan gaji">
+              Bank
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Nama Bank</Label>
+                  <Input {...register("bank_nama")} placeholder="Contoh: BCA" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Nomor Rekening</Label>
+                  <Input {...register("bank_no_rekening")} placeholder="0000000000" />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="gaji_pokok">Gaji Pokok</Label>
-                <Input
-                  id="gaji_pokok"
-                  type="number"
-                  step="any"
-                  {...register("gaji_pokok")}
-                />
-              </div>
-            </div>
+            </AccordionContent>
+          </AccordionItem>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="bank_nama">Bank - Nama</Label>
-                <Input id="bank_nama" {...register("bank_nama")} />
+          {/* Panel 5: Kontak & Alamat */}
+          <AccordionItem value="kontak">
+            <AccordionTrigger description="Informasi komunikasi dan tempat tinggal">
+              Kontak & Alamat
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Nomor HP</Label>
+                  <Input {...register("nomor_hp")} placeholder="08xxxxxxxxxx" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tanggal Lahir</Label>
+                  <Input type="date" {...register("tanggal_lahir")} />
+                </div>
+                <div className="col-span-full space-y-2">
+                  <Label>Alamat</Label>
+                  <Input {...register("alamat")} placeholder="Alamat lengkap" />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="bank_no_rekening">Bank - No. Rekening</Label>
-                <Input id="bank_no_rekening" {...register("bank_no_rekening")} />
-              </div>
-            </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="nomor_hp">Nomor HP</Label>
-                <Input id="nomor_hp" {...register("nomor_hp")} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tanggal_lahir">Tanggal Lahir</Label>
-                <Input id="tanggal_lahir" type="date" {...register("tanggal_lahir")} />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="alamat">Alamat</Label>
-              <Input id="alamat" {...register("alamat")} />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="status"
-                  checked={(watch("status") ?? "aktif") === "aktif"}
-                  onCheckedChange={(c) => setValue("status", c ? "aktif" : "nonaktif")}
-                />
-                <span className="text-sm">Status: {watch("status") ?? "aktif"}</span>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2 pt-4">
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Menyimpan…" : "Simpan"}
-              </Button>
-              <Button type="button" variant="outline" asChild>
-                <Link href="/employees">Batal</Link>
-              </Button>
-              {canDeleteRole && (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setDeleteOpen(true)}
-                >
-                  <Trash2 className="mr-2 size-4" />
-                  Hapus
-                </Button>
-              )}
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+        <div className="flex flex-wrap items-center gap-3 pt-6">
+          <Button type="submit" size="lg" disabled={isSubmitting} className="px-8 font-bold">
+            {isSubmitting ? "Menyimpan…" : "Simpan Perubahan"}
+          </Button>
+          <Button type="button" variant="outline" size="lg" asChild>
+            <Link href="/employees">Batal</Link>
+          </Button>
+          {canDeleteRole && (
+            <Button
+              type="button"
+              variant="destructive"
+              size="lg"
+              onClick={() => setDeleteOpen(true)}
+              className="ml-auto"
+            >
+              <Trash2 className="mr-2 size-4" />
+              Hapus Karyawan
+            </Button>
+          )}
+        </div>
+      </form>
 
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         title="Hapus Karyawan"
-        description="Anda yakin ingin menghapus karyawan ini?"
+        description="Anda yakin ingin menghapus karyawan ini? Akun user terkait tidak akan dihapus otomatis."
         confirmLabel="Hapus"
         variant="destructive"
         onConfirm={onDelete}

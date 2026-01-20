@@ -9,8 +9,13 @@ import { z } from "zod";
 import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
 import { PageHeader } from "@/shared/presentation/components/PageHeader";
 import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGuard";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -103,61 +108,66 @@ export default function UsersNewPage() {
   if (!allowed) return null;
 
   return (
-    <div>
-      <PageHeader title="Tambah User" description="Buat user baru" />
+    <div className="w-full">
+      <PageHeader title="Tambah User" description="Buat user baru dengan akses spesifik" />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {/* Main Panel: User Data */}
-          <Card className="rounded-2xl shadow-sm overflow-hidden">
-            <div className="border-b bg-slate-50/50 px-4 py-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Data Pengguna</h3>
-            </div>
-            <CardContent className="space-y-3 pt-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nama</Label>
-                <Input id="name" {...register("name")} placeholder="Nama lengkap" />
-                {errors.name && (
-                  <p className="text-destructive text-sm">{errors.name.message}</p>
-                )}
+        <Accordion defaultValue="data-user" className="w-full">
+          {/* Panel 1: Data User */}
+          <AccordionItem value="data-user">
+            <AccordionTrigger description="Informasi dasar akun pengguna">
+              Data User
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nama Lengkap</Label>
+                  <Input id="name" {...register("name")} placeholder="Contoh: Budi Santoso" />
+                  <p className="text-[11px] text-muted-foreground">Nama lengkap sesuai identitas</p>
+                  {errors.name && (
+                    <p className="text-destructive text-sm">{errors.name.message}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    {...register("email")}
+                    placeholder="email@contoh.com"
+                  />
+                  <p className="text-[11px] text-muted-foreground">Digunakan untuk login ke sistem</p>
+                  {errors.email && (
+                    <p className="text-destructive text-sm">{errors.email.message}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    {...register("password")}
+                    placeholder="Minimal 8 karakter"
+                  />
+                  <p className="text-[11px] text-muted-foreground">Minimal 8 karakter unik</p>
+                  {errors.password && (
+                    <p className="text-destructive text-sm">
+                      {errors.password.message}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  {...register("email")}
-                  placeholder="email@contoh.com"
-                />
-                {errors.email && (
-                  <p className="text-destructive text-sm">{errors.email.message}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  {...register("password")}
-                  placeholder="Min. 8 karakter"
-                />
-                {errors.password && (
-                  <p className="text-destructive text-sm">
-                    {errors.password.message}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+            </AccordionContent>
+          </AccordionItem>
 
-          {/* Side Panel: Role & Access */}
-          <Card className="rounded-2xl shadow-sm overflow-hidden">
-            <div className="border-b bg-slate-50/50 px-4 py-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Role & Akses</h3>
-            </div>
-            <CardContent className="space-y-3 pt-4">
-              <div className="space-y-2">
-                <Label>Role</Label>
+          {/* Panel 2: Role Assignment */}
+          <AccordionItem value="role-assignment">
+            <AccordionTrigger description="Tentukan hak akses dan modul yang dapat dibuka">
+              Role Assignment
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="max-w-md space-y-2">
+                <Label>Pilih Role</Label>
                 <Select
                   value={watch("role")}
                   onValueChange={(v) => setValue("role", v)}
@@ -173,22 +183,36 @@ export default function UsersNewPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-[11px] text-muted-foreground">Menentukan hak akses user di dashboard</p>
                 {errors.role && (
                   <p className="text-destructive text-sm">{errors.role.message}</p>
                 )}
               </div>
-              <div className="pt-2">
-                <p className="text-xs text-muted-foreground italic">
-                  * Status pengguna akan otomatis disetel sebagai <strong>Aktif</strong>.
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Panel 3: Status */}
+          <AccordionItem value="status-panel">
+            <AccordionTrigger description="Aktifkan atau nonaktifkan akun ini">
+              Status
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 rounded-xl border px-4 py-3 bg-slate-50/50 cursor-not-allowed opacity-70">
+                  <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-sm font-medium">Status: Aktif</span>
+                </div>
+                <p className="text-xs text-muted-foreground max-w-xs">
+                  User baru secara otomatis berstatus <strong>Aktif</strong>. Gunakan halaman edit untuk merubah status di masa mendatang.
                 </p>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 pt-4">
           <Button type="submit" size="lg" disabled={isSubmitting} className="px-8">
-            {isSubmitting ? "Menyimpan…" : "Simpan"}
+            {isSubmitting ? "Menyimpan…" : "Buat User Baru"}
           </Button>
           <Button type="button" variant="outline" size="lg" asChild>
             <Link href="/users">Batal</Link>
