@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { ValidationError } from "@/shared/infrastructure/api/errors";
 import { applyValidationErrors } from "@/shared/lib/applyValidationErrors";
 import * as usersUsecase from "@/modules/identity/application/usecases/users.usecase";
@@ -176,21 +177,14 @@ export default function UsersEditPage() {
             </div>
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select
-                value={watch("status")}
-                onValueChange={(v) => setValue("status", v as Form["status"])}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="status"
+                  checked={watch("status") === "Aktif"}
+                  onCheckedChange={(c) => setValue("status", c ? "Aktif" : "Non Aktif")}
+                />
+                <span className="text-sm">Status: {watch("status")}</span>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Role</Label>

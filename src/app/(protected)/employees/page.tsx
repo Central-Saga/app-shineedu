@@ -11,6 +11,7 @@ import { DataTablePagination } from "@/shared/presentation/components/table/Data
 import { useDebouncedValue } from "@/shared/presentation/hooks/useDebouncedValue";
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import { getEmployeesUsecase } from "@/modules/employees/application/usecases/getEmployees.usecase";
+import { updateEmployeeUsecase } from "@/modules/employees/application/usecases/updateEmployee.usecase";
 import { deleteEmployeeUsecase } from "@/modules/employees/application/usecases/deleteEmployee.usecase";
 import { EmployeeTable } from "@/modules/employees/presentation/components/EmployeeTable";
 import { ConfirmDialog } from "@/modules/identity/presentation/components/shared/ConfirmDialog";
@@ -183,6 +184,19 @@ export default function EmployeesPage() {
     loadEmployees(buildParams()).catch(handleError);
   }
 
+  function handleStatusChange(emp: Employee, newStatus: "aktif" | "nonaktif") {
+    const prev = emp.status;
+    setEmployees((prevE) =>
+      prevE.map((e) => (e.id === emp.id ? { ...e, status: newStatus } : e))
+    );
+    updateEmployeeUsecase(emp.id, { status: newStatus }).catch((e) => {
+      setEmployees((prevE) =>
+        prevE.map((e) => (e.id === emp.id ? { ...e, status: prev } : e))
+      );
+      toast.error(e instanceof Error ? e.message : "Gagal mengubah status");
+    });
+  }
+
   if (!allowed) return null;
 
   return (
@@ -333,6 +347,7 @@ export default function EmployeesPage() {
               setDeleteEmployee(em);
               setDeleteOpen(true);
             }}
+            onStatusChange={handleStatusChange}
             canUpdate={canUpdate}
             canDelete={canDelete}
           />

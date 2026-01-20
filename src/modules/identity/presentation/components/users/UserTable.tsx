@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -24,6 +25,7 @@ interface UserTableProps {
   loading?: boolean;
   onEdit: (user: IdentityUser) => void;
   onDelete: (user: IdentityUser) => void;
+  onStatusChange?: (user: IdentityUser, newStatus: "Aktif" | "Non Aktif") => void;
   canUpdate: boolean;
   canDelete: boolean;
 }
@@ -33,6 +35,7 @@ export function UserTable({
   loading = false,
   onEdit,
   onDelete,
+  onStatusChange,
   canUpdate,
   canDelete,
 }: UserTableProps) {
@@ -82,16 +85,27 @@ export function UserTable({
                   {u.email}
                 </TableCell>
                 <TableCell>
-                  <Badge
-                    variant="outline"
-                    className={
-                      u.status === "Aktif"
-                        ? "border-emerald-300 bg-emerald-100 text-emerald-800"
-                        : "border-slate-200 bg-slate-100 text-slate-700"
-                    }
-                  >
-                    {u.status}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant="outline"
+                      className={
+                        u.status === "Aktif"
+                          ? "border-emerald-300 bg-emerald-100 text-emerald-800"
+                          : "border-slate-200 bg-slate-100 text-slate-700"
+                      }
+                    >
+                      {u.status}
+                    </Badge>
+                    {canUpdate && onStatusChange && (
+                      <Switch
+                        checked={u.status === "Aktif"}
+                        onCheckedChange={(c) =>
+                          onStatusChange(u, c ? "Aktif" : "Non Aktif")
+                        }
+                        className="scale-75 shrink-0"
+                      />
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <Badge

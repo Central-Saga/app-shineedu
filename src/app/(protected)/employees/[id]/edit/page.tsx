@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { ValidationError } from "@/shared/infrastructure/api/errors";
 import { applyValidationErrors } from "@/shared/lib/applyValidationErrors";
 import { getEmployeeUsecase } from "@/modules/employees/application/usecases/getEmployee.usecase";
@@ -330,18 +331,14 @@ export default function EmployeesEditPage() {
 
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select
-                value={watch("status") ?? "aktif"}
-                onValueChange={(v) => setValue("status", (v as Form["status"]) ?? "aktif")}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="aktif">Aktif</SelectItem>
-                  <SelectItem value="nonaktif">Nonaktif</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="status"
+                  checked={(watch("status") ?? "aktif") === "aktif"}
+                  onCheckedChange={(c) => setValue("status", c ? "aktif" : "nonaktif")}
+                />
+                <span className="text-sm">Status: {watch("status") ?? "aktif"}</span>
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-2 pt-4">

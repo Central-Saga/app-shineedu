@@ -6,8 +6,17 @@ import { useRouter } from "next/navigation";
 import { AppBreadcrumbs } from "@/shared/presentation/components/AppBreadcrumbs";
 import { PageHeader } from "@/shared/presentation/components/PageHeader";
 import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGuard";
+import { DataTablePagination } from "@/shared/presentation/components/table/DataTablePagination";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -30,12 +39,23 @@ import type { Role } from "@/modules/identity/domain/entities";
 import { Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 
+const PER_PAGE_OPTIONS = [15, 30, 50, 100];
+
 export default function RolesPage() {
   const { allowed } = usePermissionGuard("roles.view");
   const router = useRouter();
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(15);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [meta, setMeta] = useState({
+    current_page: 1,
+    per_page: 15,
+    total: 0,
+    last_page: 1,
+    from: null as number | null,
+    to: null as number | null,
+  });
   const [permissionsCount, setPermissionsCount] = useState(0);
-  const [totalRoles, setTotalRoles] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const canCreate = authStore.hasPermission("roles.create");
@@ -47,15 +67,15 @@ export default function RolesPage() {
     try {
       const [r, perms] = await Promise.all([
         rolesUsecase.getRolesUsecase({
-          page: 1,
-          per_page: 100,
+          page,
+          per_page: perPage,
           sort_by: "name",
           sort_dir: "asc",
         }),
         permissionsUsecase.getPermissionsUsecase(),
       ]);
       setRoles(r.items);
-      setTotalRoles(r.meta.total);
+      setMeta(r.meta);
       setPermissionsCount(perms.length);
     } catch (e) {
       if (e instanceof ForbiddenError) {
@@ -72,8 +92,8 @@ export default function RolesPage() {
   useEffect(() => {
     if (!allowed) return;
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- load is stable
-  }, [allowed]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load, page, perPage are deps
+  }, [allowed, page, perPage]);
 
   if (!allowed) return null;
 
@@ -104,7 +124,7 @@ export default function RolesPage() {
         <Card className="rounded-xl">
           <CardContent className="pt-4">
             <p className="text-muted-foreground text-sm">Total Roles</p>
-            <p className="text-2xl font-semibold">{totalRoles}</p>
+            <p className="text-2xl font-semibold">{meta.total}</p>
           </CardContent>
         </Card>
         <Card className="rounded-xl">
@@ -116,7 +136,30 @@ export default function RolesPage() {
       </div>
 
       <Card className="rounded-2xl shadow-sm">
-        <CardContent className="pt-6">
+        <CardContent className="space-y-4 pt-6">
+          <div className="flex items-center gap-2">
+            <Label className="text-muted-foreground text-sm whitespace-nowrap">
+              Per halaman
+            </Label>
+            <Select
+              value={String(perPage)}
+              onValueChange={(v) => {
+                setPerPage(Number(v));
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-9 w-[100px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PER_PAGE_OPTIONS.map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="w-full overflow-x-auto">
             <Table className="min-w-[900px]">
               <TableHeader>
@@ -181,6 +224,7 @@ export default function RolesPage() {
               </TableBody>
             </Table>
           </div>
+          <DataTablePagination meta={meta} onPageChange={setPage} />
         </CardContent>
       </Card>
     </div>

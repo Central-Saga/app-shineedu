@@ -161,6 +161,21 @@ export default function UsersPage() {
     loadUsers(buildUserParams()).catch(handleLoadError);
   }
 
+  function handleStatusChange(user: IdentityUser, newStatus: "Aktif" | "Non Aktif") {
+    const prev = user.status;
+    setUsers((prevU) =>
+      prevU.map((u) => (u.id === user.id ? { ...u, status: newStatus } : u))
+    );
+    usersUsecase
+      .updateUserUsecase(user.id, { status: newStatus })
+      .catch((e) => {
+        setUsers((prevU) =>
+          prevU.map((u) => (u.id === user.id ? { ...u, status: prev } : u))
+        );
+        toast.error(e instanceof Error ? e.message : "Gagal mengubah status");
+      });
+  }
+
   if (!allowed) return null;
 
   return (
@@ -292,6 +307,7 @@ export default function UsersPage() {
               setDeleteUser(u);
               setDeleteOpen(true);
             }}
+            onStatusChange={handleStatusChange}
             canUpdate={canUpdate}
             canDelete={canDelete}
           />

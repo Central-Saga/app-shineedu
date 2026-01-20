@@ -10,6 +10,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -33,6 +35,7 @@ interface EmployeeTableProps {
   loading?: boolean;
   onEdit: (e: Employee) => void;
   onDelete: (e: Employee) => void;
+  onStatusChange?: (e: Employee, newStatus: "aktif" | "nonaktif") => void;
   canUpdate: boolean;
   canDelete: boolean;
 }
@@ -42,6 +45,7 @@ export function EmployeeTable({
   loading = false,
   onEdit,
   onDelete,
+  onStatusChange,
   canUpdate,
   canDelete,
 }: EmployeeTableProps) {
@@ -120,7 +124,29 @@ export function EmployeeTable({
                 </TableCell>
                 <TableCell>{em.kategori_karyawan ?? "-"}</TableCell>
                 <TableCell>{em.tipe_gaji ?? "-"}</TableCell>
-                <TableCell>{em.status}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant="outline"
+                      className={
+                        em.status === "aktif"
+                          ? "border-emerald-300 bg-emerald-100 text-emerald-800"
+                          : "border-slate-200 bg-slate-100 text-slate-700"
+                      }
+                    >
+                      {em.status}
+                    </Badge>
+                    {canUpdate && onStatusChange && (
+                      <Switch
+                        checked={em.status === "aktif"}
+                        onCheckedChange={(c) =>
+                          onStatusChange(em, c ? "aktif" : "nonaktif")
+                        }
+                        className="scale-75 shrink-0"
+                      />
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell>{formatDate(em.created_at)}</TableCell>
                 {hasActions && (
                   <TableCell>
