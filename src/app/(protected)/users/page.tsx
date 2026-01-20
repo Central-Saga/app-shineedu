@@ -3,14 +3,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AppBreadcrumbs } from "@/shared/presentation/components/AppBreadcrumbs";
+import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
 import { PageHeader } from "@/shared/presentation/components/PageHeader";
 import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGuard";
 import { UserTable } from "@/modules/identity/presentation/components/users/UserTable";
-import { ConfirmDialog } from "@/modules/identity/presentation/components/shared/ConfirmDialog";
+
 import { DataTableToolbar } from "@/shared/presentation/components/table/DataTableToolbar";
 import { DataTablePagination } from "@/shared/presentation/components/table/DataTablePagination";
 import { useDebouncedValue } from "@/shared/presentation/hooks/useDebouncedValue";
+import { StatsCard } from "@/shared/presentation/components/StatsCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -27,7 +28,7 @@ import * as rolesUsecase from "@/modules/identity/application/usecases/roles.use
 import { ForbiddenError } from "@/shared/infrastructure/api/errors";
 import type { IdentityUser } from "@/modules/identity/domain/entities";
 import type { Role } from "@/modules/identity/domain/entities";
-import { Plus } from "lucide-react";
+import { Plus, Users, UserCheck, UserMinus } from "lucide-react";
 import { toast } from "sonner";
 
 const SORT_OPTIONS = [
@@ -60,8 +61,6 @@ export default function UsersPage() {
   const [stats, setStats] = useState({ total: 0, aktif: 0, nonAktif: 0 });
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteUser, setDeleteUser] = useState<IdentityUser | null>(null);
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 400);
@@ -73,7 +72,6 @@ export default function UsersPage() {
   const prevDebouncedQ = useRef(debouncedSearch);
 
   const canUpdate = authStore.hasAnyPermission(["users.update"]);
-  const canDelete = authStore.hasAnyPermission(["users.delete"]);
   const canCreate = authStore.hasAnyPermission(["users.create"]);
 
   function buildUserParams(overridePage?: number) {
@@ -114,6 +112,15 @@ export default function UsersPage() {
     toast.error("Gagal memuat user");
   }
 
+  const { setItems } = useBreadcrumbStore();
+
+  useEffect(() => {
+    setItems([
+      { label: "Dashboard", href: "/dashboard" },
+      { label: "Users" },
+    ]);
+  }, [setItems]);
+
   useEffect(() => {
     if (!allowed) return;
     // Loading state for fetch-in-effect pattern
@@ -152,14 +159,7 @@ export default function UsersPage() {
     return [...new Set(names)].map((n) => ({ label: n, value: n }));
   }, [roles]);
 
-  async function handleDelete() {
-    if (!deleteUser) return;
-    await usersUsecase.deleteUserUsecase(deleteUser.id);
-    toast.success("User berhasil dihapus");
-    setDeleteOpen(false);
-    setDeleteUser(null);
-    loadUsers(buildUserParams()).catch(handleLoadError);
-  }
+
 
   function handleStatusChange(user: IdentityUser, newStatus: "Aktif" | "Non Aktif") {
     const prev = user.status;
@@ -168,6 +168,7 @@ export default function UsersPage() {
     );
     usersUsecase
       .updateUserUsecase(user.id, { status: newStatus })
+      .then(() => toast.success("Status berhasil diubah"))
       .catch((e) => {
         setUsers((prevU) =>
           prevU.map((u) => (u.id === user.id ? { ...u, status: prev } : u))
@@ -180,12 +181,6 @@ export default function UsersPage() {
 
   return (
     <div>
-      <AppBreadcrumbs
-        items={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Users" },
-        ]}
-      />
       <PageHeader
         title="Users"
         description="Kelola user dan role"
@@ -201,25 +196,28 @@ export default function UsersPage() {
         }
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Card className="rounded-xl">
-          <CardContent className="pt-4">
-            <p className="text-muted-foreground text-sm">Total Users</p>
-            <p className="text-2xl font-semibold">{stats.total}</p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-xl">
-          <CardContent className="pt-4">
-            <p className="text-muted-foreground text-sm">Aktif</p>
-            <p className="text-2xl font-semibold">{stats.aktif}</p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-xl">
-          <CardContent className="pt-4">
-            <p className="text-muted-foreground text-sm">Non Aktif</p>
-            <p className="text-2xl font-semibold">{stats.nonAktif}</p>
-          </CardContent>
-        </Card>
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatsCard
+          label="Total Users"
+          value={stats.total}
+          icon={Users}
+          variant="primary"
+          description="Total pengguna terdaftar"
+        />
+        <StatsCard
+          label="Aktif"
+          value={stats.aktif}
+          icon={UserCheck}
+          variant="success"
+          description="Pengguna dengan status aktif"
+        />
+        <StatsCard
+          label="Non Aktif"
+          value={stats.nonAktif}
+          icon={UserMinus}
+          variant="danger"
+          description="Pengguna yang dinonaktifkan"
+        />
       </div>
 
       <Card className="rounded-2xl shadow-sm">
@@ -303,28 +301,15 @@ export default function UsersPage() {
             users={users}
             loading={loading}
             onEdit={(u) => router.push(`/users/${u.id}/edit`)}
-            onDelete={(u) => {
-              setDeleteUser(u);
-              setDeleteOpen(true);
-            }}
             onStatusChange={handleStatusChange}
             canUpdate={canUpdate}
-            canDelete={canDelete}
           />
 
           <DataTablePagination meta={meta} onPageChange={(p) => setPage(p)} />
         </CardContent>
       </Card>
 
-      <ConfirmDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        title="Hapus User"
-        description={`Anda yakin ingin menghapus "${deleteUser?.name}"? Data akan dihapus secara soft delete.`}
-        confirmLabel="Hapus"
-        variant="destructive"
-        onConfirm={handleDelete}
-      />
+
     </div>
   );
 }

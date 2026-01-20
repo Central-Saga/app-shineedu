@@ -18,29 +18,25 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil } from "lucide-react";
 
 interface UserTableProps {
   users: IdentityUser[];
   loading?: boolean;
   onEdit: (user: IdentityUser) => void;
-  onDelete: (user: IdentityUser) => void;
   onStatusChange?: (user: IdentityUser, newStatus: "Aktif" | "Non Aktif") => void;
   canUpdate: boolean;
-  canDelete: boolean;
 }
 
 export function UserTable({
   users,
   loading = false,
   onEdit,
-  onDelete,
   onStatusChange,
   canUpdate,
-  canDelete,
 }: UserTableProps) {
   const role = (u: IdentityUser) => u.roles?.[0]?.name ?? "-";
-  const hasActions = canUpdate || canDelete;
+  const hasActions = canUpdate;
   const colCount = hasActions ? 5 : 4;
 
   return (
@@ -85,39 +81,44 @@ export function UserTable({
                   {u.email}
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant="outline"
-                      className={
-                        u.status === "Aktif"
-                          ? "border-emerald-300 bg-emerald-100 text-emerald-800"
-                          : "border-slate-200 bg-slate-100 text-slate-700"
-                      }
-                    >
-                      {u.status}
-                    </Badge>
-                    {canUpdate && onStatusChange && (
-                      <Switch
-                        checked={u.status === "Aktif"}
-                        onCheckedChange={(c) =>
-                          onStatusChange(u, c ? "Aktif" : "Non Aktif")
-                        }
-                        className="scale-75 shrink-0"
-                      />
-                    )}
-                  </div>
+                  <Badge
+                    variant="outline"
+                    className={
+                      u.status === "Aktif"
+                        ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                        : "border-rose-200 bg-rose-50 text-rose-700"
+                    }
+                  >
+                    {u.status}
+                  </Badge>
                 </TableCell>
                 <TableCell>
                   <Badge
                     variant="outline"
-                    className="border-amber-300/80 bg-amber-50 text-amber-800"
+                    className={(() => {
+                      const r = role(u).toLowerCase();
+                      if (r.includes("superadmin")) return "border-indigo-300 bg-indigo-50 text-indigo-700";
+                      if (r.includes("admin")) return "border-blue-300 bg-blue-50 text-blue-700";
+                      if (r.includes("teacher")) return "border-amber-300 bg-amber-50 text-amber-800";
+                      if (r.includes("student")) return "border-teal-300 bg-teal-50 text-teal-800";
+                      return "border-slate-300 bg-slate-50 text-slate-700";
+                    })()}
                   >
                     {role(u)}
                   </Badge>
                 </TableCell>
                 {hasActions && (
                   <TableCell>
-                    <div className="flex gap-1">
+                    <div className="flex items-center gap-1">
+                      {canUpdate && onStatusChange && (
+                        <Switch
+                          checked={u.status === "Aktif"}
+                          onCheckedChange={(c) =>
+                            onStatusChange(u, c ? "Aktif" : "Non Aktif")
+                          }
+                          className="scale-75 shrink-0 mr-2"
+                        />
+                      )}
                       {canUpdate && (
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -130,20 +131,6 @@ export function UserTable({
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>Edit</TooltipContent>
-                        </Tooltip>
-                      )}
-                      {canDelete && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => onDelete(u)}
-                            >
-                              <Trash2 className="size-4 text-destructive" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Hapus</TooltipContent>
                         </Tooltip>
                       )}
                     </div>

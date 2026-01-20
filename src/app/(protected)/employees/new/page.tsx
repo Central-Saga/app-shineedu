@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { AppBreadcrumbs } from "@/shared/presentation/components/AppBreadcrumbs";
+import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
 import { PageHeader } from "@/shared/presentation/components/PageHeader";
 import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGuard";
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
@@ -111,6 +111,16 @@ export default function EmployeesNewPage() {
     },
   });
 
+  const { setItems } = useBreadcrumbStore();
+
+  useEffect(() => {
+    setItems([
+      { label: "Dashboard", href: "/dashboard" },
+      { label: "Karyawan", href: "/employees" },
+      { label: "Tambah Karyawan" },
+    ]);
+  }, [setItems]);
+
   useEffect(() => {
     if (!allowed) return;
     getUsersUsecase({ page: 1, per_page: 100 })
@@ -140,6 +150,8 @@ export default function EmployeesNewPage() {
             setError as (a: string, b: { type?: string; message: string }) => void,
             e.validationErrors
           );
+        } else {
+          toast.error(e instanceof Error ? e.message : "Gagal menambahkan karyawan");
         }
       }
       return;
@@ -171,6 +183,8 @@ export default function EmployeesNewPage() {
     } catch (userErr) {
       if (userErr instanceof ValidationError && userErr.validationErrors && userFormRef.current) {
         applyValidationErrors(userFormRef.current.setError, userErr.validationErrors);
+      } else {
+        toast.error(userErr instanceof Error ? userErr.message : "Gagal membuat user");
       }
     }
   }
@@ -179,13 +193,6 @@ export default function EmployeesNewPage() {
 
   return (
     <div>
-      <AppBreadcrumbs
-        items={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Karyawan", href: "/employees" },
-          { label: "New" },
-        ]}
-      />
       <PageHeader title="Tambah Karyawan" description="Tambah karyawan baru" />
 
       <Card className="rounded-2xl shadow-sm">

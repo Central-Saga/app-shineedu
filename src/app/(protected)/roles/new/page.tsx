@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { AppBreadcrumbs } from "@/shared/presentation/components/AppBreadcrumbs";
+import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
 import { PageHeader } from "@/shared/presentation/components/PageHeader";
 import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGuard";
 import { PermissionMatrix } from "@/modules/identity/presentation/components/roles/PermissionMatrix";
@@ -43,6 +43,16 @@ export default function RolesNewPage() {
     defaultValues: { name: "" },
   });
 
+  const { setItems } = useBreadcrumbStore();
+
+  useEffect(() => {
+    setItems([
+      { label: "Dashboard", href: "/dashboard" },
+      { label: "Roles", href: "/roles" },
+      { label: "Tambah Role" },
+    ]);
+  }, [setItems]);
+
   useEffect(() => {
     if (!allowed) return;
     permissionsUsecase
@@ -65,6 +75,8 @@ export default function RolesNewPage() {
           setError as (a: string, b: { type?: string; message: string }) => void,
           e.validationErrors
         );
+      } else {
+        toast.error(e instanceof Error ? e.message : "Gagal membuat role");
       }
     }
   }
@@ -73,13 +85,6 @@ export default function RolesNewPage() {
 
   return (
     <div>
-      <AppBreadcrumbs
-        items={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Roles", href: "/roles" },
-          { label: "New" },
-        ]}
-      />
       <PageHeader title="Tambah Role" description="Buat role baru dengan Permission Matrix" />
 
       <Card className="rounded-2xl shadow-sm">

@@ -130,8 +130,8 @@ export function EmployeeTable({
                       variant="outline"
                       className={
                         em.status === "aktif"
-                          ? "border-emerald-300 bg-emerald-100 text-emerald-800"
-                          : "border-slate-200 bg-slate-100 text-slate-700"
+                          ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                          : "border-rose-200 bg-rose-50 text-rose-700"
                       }
                     >
                       {em.status}

@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,23 +16,17 @@ import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { LogOut, ChevronDown } from "lucide-react";
 
-const PAGE_TITLES: Record<string, string> = {
-  "/dashboard": "Dashboard",
-  "/users": "Users",
-  "/roles": "Roles",
-  "/permissions": "Permissions",
-  "/employees": "Karyawan",
-};
+import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
+import { AppBreadcrumbs } from "./AppBreadcrumbs";
 
 export function AppTopbar() {
-  const pathname = usePathname();
   const router = useRouter();
   const user = authStore.getState().user;
   const name = user?.name ?? "User";
   const email = user?.email ?? "";
   const initial = name.slice(0, 1).toUpperCase();
   const roleName = user?.roles?.[0]?.name;
-  const pageTitle = PAGE_TITLES[pathname] ?? null;
+  const { items } = useBreadcrumbStore();
 
   async function handleLogout() {
     await authStore.logout();
@@ -41,11 +35,12 @@ export function AppTopbar() {
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-slate-200 bg-background px-4">
-      <SidebarTrigger className="-ml-1" />
-      <div className="min-w-0 flex-1">
-        {pageTitle && (
-          <span className="text-sm font-medium text-slate-600">{pageTitle}</span>
-        )}
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <SidebarTrigger className="-ml-1" />
+        <div className="h-4 w-px bg-slate-200 mx-1" />
+        <div className="flex-1 min-w-0">
+          <AppBreadcrumbs items={items} className="mb-0 text-xs sm:text-sm" />
+        </div>
       </div>
 
       <DropdownMenu>

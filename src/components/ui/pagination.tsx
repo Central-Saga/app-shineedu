@@ -9,7 +9,7 @@ const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
   <nav
     role="navigation"
     aria-label="pagination"
-    className={cn("mx-auto flex w-full justify-center", className)}
+    className={cn("flex justify-end", className)}
     {...props}
   />
 );
@@ -132,7 +132,7 @@ export function buildPaginationItems(
   }
   const half = Math.floor(windowSize / 2);
   let start = Math.max(1, current_page - half);
-  let end = Math.min(last_page, start + windowSize - 1);
+  const end = Math.min(last_page, start + windowSize - 1);
   if (end - start + 1 < windowSize) {
     start = Math.max(1, end - windowSize + 1);
   }
@@ -184,7 +184,7 @@ export function AppPagination({
 
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <p className="text-muted-foreground text-sm">
+      <p className="text-muted-foreground text-sm whitespace-nowrap">
         Menampilkan {from ?? 0}–{to ?? 0} dari {total}
       </p>
       {last_page > 1 && (

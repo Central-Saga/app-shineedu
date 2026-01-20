@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AppBreadcrumbs } from "@/shared/presentation/components/AppBreadcrumbs";
+import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
 import { PageHeader } from "@/shared/presentation/components/PageHeader";
 import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGuard";
 import { DataTableToolbar } from "@/shared/presentation/components/table/DataTableToolbar";
@@ -13,6 +13,7 @@ import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import { getEmployeesUsecase } from "@/modules/employees/application/usecases/getEmployees.usecase";
 import { updateEmployeeUsecase } from "@/modules/employees/application/usecases/updateEmployee.usecase";
 import { deleteEmployeeUsecase } from "@/modules/employees/application/usecases/deleteEmployee.usecase";
+import { StatsCard } from "@/shared/presentation/components/StatsCard";
 import { EmployeeTable } from "@/modules/employees/presentation/components/EmployeeTable";
 import { ConfirmDialog } from "@/modules/identity/presentation/components/shared/ConfirmDialog";
 import {
@@ -31,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Contact, Briefcase, FileText, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 const SORT_OPTIONS = [
@@ -91,6 +92,15 @@ export default function EmployeesPage() {
   const [deleteEmployee, setDeleteEmployee] = useState<Employee | null>(null);
 
   const prevDebouncedQ = useRef(debouncedQ);
+
+  const { setItems } = useBreadcrumbStore();
+
+  useEffect(() => {
+    setItems([
+      { label: "Dashboard", href: "/dashboard" },
+      { label: "Karyawan" },
+    ]);
+  }, [setItems]);
 
   const canCreate = authStore.hasPermission("employees.create");
   const canUpdate = authStore.hasPermission("employees.update");
@@ -189,7 +199,9 @@ export default function EmployeesPage() {
     setEmployees((prevE) =>
       prevE.map((e) => (e.id === emp.id ? { ...e, status: newStatus } : e))
     );
-    updateEmployeeUsecase(emp.id, { status: newStatus }).catch((e) => {
+    updateEmployeeUsecase(emp.id, { status: newStatus })
+      .then(() => toast.success("Status berhasil diubah"))
+      .catch((e) => {
       setEmployees((prevE) =>
         prevE.map((e) => (e.id === emp.id ? { ...e, status: prev } : e))
       );
@@ -201,12 +213,6 @@ export default function EmployeesPage() {
 
   return (
     <div>
-      <AppBreadcrumbs
-        items={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Karyawan" },
-        ]}
-      />
       <PageHeader
         title="Karyawan"
         description="Daftar karyawan"
@@ -222,31 +228,35 @@ export default function EmployeesPage() {
         }
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Card className="rounded-xl">
-          <CardContent className="pt-4">
-            <p className="text-muted-foreground text-sm">Total Karyawan</p>
-            <p className="text-2xl font-semibold">{stats.total}</p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-xl">
-          <CardContent className="pt-4">
-            <p className="text-muted-foreground text-sm">Tetap</p>
-            <p className="text-2xl font-semibold">{stats.tetap}</p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-xl">
-          <CardContent className="pt-4">
-            <p className="text-muted-foreground text-sm">Kontrak</p>
-            <p className="text-2xl font-semibold">{stats.kontrak}</p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-xl">
-          <CardContent className="pt-4">
-            <p className="text-muted-foreground text-sm">Freelance</p>
-            <p className="text-2xl font-semibold">{stats.freelance}</p>
-          </CardContent>
-        </Card>
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatsCard
+          label="Total Karyawan"
+          value={stats.total}
+          icon={Contact}
+          variant="primary"
+          description="Seluruh data karyawan"
+        />
+        <StatsCard
+          label="Tetap"
+          value={stats.tetap}
+          icon={Briefcase}
+          variant="success"
+          description="Karyawan status tetap"
+        />
+        <StatsCard
+          label="Kontrak"
+          value={stats.kontrak}
+          icon={FileText}
+          variant="warning"
+          description="Karyawan status kontrak"
+        />
+        <StatsCard
+          label="Freelance"
+          value={stats.freelance}
+          icon={UserPlus}
+          variant="info"
+          description="Karyawan freelance"
+        />
       </div>
 
       <Card className="rounded-2xl shadow-sm">

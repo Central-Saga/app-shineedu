@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { AppBreadcrumbs } from "@/shared/presentation/components/AppBreadcrumbs";
+import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
 import { PageHeader } from "@/shared/presentation/components/PageHeader";
 import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGuard";
 import { ConfirmDialog } from "@/modules/identity/presentation/components/shared/ConfirmDialog";
@@ -134,6 +134,16 @@ export default function EmployeesEditPage() {
     },
   });
 
+  const { setItems } = useBreadcrumbStore();
+
+  useEffect(() => {
+    setItems([
+      { label: "Dashboard", href: "/dashboard" },
+      { label: "Karyawan", href: "/employees" },
+      { label: "Edit Karyawan" },
+    ]);
+  }, [setItems]);
+
   useEffect(() => {
     if (!allowed || !id || Number.isNaN(id)) return;
     Promise.all([
@@ -172,12 +182,15 @@ export default function EmployeesEditPage() {
         status: values.status ?? null,
       });
       toast.success("Karyawan berhasil diupdate");
+      router.push("/employees");
     } catch (e) {
       if (e instanceof ValidationError && e.validationErrors) {
         applyValidationErrors(
           setError as (a: string, b: { type?: string; message: string }) => void,
           e.validationErrors
         );
+      } else {
+        toast.error(e instanceof Error ? e.message : "Gagal mengupdate karyawan");
       }
     }
   }
@@ -197,13 +210,6 @@ export default function EmployeesEditPage() {
 
   return (
     <div>
-      <AppBreadcrumbs
-        items={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Karyawan", href: "/employees" },
-          { label: "Edit" },
-        ]}
-      />
       <PageHeader title="Edit Karyawan" description="Ubah data karyawan" />
 
       <Card className="rounded-2xl shadow-sm">

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface AppBreadcrumbsItem {
   label: string;
@@ -10,15 +11,16 @@ export interface AppBreadcrumbsItem {
 
 interface AppBreadcrumbsProps {
   items: AppBreadcrumbsItem[];
+  className?: string;
 }
 
-export function AppBreadcrumbs({ items }: AppBreadcrumbsProps) {
+export function AppBreadcrumbs({ items, className }: AppBreadcrumbsProps) {
   if (items.length === 0) return null;
 
   return (
     <nav
       aria-label="Breadcrumb"
-      className="mb-4 flex items-center gap-1.5 text-sm text-muted-foreground"
+      className={cn("mb-4 flex items-center gap-1.5 text-sm text-muted-foreground", className)}
     >
       {items.map((item, i) => {
         const isLast = i === items.length - 1;

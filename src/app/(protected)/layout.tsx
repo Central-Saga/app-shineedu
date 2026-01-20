@@ -30,8 +30,8 @@ export default function ProtectedLayout({
       <AppSidebar />
       <SidebarInset>
         <AppTopbar />
-        <div className="flex-1 overflow-auto px-6 py-6">
-          <div className="mx-auto w-full max-w-7xl">{children}</div>
+        <div className="flex-1 overflow-auto px-4 sm:px-6 py-5">
+          <div className="w-full">{children}</div>
         </div>
       </SidebarInset>
     </SidebarProvider>
