@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PageHeader } from "@/modules/identity/presentation/components/shared/PageHeader";
+import { PageHeader } from "@/shared/presentation/components/PageHeader";
 import { UserTable } from "@/modules/identity/presentation/components/users/UserTable";
 import { UserFormDialog } from "@/modules/identity/presentation/components/users/UserFormDialog";
 import { UserRoleDialog } from "@/modules/identity/presentation/components/users/UserRoleDialog";
@@ -40,7 +40,7 @@ const SORT_OPTIONS = [
 type SortKey = (typeof SORT_OPTIONS)[number]["value"];
 
 const ROLE_FALLBACK = ["Admin", "Teacher", "Student", "Superadmin"];
-const PER_PAGE_OPTIONS = [15, 30, 50];
+const PER_PAGE_OPTIONS = [15, 30, 50, 100];
 
 export default function UsersPage() {
   const router = useRouter();
@@ -99,22 +99,24 @@ export default function UsersPage() {
   }
 
   async function loadRoles() {
-    const { roles: r } = await rolesUsecase.getRolesUsecase({
+    const { items } = await rolesUsecase.getRolesUsecase({
       page: 1,
       per_page: 100,
     });
-    setRoles(r);
+    setRoles(items);
   }
 
   function handleLoadError(e: unknown) {
     if (e instanceof ForbiddenError) {
-      router.push("/dashboard");
+      toast.error(e.message || "Tidak punya akses");
+      router.replace("/dashboard");
       return;
     }
     toast.error("Gagal memuat user");
   }
 
   useEffect(() => {
+    if (!authStore.hasPermission("users.view")) return;
     setLoading(true);
     const searchJustChanged = prevDebouncedQ.current !== debouncedSearch;
     if (searchJustChanged) {
@@ -190,13 +192,27 @@ export default function UsersPage() {
     setPage(p);
   }
 
-  if (loading && users.length === 0) {
-    return <div className="p-4">Memuat…</div>;
-  }
+  useEffect(() => {
+    if (!authStore.hasPermission("users.view")) {
+      toast.error("Tidak punya akses");
+      router.replace("/dashboard");
+    }
+  }, [router]);
 
   return (
     <div>
-      <PageHeader title="Users" description="Kelola user dan role" />
+      <PageHeader
+        title="Users"
+        description="Kelola user dan role"
+        actions={
+          canCreate ? (
+            <Button onClick={openCreate}>
+              <Plus className="mr-2 size-4" />
+              Tambah User
+            </Button>
+          ) : undefined
+        }
+      />
 
       <Card className="rounded-2xl shadow-sm">
         <CardContent className="space-y-4 pt-6">
@@ -249,14 +265,6 @@ export default function UsersPage() {
                 setPage(1);
               },
             }}
-            rightSlot={
-              canCreate ? (
-                <Button onClick={openCreate}>
-                  <Plus className="mr-2 size-4" />
-                  Tambah User
-                </Button>
-              ) : undefined
-            }
           />
 
           <div className="flex items-center gap-2">
@@ -285,6 +293,7 @@ export default function UsersPage() {
 
           <UserTable
             users={users}
+            loading={loading}
             onEdit={openEdit}
             onChangeRole={(u) => {
               setRoleUser(u);

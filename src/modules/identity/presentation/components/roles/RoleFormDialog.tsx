@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ValidationError } from "@/shared/infrastructure/api/errors";
+import { applyValidationErrors } from "@/shared/lib/applyValidationErrors";
 import type { Permission } from "../../../domain/entities";
 
 const schema = z.object({
@@ -40,6 +42,7 @@ export function RoleFormDialog({
     register,
     handleSubmit,
     setValue,
+    setError,
     watch,
     reset,
     formState: { errors, isSubmitting },
@@ -63,11 +66,20 @@ export function RoleFormDialog({
   }
 
   async function onFormSubmit(values: Form) {
-    await onSubmit({
-      name: values.name,
-      permissions: values.permissionNames.length > 0 ? values.permissionNames : undefined,
-    });
-    onOpenChangeWithReset(false);
+    try {
+      await onSubmit({
+        name: values.name,
+        permissions: values.permissionNames.length > 0 ? values.permissionNames : undefined,
+      });
+      onOpenChangeWithReset(false);
+    } catch (e) {
+      if (e instanceof ValidationError && e.validationErrors) {
+        applyValidationErrors(
+          setError as (a: string, b: { type?: string; message: string }) => void,
+          e.validationErrors
+        );
+      }
+    }
   }
 
   return (

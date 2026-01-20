@@ -21,6 +21,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/users": "Users",
   "/roles": "Roles",
   "/permissions": "Permissions",
+  "/employees": "Karyawan",
 };
 
 export function AppTopbar() {

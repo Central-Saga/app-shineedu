@@ -20,6 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ValidationError } from "@/shared/infrastructure/api/errors";
+import { applyValidationErrors } from "@/shared/lib/applyValidationErrors";
 import type { IdentityUser } from "../../../domain/entities";
 import type { Role } from "../../../domain/entities";
 
@@ -132,14 +134,23 @@ export function UserFormDialog({
           </DialogHeader>
           <form
             onSubmit={createForm.handleSubmit(async (v) => {
-              await onSubmitCreate({
-                name: v.name,
-                email: v.email,
-                password: v.password,
-                status: v.status,
-                role: v.role,
-              });
-              handleOpenChange(false);
+              try {
+                await onSubmitCreate({
+                  name: v.name,
+                  email: v.email,
+                  password: v.password,
+                  status: v.status,
+                  role: v.role,
+                });
+                handleOpenChange(false);
+              } catch (e) {
+                if (e instanceof ValidationError && e.validationErrors) {
+                  applyValidationErrors(
+                    createForm.setError as (a: string, b: { type?: string; message: string }) => void,
+                    e.validationErrors
+                  );
+                }
+              }
             })}
             className="space-y-4"
           >
@@ -233,13 +244,22 @@ export function UserFormDialog({
         </DialogHeader>
         <form
           onSubmit={updateForm.handleSubmit(async (v) => {
-            await onSubmitUpdate(user.id, {
-              name: v.name,
-              email: v.email,
-              status: v.status,
-              password: v.password || undefined,
-            });
-            handleOpenChange(false);
+            try {
+              await onSubmitUpdate(user.id, {
+                name: v.name,
+                email: v.email,
+                status: v.status,
+                password: v.password || undefined,
+              });
+              handleOpenChange(false);
+            } catch (e) {
+              if (e instanceof ValidationError && e.validationErrors) {
+                applyValidationErrors(
+                  updateForm.setError as (a: string, b: { type?: string; message: string }) => void,
+                  e.validationErrors
+                );
+              }
+            }
           })}
           className="space-y-4"
         >

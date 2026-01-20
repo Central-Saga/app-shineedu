@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PageHeader } from "@/modules/identity/presentation/components/shared/PageHeader";
+import { PageHeader } from "@/shared/presentation/components/PageHeader";
 import { RoleList } from "@/modules/identity/presentation/components/roles/RoleList";
 import { RoleFormDialog } from "@/modules/identity/presentation/components/roles/RoleFormDialog";
 import { PermissionMatrix } from "@/modules/identity/presentation/components/roles/PermissionMatrix";
@@ -42,6 +42,7 @@ export default function RolesPage() {
   const selected = roles.find((r) => r.id === selectedId);
 
   async function load() {
+    if (!authStore.hasPermission("roles.view")) return;
     setLoading(true);
     try {
       const [r, p] = await Promise.all([
@@ -54,11 +55,12 @@ export default function RolesPage() {
         }),
         permissionsUsecase.getPermissionsUsecase(),
       ]);
-      setRoles(r.roles);
+      setRoles(r.items);
       setPermissions(p);
     } catch (e) {
       if (e instanceof ForbiddenError) {
-        router.push("/dashboard");
+        toast.error(e.message || "Tidak punya akses");
+        router.replace("/dashboard");
         return;
       }
       toast.error("Gagal memuat data");
@@ -68,8 +70,13 @@ export default function RolesPage() {
   }
 
   useEffect(() => {
+    if (!authStore.hasPermission("roles.view")) {
+      toast.error("Tidak punya akses");
+      router.replace("/dashboard");
+      return;
+    }
     load();
-  }, [debouncedRoleSearch, roleSort]);
+  }, [debouncedRoleSearch, roleSort, router]);
 
   useEffect(() => {
     if (selected) {

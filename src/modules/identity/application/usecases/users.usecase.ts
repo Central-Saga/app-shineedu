@@ -6,8 +6,8 @@ import type { PaginatedMeta } from "@/shared/domain/types";
 export async function getUsersUsecase(
   params: ListUsersParams
 ): Promise<{ users: IdentityUser[]; meta: PaginatedMeta }> {
-  const { data, meta } = await repo.listUsers(params);
-  return { users: data ?? [], meta };
+  const { items, meta } = await repo.listUsers(params);
+  return { users: items, meta };
 }
 
 export async function createUserUsecase(payload: {

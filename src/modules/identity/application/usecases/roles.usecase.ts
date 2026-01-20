@@ -5,9 +5,9 @@ import type { PaginatedMeta } from "@/shared/domain/types";
 
 export async function getRolesUsecase(
   params?: ListRolesParams
-): Promise<{ roles: Role[]; meta: PaginatedMeta }> {
-  const { data, meta } = await repo.listRoles(params ?? {});
-  return { roles: data ?? [], meta };
+): Promise<{ items: Role[]; meta: PaginatedMeta }> {
+  const { items, meta } = await repo.listRoles(params ?? {});
+  return { items, meta };
 }
 
 export async function createRoleUsecase(payload: {

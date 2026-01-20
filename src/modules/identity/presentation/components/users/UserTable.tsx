@@ -16,10 +16,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Pencil, UserCog, Trash2 } from "lucide-react";
 
 interface UserTableProps {
   users: IdentityUser[];
+  loading?: boolean;
   onEdit: (user: IdentityUser) => void;
   onChangeRole: (user: IdentityUser) => void;
   onDelete: (user: IdentityUser) => void;
@@ -29,6 +31,7 @@ interface UserTableProps {
 
 export function UserTable({
   users,
+  loading = false,
   onEdit,
   onChangeRole,
   onDelete,
@@ -36,6 +39,8 @@ export function UserTable({
   canDelete,
 }: UserTableProps) {
   const role = (u: IdentityUser) => u.roles?.[0]?.name ?? "-";
+  const hasActions = canUpdate || canDelete;
+  const colCount = hasActions ? 5 : 4;
 
   return (
     <div className="w-full overflow-x-auto">
@@ -46,16 +51,26 @@ export function UserTable({
             <TableHead>Email</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Role</TableHead>
-            {(canUpdate || canDelete) && (
+            {hasActions && (
               <TableHead className="w-[140px]">Aksi</TableHead>
             )}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.length === 0 ? (
+          {loading ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <TableRow key={i}>
+                <TableCell><Skeleton className="h-6 w-32" /></TableCell>
+                <TableCell><Skeleton className="h-6 w-48" /></TableCell>
+                <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                {hasActions && <TableCell><Skeleton className="h-6 w-24" /></TableCell>}
+              </TableRow>
+            ))
+          ) : users.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={canUpdate || canDelete ? 5 : 4}
+                colSpan={colCount}
                 className="h-24 text-center text-muted-foreground"
               >
                 Tidak ada data.
@@ -88,7 +103,7 @@ export function UserTable({
                     {role(u)}
                   </Badge>
                 </TableCell>
-                {(canUpdate || canDelete) && (
+                {hasActions && (
                   <TableCell>
                     <div className="flex gap-1">
                       {canUpdate && (
