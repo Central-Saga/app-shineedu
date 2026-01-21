@@ -14,6 +14,10 @@ import { getEmployeesUsecase } from "@/modules/employees/application/usecases/ge
 import { updateEmployeeUsecase } from "@/modules/employees/application/usecases/updateEmployee.usecase";
 import { StatsCard } from "@/shared/presentation/components/StatsCard";
 import { EmployeeTable } from "@/modules/employees/presentation/components/EmployeeTable";
+import { exportEmployeesUsecase } from "@/modules/employees/application/usecases/exportEmployees.usecase";
+import { importEmployeesUsecase } from "@/modules/employees/application/usecases/importEmployees.usecase";
+import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
+import { ImportModal } from "@/shared/presentation/components/ImportModal";
 import {
   ForbiddenError,
   NotFoundError,
@@ -195,6 +199,17 @@ export default function EmployeesPage() {
     });
   }
 
+  const handleExport = async (format: string) => {
+    const params = buildParams();
+    await exportEmployeesUsecase(format, params);
+  };
+
+  const handleImport = async (file: File) => {
+    await importEmployeesUsecase(file);
+    setPage(1);
+    loadEmployees(buildParams(1));
+  };
+
   if (!allowed) return null;
 
   return (
@@ -203,14 +218,18 @@ export default function EmployeesPage() {
         title="Karyawan"
         description="Daftar karyawan"
         actions={
-          canCreate ? (
-            <Button asChild>
-              <Link href="/employees/new">
-                <Plus className="mr-2 size-4" />
-                Tambah Karyawan
-              </Link>
-            </Button>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            <ImportModal onImport={handleImport} />
+            <ExportDropdown onExport={handleExport} />
+            {canCreate && (
+              <Button asChild>
+                <Link href="/employees/new">
+                  <Plus className="mr-2 size-4" />
+                  Tambah Karyawan
+                </Link>
+              </Button>
+            )}
+          </div>
         }
       />
 

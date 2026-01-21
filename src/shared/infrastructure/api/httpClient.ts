@@ -298,3 +298,56 @@ export async function put<T>(path: string, body: unknown): Promise<T> {
 export async function del<T = void>(path: string): Promise<T> {
   return request<T>("DELETE", path);
 }
+
+export async function download(path: string, params?: object, filename?: string): Promise<void> {
+  const qs = params ? buildQuery(params) : "";
+  const url = `${BASE.replace(/\/$/, "")}/${path.replace(/^\//, "")}${qs ? `?${qs}` : ""}`;
+  const headers: Record<string, string> = {
+    ...getAuthHeaders(),
+  };
+
+  const res = await fetch(url, { method: "GET", headers });
+
+  if (!res.ok) {
+    await handleResponse(res);
+    return;
+  }
+
+  const blob = await res.blob();
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = downloadUrl;
+  
+  if (!filename) {
+    const disposition = res.headers.get("Content-Disposition");
+    if (disposition) {
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      if (match && match[1]) filename = match[1];
+    }
+  }
+
+  if (filename) a.download = filename;
+  
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(downloadUrl);
+}
+
+export async function upload<T>(path: string, file: File): Promise<T> {
+  const url = `${BASE.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const headers: Record<string, string> = {
+    ...getAuthHeaders(),
+  };
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  return handleResponse<T>(res);
+}

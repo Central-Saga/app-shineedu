@@ -41,3 +41,15 @@ export async function updateUserRoleUsecase(
 ): Promise<IdentityUser> {
   return repo.updateUserRole(id, roleName);
 }
+
+export async function exportUsersUsecase(
+  format: string,
+  params: ListUsersParams
+): Promise<void> {
+  return repo.exportUsers(format, params);
+}
+
+export async function importUsersUsecase(file: File): Promise<void> {
+  return repo.importUsers(file);
+}
+

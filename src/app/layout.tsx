@@ -15,12 +15,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id">
+    <html lang="id" suppressHydrationWarning>
       <body className="antialiased">
-        <AuthStoreHydration />
-        <SessionTimeout />
-        <Toaster richColors position="top-right" />
+        {/* <AuthStoreHydration /> */}
+        {/* <SessionTimeout /> */}
         {children}
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );

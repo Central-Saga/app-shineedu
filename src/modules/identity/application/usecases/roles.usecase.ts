@@ -38,3 +38,11 @@ export async function syncRolePermissionsUsecase(
 ): Promise<Role> {
   return repo.syncRolePermissions(id, permissions);
 }
+
+export async function exportRolesUsecase(
+  format: string,
+  params?: ListRolesParams
+): Promise<void> {
+  return repo.exportRoles(format, params);
+}
+

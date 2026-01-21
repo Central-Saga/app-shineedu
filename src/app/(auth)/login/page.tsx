@@ -51,7 +51,7 @@ function InputWithIcon({
   return (
     <div className="space-y-2">
       <div className="relative">
-        <Icon className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-zinc-400" aria-hidden />
+        <Icon className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-zinc-400 pointer-events-none" aria-hidden />
         <Input
           id={id}
           type={type}
@@ -67,6 +67,12 @@ function InputWithIcon({
 }
 
 export default function LoginPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+    console.log("LoginPage Mounted");
+  }, []);
+
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const {
@@ -97,124 +103,85 @@ export default function LoginPage() {
     }
   }
 
-  return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#fff5f5] via-white to-[#fff9e6]">
-      {/* Global blobs */}
-      <div
-        className="pointer-events-none absolute -left-48 -top-48 h-96 w-96 rounded-full bg-[#A4001D]/[0.06] blur-3xl"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute -bottom-48 -right-48 h-[28rem] w-[28rem] rounded-full bg-[#F5B700]/[0.05] blur-3xl"
-        aria-hidden
-      />
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      console.log("Global click at:", e.clientX, e.clientY, "Target:", e.target);
+    };
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, []);
 
-      <div className="relative mx-auto flex min-h-screen max-w-[1180px] flex-col-reverse px-4 py-8 sm:px-6 lg:flex-row lg:px-8 xl:px-10">
-        {/* Left: Branding — 45% on desktop */}
-        <aside className="flex shrink-0 flex-col justify-center px-8 py-8 lg:flex-[0.45] lg:px-10 lg:py-12">
-          <Image
-            src="/shine-logo.png"
-            alt="Shine Education"
-            width={180}
-            height={52}
-            className="mb-6 object-contain object-left"
-            priority
-          />
-          <h1 className="text-4xl font-semibold tracking-tight text-zinc-900">
-            Shine Edu Admin Panel
-          </h1>
-          <p className="mt-3 max-w-md text-zinc-500">
-            Satu dashboard untuk operasi RBAC: kelola pengguna, role, dan permission dengan akses aman berbasis peran.
-          </p>
-          <ul className="mt-6 space-y-3">
-            {BULLETS.map((item) => (
-              <li key={item} className="flex items-center gap-3 text-zinc-600">
-                <CheckCircle2 className="size-5 shrink-0 text-[#A4001D]" aria-hidden />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-8 text-sm text-zinc-400">
-            Secure access with role-based permissions.
-          </p>
-        </aside>
-
-        {/* Right: Login card — 55% on desktop */}
-        <section className="relative flex min-h-0 flex-1 items-center justify-center py-8 lg:flex-[0.55] lg:py-12">
-          {/* Glow blobs behind card */}
-          <div
-            className="pointer-events-none absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#A4001D]/[0.08] blur-3xl"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute right-1/4 top-1/2 h-56 w-56 -translate-y-1/2 rounded-full bg-[#F5B700]/[0.06] blur-3xl"
-            aria-hidden
-          />
-
-          <Card
-            className={[
-              "relative z-10 w-full max-w-[460px] rounded-2xl border border-zinc-200/60 p-6 lg:p-8",
-              "bg-white/80 shadow-[0_4px_14px_0_rgba(0,0,0,0.05),0_12px_32px_-4px_rgba(0,0,0,0.08)] backdrop-blur-sm",
-              "animate-in fade-in-0 zoom-in-95 duration-300",
-            ].join(" ")}
-          >
-            <CardHeader className="space-y-1 pb-4 !px-0 pt-0">
-              <CardTitle className="text-2xl font-semibold">Login</CardTitle>
-              <CardDescription>Masuk ke Admin Panel Shine Education</CardDescription>
-            </CardHeader>
-            <CardContent className="!px-0 pb-0">
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-zinc-700">Email</Label>
-                  <InputWithIcon
-                    id="email"
-                    type="email"
-                    placeholder="admin@example.com"
-                    autoComplete="email"
-                    icon={Mail}
-                    error={errors.email?.message}
-                    {...register("email")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-zinc-700">Password</Label>
-                  <InputWithIcon
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    autoComplete="current-password"
-                    icon={Lock}
-                    error={errors.password?.message}
-                    {...register("password")}
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className={[
-                    "h-12 w-full rounded-lg font-medium text-white transition-all",
-                    "bg-gradient-to-r from-[#A4001D] to-[#C9002A]",
-                    "hover:brightness-110 active:scale-[0.99]",
-                    "focus-visible:ring-2 focus-visible:ring-[#A4001D]/30",
-                  ].join(" ")}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="size-5 animate-spin" aria-hidden />
-                      Memproses…
-                    </>
-                  ) : (
-                    "Login"
-                  )}
-                </Button>
-              </form>
-              <p className="mt-6 text-center text-xs text-zinc-400">
-                © Shine Education
-              </p>
-            </CardContent>
-          </Card>
-        </section>
+  if (!mounted) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-100">
+        <div className="flex flex-col items-center gap-4">
+          <div className="size-12 animate-spin rounded-full border-4 border-zinc-200 border-t-red-600" />
+          <p className="text-zinc-500 font-medium">Memuat halaman...</p>
+        </div>
       </div>
+    );
+  }
+
+  return (
+
+    <div className="flex min-h-screen items-center justify-center bg-zinc-100 p-4">
+      {/* DEBUG BUTTON */}
+      <button 
+        onClick={(e) => {
+          e.stopPropagation();
+          alert('CLICKED DEBUG TOP');
+        }}
+        className="fixed top-4 left-4 z-[999999] bg-red-600 text-white px-6 py-3 rounded-xl shadow-2xl cursor-pointer pointer-events-auto hover:bg-red-700 active:scale-95 transition-all"
+        style={{ pointerEvents: 'auto' }}
+      >
+        TEST CLICK TOP (v2)
+      </button>
+
+      <Card className="relative z-0 w-full max-w-md bg-white p-8 shadow-2xl">
+        <div className="mb-8 text-center">
+
+          <h1 className="text-3xl font-bold text-zinc-900">Login Admin</h1>
+          <p className="text-zinc-500">Shine Education Bali</p>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="admin@example.com"
+              className="h-12 text-lg"
+              {...register("email")}
+            />
+            {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              className="h-12 text-lg"
+              {...register("password")}
+            />
+            {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
+          </div>
+
+          <Button
+            type="submit"
+            disabled={loading}
+            className="h-12 w-full text-lg bg-red-700 hover:bg-red-800"
+          >
+            {loading ? "Memproses..." : "Masuk Sekarang"}
+          </Button>
+        </form>
+
+        <div className="mt-8 text-center text-sm text-zinc-400">
+          © {new Date().getFullYear()} Shine Education
+        </div>
+      </Card>
     </div>
   );
 }

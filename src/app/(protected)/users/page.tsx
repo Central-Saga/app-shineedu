@@ -12,6 +12,8 @@ import { DataTableToolbar } from "@/shared/presentation/components/table/DataTab
 import { DataTablePagination } from "@/shared/presentation/components/table/DataTablePagination";
 import { useDebouncedValue } from "@/shared/presentation/hooks/useDebouncedValue";
 import { StatsCard } from "@/shared/presentation/components/StatsCard";
+import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
+import { ImportModal } from "@/shared/presentation/components/ImportModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -177,6 +179,18 @@ export default function UsersPage() {
       });
   }
 
+  const handleExport = async (format: string) => {
+    const params = buildUserParams();
+    await usersUsecase.exportUsersUsecase(format, params);
+  };
+
+  const handleImport = async (file: File) => {
+    await usersUsecase.importUsersUsecase(file);
+    // Refresh list
+    setPage(1);
+    loadUsers(buildUserParams(1));
+  };
+
   if (!allowed) return null;
 
   return (
@@ -185,14 +199,18 @@ export default function UsersPage() {
         title="Users"
         description="Kelola user dan role"
         actions={
-          canCreate ? (
-            <Button asChild>
-              <Link href="/users/new">
-                <Plus className="mr-2 size-4" />
-                Tambah User
-              </Link>
-            </Button>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            <ImportModal onImport={handleImport} />
+            <ExportDropdown onExport={handleExport} />
+            {canCreate && (
+              <Button asChild>
+                <Link href="/users/new">
+                  <Plus className="mr-2 size-4" />
+                  Tambah User
+                </Link>
+              </Button>
+            )}
+          </div>
         }
       />
 
