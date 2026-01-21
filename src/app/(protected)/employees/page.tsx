@@ -12,10 +12,8 @@ import { useDebouncedValue } from "@/shared/presentation/hooks/useDebouncedValue
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import { getEmployeesUsecase } from "@/modules/employees/application/usecases/getEmployees.usecase";
 import { updateEmployeeUsecase } from "@/modules/employees/application/usecases/updateEmployee.usecase";
-import { deleteEmployeeUsecase } from "@/modules/employees/application/usecases/deleteEmployee.usecase";
 import { StatsCard } from "@/shared/presentation/components/StatsCard";
 import { EmployeeTable } from "@/modules/employees/presentation/components/EmployeeTable";
-import { ConfirmDialog } from "@/modules/identity/presentation/components/shared/ConfirmDialog";
 import {
   ForbiddenError,
   NotFoundError,
@@ -88,8 +86,6 @@ export default function EmployeesPage() {
     freelance: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteEmployee, setDeleteEmployee] = useState<Employee | null>(null);
 
   const prevDebouncedQ = useRef(debouncedQ);
 
@@ -104,7 +100,6 @@ export default function EmployeesPage() {
 
   const canCreate = authStore.hasPermission("employees.create");
   const canUpdate = authStore.hasPermission("employees.update");
-  const canDelete = authStore.hasPermission("employees.delete");
 
   function buildParams(overridePage?: number) {
     return {
@@ -184,15 +179,6 @@ export default function EmployeesPage() {
     sortKey,
     sortDir,
   ]);
-
-  async function handleDelete() {
-    if (!deleteEmployee) return;
-    await deleteEmployeeUsecase(deleteEmployee.id);
-    toast.success("Karyawan berhasil dihapus");
-    setDeleteOpen(false);
-    setDeleteEmployee(null);
-    loadEmployees(buildParams()).catch(handleError);
-  }
 
   function handleStatusChange(emp: Employee, newStatus: "aktif" | "nonaktif") {
     const prev = emp.status;
@@ -314,7 +300,7 @@ export default function EmployeesPage() {
               direction: sortDir,
               onToggleDirection: () => {
                 setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-                setPage(1);
+                setPage(page);
               },
               defaultValue: "created_at",
               defaultDirection: "desc",
@@ -352,29 +338,15 @@ export default function EmployeesPage() {
           <EmployeeTable
             employees={employees}
             loading={loading}
+            onView={(em) => router.push(`/employees/${em.id}`)}
             onEdit={(em) => router.push(`/employees/${em.id}/edit`)}
-            onDelete={(em) => {
-              setDeleteEmployee(em);
-              setDeleteOpen(true);
-            }}
             onStatusChange={handleStatusChange}
             canUpdate={canUpdate}
-            canDelete={canDelete}
           />
 
           <DataTablePagination meta={meta} onPageChange={(p) => setPage(p)} />
         </CardContent>
       </Card>
-
-      <ConfirmDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        title="Hapus Karyawan"
-        description={`Anda yakin ingin menghapus "${deleteEmployee?.kode_karyawan}" (${deleteEmployee?.user?.name ?? "-"})?`}
-        confirmLabel="Hapus"
-        variant="destructive"
-        onConfirm={handleDelete}
-      />
     </div>
   );
 }

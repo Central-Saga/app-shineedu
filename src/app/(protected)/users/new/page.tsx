@@ -170,7 +170,7 @@ export default function UsersNewPage() {
                 <Label>Pilih Role</Label>
                 <Select
                   value={watch("role")}
-                  onValueChange={(v) => setValue("role", v)}
+                  onValueChange={(v) => setValue("role", v, { shouldValidate: true })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih role" />

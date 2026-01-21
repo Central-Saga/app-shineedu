@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
 import { AuthStoreHydration } from "@/shared/presentation/AuthStoreHydration";
+import SessionTimeout from "@/shared/presentation/components/SessionTimeout";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export default function RootLayout({
     <html lang="id">
       <body className="antialiased">
         <AuthStoreHydration />
+        <SessionTimeout />
         <Toaster richColors position="top-right" />
         {children}
       </body>

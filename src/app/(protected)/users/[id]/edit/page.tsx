@@ -9,6 +9,12 @@ import { z } from "zod";
 import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
 import { PageHeader } from "@/shared/presentation/components/PageHeader";
 import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGuard";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { ValidationError } from "@/shared/infrastructure/api/errors";
 import { applyValidationErrors } from "@/shared/lib/applyValidationErrors";
 import * as usersUsecase from "@/modules/identity/application/usecases/users.usecase";
@@ -203,7 +210,7 @@ export default function UsersEditPage() {
                 <Label>Pilih Role</Label>
                 <Select
                   value={watch("role")}
-                  onValueChange={(v) => setValue("role", v)}
+                  onValueChange={(v) => setValue("role", v, { shouldValidate: true })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih role" />

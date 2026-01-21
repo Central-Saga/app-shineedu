@@ -28,10 +28,13 @@ import {
 import { ValidationError } from "@/shared/infrastructure/api/errors";
 import { applyValidationErrors } from "@/shared/lib/applyValidationErrors";
 import { createEmployeeUsecase } from "@/modules/employees/application/usecases/createEmployee.usecase";
+import { getEmployeesUsecase } from "@/modules/employees/application/usecases/getEmployees.usecase";
 import { createUserUsecase } from "@/modules/identity/application/usecases/users.usecase";
 import { getRolesUsecase } from "@/modules/identity/application/usecases/roles.usecase";
 import type { Role } from "@/modules/identity/domain/entities";
 import { toast } from "sonner";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 import { RefreshCw } from "lucide-react";
 
 type UserMode = "existing" | "create";
@@ -109,7 +112,15 @@ export default function EmployeesNewPage() {
     },
   });
 
-  const { register: registerUser, watch: watchUser, trigger: triggerUser, getValues: getUserValues, setError: setUserError, formState: { errors: userErrors } } = useForm({
+  const {
+    register: registerUser,
+    watch: watchUser,
+    trigger: triggerUser,
+    getValues: getUserValues,
+    setError: setUserError,
+    setValue: setUserValue,
+    formState: { errors: userErrors }
+  } = useForm({
     defaultValues: { name: "", email: "", password: "", status: "Aktif", role: "" }
   });
 
@@ -133,7 +144,7 @@ export default function EmployeesNewPage() {
 
   // Auto-generate code on DOB change
   useEffect(() => {
-    if (dob && dob.length === 10) {
+    if (dob) {
       generateCode();
     }
   }, [dob]);
@@ -141,16 +152,32 @@ export default function EmployeesNewPage() {
   function generateCode() {
     const date = watch("tanggal_lahir");
     if (!date) return;
-    const parts = date.split("-"); // YYYY-MM-DD
-    if (parts.length !== 3) return;
-    const dd = parts[2];
-    const mm = parts[1];
-    const yy = parts[0].slice(-2);
-    const random = Math.floor(100 + Math.random() * 900); // 3 digits
+    
+    // date might be a string (from previous input) or a Date object
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return;
+
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yy = String(d.getFullYear()).slice(-2);
+    const random = Math.floor(1000 + Math.random() * 9000); // 4 digits for better uniqueness
     setValue("kode_karyawan", `${dd}${mm}${yy}${random}`);
   }
 
   async function onSubmit(values: EmployeeFormValues) {
+    // Check if kode_karyawan is unique
+    try {
+      const { items } = await getEmployeesUsecase({ q: values.kode_karyawan });
+      const exists = items.some(e => e.kode_karyawan === values.kode_karyawan);
+      if (exists) {
+        setError("kode_karyawan", { message: "Kode karyawan sudah terdaftar. Silakan klik refresh untuk generate kode baru." });
+        toast.error("Kode karyawan sudah digunakan.");
+        return;
+      }
+    } catch (e) {
+      console.error("Uniqueness check failed", e);
+    }
+
     const isUserValid = await triggerUser();
     if (!isUserValid) return;
 
@@ -233,7 +260,7 @@ export default function EmployeesNewPage() {
                   <Label>Role</Label>
                   <Select
                     value={watchUser("role")}
-                    onValueChange={(v) => setValue("role" as any, v as any, { shouldValidate: true })}
+                    onValueChange={(v) => setUserValue("role", v, { shouldValidate: true })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih role" />
@@ -374,7 +401,12 @@ export default function EmployeesNewPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Tanggal Lahir</Label>
-                  <Input type="date" {...register("tanggal_lahir")} />
+                  <DatePicker
+                    date={watch("tanggal_lahir") ? new Date(watch("tanggal_lahir")) : null}
+                    setDate={(d) => setValue("tanggal_lahir", d ? format(d, "yyyy-MM-dd") : "")}
+                    placeholder="Pilih tanggal lahir"
+                  />
+                  <p className="text-[11px] text-muted-foreground">Otomatis merubah Kode Karyawan</p>
                 </div>
                 <div className="col-span-full space-y-2">
                   <Label>Alamat</Label>

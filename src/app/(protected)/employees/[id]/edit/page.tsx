@@ -29,6 +29,7 @@ import {
 import { ValidationError } from "@/shared/infrastructure/api/errors";
 import { applyValidationErrors } from "@/shared/lib/applyValidationErrors";
 import { getEmployeeUsecase } from "@/modules/employees/application/usecases/getEmployee.usecase";
+import { getEmployeesUsecase } from "@/modules/employees/application/usecases/getEmployees.usecase";
 import { updateEmployeeUsecase } from "@/modules/employees/application/usecases/updateEmployee.usecase";
 import { deleteEmployeeUsecase } from "@/modules/employees/application/usecases/deleteEmployee.usecase";
 import { getUserUsecase, updateUserUsecase, updateUserRoleUsecase } from "@/modules/identity/application/usecases/users.usecase";
@@ -37,6 +38,8 @@ import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import type { Employee } from "@/modules/employees/domain/entities";
 import type { Role } from "@/modules/identity/domain/entities";
 import { NotFoundError } from "@/shared/infrastructure/api/errors";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -192,6 +195,19 @@ export default function EmployeesEditPage() {
   }, [allowed, id, reset, resetUser, router]);
 
   async function onSave(values: Form) {
+    // Check if kode_karyawan is unique among other employees
+    try {
+      const { items } = await getEmployeesUsecase({ q: values.kode_karyawan });
+      const exists = items.some(e => e.kode_karyawan === values.kode_karyawan && e.id !== id);
+      if (exists) {
+        setError("kode_karyawan", { message: "Kode karyawan sudah terdaftar." });
+        toast.error("Kode karyawan sudah digunakan.");
+        return;
+      }
+    } catch (e) {
+      console.error("Uniqueness check failed", e);
+    }
+
     try {
       // 1. Update Employee
       await updateEmployeeUsecase(id, {
@@ -282,7 +298,7 @@ export default function EmployeesEditPage() {
                   <Label>Role</Label>
                   <Select
                     value={watchUser("role")}
-                    onValueChange={(v) => setUserValue("role", v as any)}
+                    onValueChange={(v) => setUserValue("role", v as any, { shouldValidate: true })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih role" />
@@ -412,7 +428,11 @@ export default function EmployeesEditPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Tanggal Lahir</Label>
-                  <Input type="date" {...register("tanggal_lahir")} />
+                  <DatePicker
+                    date={watch("tanggal_lahir") ? new Date(watch("tanggal_lahir")) : null}
+                    setDate={(d) => setValue("tanggal_lahir", d ? format(d, "yyyy-MM-dd") : "")}
+                    placeholder="Pilih tanggal lahir"
+                  />
                 </div>
                 <div className="col-span-full space-y-2">
                   <Label>Alamat</Label>
