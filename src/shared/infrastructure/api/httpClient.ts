@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { buildQuery } from "@/shared/lib/buildQuery";
 import type { ApiResponse, PaginatedMeta } from "@/shared/domain/types";
 import {
   AppError,
@@ -8,16 +9,6 @@ import {
   UnauthorizedError,
   ValidationError,
 } from "./errors";
-
-/**
- * Build querystring from params. Skips null, undefined, and empty string.
- */
-export function buildQuery(params: object): string {
-  return Object.entries(params)
-    .filter(([, v]) => v != null && v !== "")
-    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
-    .join("&");
-}
 
 const BASE =
   (typeof process !== "undefined" &&
@@ -63,7 +54,6 @@ async function handleResponse<T>(res: Response): Promise<T> {
           onUnauthorized?.();
           throw new UnauthorizedError(message, payload?.errors);
         case 403:
-          toast.error(message || "Tidak punya akses");
           throw new ForbiddenError(message, payload?.errors);
         case 409:
           toast.error(message);
@@ -91,7 +81,6 @@ async function handleResponse<T>(res: Response): Promise<T> {
       throw new UnauthorizedError(message, payload?.errors);
     }
     case 403: {
-      toast.error(message || "Tidak punya akses");
       throw new ForbiddenError(message, payload?.errors);
     }
     case 404: {
@@ -143,7 +132,77 @@ export async function get<T>(path: string): Promise<T> {
   return request<T>("GET", path);
 }
 
-const DEFAULT_META: PaginatedMeta = {
+/**
+ * GET request that returns the full ApiResponse (including meta) for paginated endpoints.
+ * Path may include query string, e.g. "users?page=1&q=foo".
+ */
+export async function getResponse<T>(path: string): Promise<ApiResponse<T>> {
+  const url = `${BASE.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    ...getAuthHeaders(),
+  };
+  const res = await fetch(url, { method: "GET", headers });
+  const text = await res.text();
+  let json: ApiResponse<T> | null = null;
+  if (text) {
+    try {
+      json = JSON.parse(text) as ApiResponse<T>;
+    } catch {
+      // ignore
+    }
+  }
+  const message = (json?.message ?? res.statusText) || "Terjadi kesalahan";
+
+  if (res.ok) {
+    if (json?.success === false) {
+      switch (res.status) {
+        case 401:
+          onUnauthorized?.();
+          throw new UnauthorizedError(message, json?.errors);
+        case 403:
+          throw new ForbiddenError(message, json?.errors);
+        case 409:
+          toast.error(message);
+          throw new ConflictError(message, json?.errors);
+        case 422:
+          toast.error(message);
+          throw new ValidationError(
+            message,
+            json?.errors as Record<string, string[] | { message: string }> | undefined
+          );
+        default:
+          toast.error(message);
+          throw new AppError(message, undefined, res.status, json?.errors);
+      }
+    }
+    return json as ApiResponse<T>;
+  }
+
+  switch (res.status) {
+    case 401:
+      onUnauthorized?.();
+      throw new UnauthorizedError(message, json?.errors);
+    case 403:
+      throw new ForbiddenError(message, json?.errors);
+    case 404:
+      throw new NotFoundError(message, json?.errors);
+    case 409:
+      toast.error(message);
+      throw new ConflictError(message, json?.errors);
+    case 422:
+      toast.error(message);
+      throw new ValidationError(
+        message,
+        json?.errors as Record<string, string[] | { message: string }> | undefined
+      );
+    default:
+      toast.error(message);
+      throw new AppError(message, undefined, res.status, json?.errors);
+  }
+}
+
+export const DEFAULT_META: PaginatedMeta = {
   current_page: 1,
   per_page: 15,
   total: 0,
@@ -184,7 +243,6 @@ export async function getPaginated<T>(
           onUnauthorized?.();
           throw new UnauthorizedError(message, json?.errors);
         case 403:
-          toast.error(message || "Tidak punya akses");
           throw new ForbiddenError(message, json?.errors);
         case 409:
           toast.error(message);
@@ -211,7 +269,6 @@ export async function getPaginated<T>(
       onUnauthorized?.();
       throw new UnauthorizedError(message, json?.errors);
     case 403:
-      toast.error(message || "Tidak punya akses");
       throw new ForbiddenError(message, json?.errors);
     case 404:
       throw new NotFoundError(message, json?.errors);

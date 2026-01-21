@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PageHeader } from "@/modules/identity/presentation/components/shared/PageHeader";
+import { PageHeader } from "@/shared/presentation/components/PageHeader";
 import { getModulesFromPermissions } from "@/modules/identity/domain/permission-matrix";
 import { getPermissionsUsecase } from "@/modules/identity/application/usecases/permissions.usecase";
 import type { Permission } from "@/modules/identity/domain/entities";

@@ -1,10 +1,12 @@
 import {
   get,
-  getPaginated,
+  getResponse,
   post,
   put,
   del,
+  DEFAULT_META,
 } from "@/shared/infrastructure/api/httpClient";
+import { buildQuery } from "@/shared/lib/buildQuery";
 import type { PaginatedMeta } from "@/shared/domain/types";
 import type { Role, Permission, IdentityUser } from "../domain/entities";
 
@@ -29,8 +31,10 @@ export interface ListUsersParams {
 // Roles
 export async function listRoles(
   params?: ListRolesParams
-): Promise<{ data: Role[]; meta: PaginatedMeta }> {
-  return getPaginated<Role[]>("roles", params ?? {});
+): Promise<{ items: Role[]; meta: PaginatedMeta }> {
+  const qs = buildQuery(params ?? {});
+  const res = await getResponse<Role[]>(qs ? `roles?${qs}` : "roles");
+  return { items: (res.data ?? []) as Role[], meta: res.meta ?? DEFAULT_META };
 }
 
 export async function createRole(payload: {
@@ -47,6 +51,11 @@ export async function updateRole(
   return put<Role>(`roles/${id}`, payload) as Promise<Role>;
 }
 
+export async function getRole(id: number): Promise<Role> {
+  const data = await get<Role>(`roles/${id}`);
+  return data as Role;
+}
+
 export async function deleteRole(id: number): Promise<void> {
   await del(`roles/${id}`);
 }
@@ -61,8 +70,15 @@ export async function syncRolePermissions(
 // Users
 export async function listUsers(
   params: ListUsersParams
-): Promise<{ data: IdentityUser[]; meta: PaginatedMeta }> {
-  return getPaginated<IdentityUser[]>("users", params);
+): Promise<{ items: IdentityUser[]; meta: PaginatedMeta }> {
+  const qs = buildQuery(params);
+  const res = await getResponse<IdentityUser[]>(qs ? `users?${qs}` : "users");
+  return { items: (res.data ?? []) as IdentityUser[], meta: res.meta ?? DEFAULT_META };
+}
+
+export async function getUser(id: number): Promise<IdentityUser> {
+  const data = await get<IdentityUser>(`users/${id}`);
+  return data as IdentityUser;
 }
 
 export async function createUser(payload: {

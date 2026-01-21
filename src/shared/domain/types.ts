@@ -27,3 +27,8 @@ export interface PaginatedMeta {
  * Validation errors: field -> messages (array) atau { message: string }.
  */
 export type ValidationErrors = Record<string, string[] | { message: string }>;
+
+/**
+ * Hasil paginated standar: items + meta.
+ */
+export type PaginatedResult<T> = { items: T; meta: PaginatedMeta };

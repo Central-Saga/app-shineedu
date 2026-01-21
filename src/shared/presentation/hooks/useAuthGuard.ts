@@ -27,7 +27,7 @@ export function useAuthGuard(): GuardState {
       );
       return;
     }
-    setState("ready");
+    setState("ready"); // eslint-disable-line react-hooks/set-state-in-effect
   }, [token, user, router]);
 
   return state;

@@ -1,0 +1,352 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
+import { PageHeader } from "@/shared/presentation/components/PageHeader";
+import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGuard";
+import { DataTableToolbar } from "@/shared/presentation/components/table/DataTableToolbar";
+import { DataTablePagination } from "@/shared/presentation/components/table/DataTablePagination";
+import { useDebouncedValue } from "@/shared/presentation/hooks/useDebouncedValue";
+import { authStore } from "@/modules/auth/infrastructure/auth.store";
+import { getEmployeesUsecase } from "@/modules/employees/application/usecases/getEmployees.usecase";
+import { updateEmployeeUsecase } from "@/modules/employees/application/usecases/updateEmployee.usecase";
+import { StatsCard } from "@/shared/presentation/components/StatsCard";
+import { EmployeeTable } from "@/modules/employees/presentation/components/EmployeeTable";
+import {
+  ForbiddenError,
+  NotFoundError,
+  AppError,
+} from "@/shared/infrastructure/api/errors";
+import type { Employee } from "@/modules/employees/domain/entities";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus, Contact, Briefcase, FileText, UserPlus } from "lucide-react";
+import { toast } from "sonner";
+
+const SORT_OPTIONS = [
+  { label: "Kode", value: "kode_karyawan" },
+  { label: "Status", value: "status" },
+  { label: "Kategori", value: "kategori_karyawan" },
+  { label: "Tipe Gaji", value: "tipe_gaji" },
+  { label: "Gaji Pokok", value: "gaji_pokok" },
+  { label: "Dibuat", value: "created_at" },
+  { label: "Diubah", value: "updated_at" },
+] as const;
+
+type SortKey = (typeof SORT_OPTIONS)[number]["value"];
+
+const KATEGORI_OPTIONS = [
+  { label: "Tetap", value: "tetap" },
+  { label: "Kontrak", value: "kontrak" },
+  { label: "Freelance", value: "freelance" },
+];
+
+const TIPE_GAJI_OPTIONS = [
+  { label: "Bulanan", value: "bulanan" },
+  { label: "Per Sesi", value: "per_sesi" },
+];
+
+const PER_PAGE_OPTIONS = [15, 30, 50, 100];
+
+export default function EmployeesPage() {
+  const { allowed } = usePermissionGuard("employees.view");
+  const router = useRouter();
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(15);
+  const [search, setSearch] = useState("");
+  const debouncedQ = useDebouncedValue(search, 400);
+  const [filterStatus, setFilterStatus] = useState<string | null>(null);
+  const [filterKategori, setFilterKategori] = useState<string | null>(null);
+  const [filterTipeGaji, setFilterTipeGaji] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("created_at");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [meta, setMeta] = useState({
+    current_page: 1,
+    per_page: 15,
+    total: 0,
+    last_page: 1,
+    from: null as number | null,
+    to: null as number | null,
+  });
+  const [stats, setStats] = useState({
+    total: 0,
+    tetap: 0,
+    kontrak: 0,
+    freelance: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  const prevDebouncedQ = useRef(debouncedQ);
+
+  const { setItems } = useBreadcrumbStore();
+
+  useEffect(() => {
+    setItems([
+      { label: "Dashboard", href: "/dashboard" },
+      { label: "Karyawan" },
+    ]);
+  }, [setItems]);
+
+  const canCreate = authStore.hasPermission("employees.create");
+  const canUpdate = authStore.hasPermission("employees.update");
+
+  function buildParams(overridePage?: number) {
+    return {
+      page: overridePage ?? page,
+      per_page: perPage,
+      q: debouncedQ || undefined,
+      status:
+        filterStatus === "aktif" || filterStatus === "nonaktif"
+          ? (filterStatus as "aktif" | "nonaktif")
+          : undefined,
+      kategori_karyawan: filterKategori || undefined,
+      tipe_gaji: filterTipeGaji || undefined,
+      sort_by: sortKey,
+      sort_dir: sortDir,
+    };
+  }
+
+  function handleError(e: unknown) {
+    if (e instanceof ForbiddenError) {
+      toast.error(e.message || "Tidak punya akses");
+      router.replace("/dashboard");
+      return;
+    }
+    if (
+      e instanceof NotFoundError ||
+      (e instanceof AppError && e.status != null && e.status >= 500)
+    ) {
+      toast.error("Gagal memuat data karyawan");
+      return;
+    }
+    toast.error(e instanceof Error ? e.message : "Gagal memuat karyawan");
+  }
+
+  async function loadEmployees(params: ReturnType<typeof buildParams>) {
+    const { items, meta: m } = await getEmployeesUsecase(params);
+    setEmployees(items);
+    setMeta(m);
+  }
+
+  useEffect(() => {
+    if (!allowed) return;
+    setLoading(true);
+    const searchJustChanged = prevDebouncedQ.current !== debouncedQ;
+    if (searchJustChanged) {
+      prevDebouncedQ.current = debouncedQ;
+      setPage(1);
+    }
+    const pageToUse = searchJustChanged ? 1 : page;
+    const params = buildParams(pageToUse);
+
+    Promise.all([
+      loadEmployees(params),
+      (async () => {
+        const [all, t, k, f] = await Promise.all([
+          getEmployeesUsecase({ per_page: 1 }),
+          getEmployeesUsecase({ per_page: 1, kategori_karyawan: "tetap" }),
+          getEmployeesUsecase({ per_page: 1, kategori_karyawan: "kontrak" }),
+          getEmployeesUsecase({ per_page: 1, kategori_karyawan: "freelance" }),
+        ]);
+        setStats({
+          total: all.meta.total,
+          tetap: t.meta.total,
+          kontrak: k.meta.total,
+          freelance: f.meta.total,
+        });
+      })(),
+    ]).catch(handleError).finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- buildParams, loadEmployees, handleError are stable
+  }, [
+    allowed,
+    page,
+    perPage,
+    debouncedQ,
+    filterStatus,
+    filterKategori,
+    filterTipeGaji,
+    sortKey,
+    sortDir,
+  ]);
+
+  function handleStatusChange(emp: Employee, newStatus: "aktif" | "nonaktif") {
+    const prev = emp.status;
+    setEmployees((prevE) =>
+      prevE.map((e) => (e.id === emp.id ? { ...e, status: newStatus } : e))
+    );
+    updateEmployeeUsecase(emp.id, { status: newStatus })
+      .then(() => toast.success("Status berhasil diubah"))
+      .catch((e) => {
+      setEmployees((prevE) =>
+        prevE.map((e) => (e.id === emp.id ? { ...e, status: prev } : e))
+      );
+      toast.error(e instanceof Error ? e.message : "Gagal mengubah status");
+    });
+  }
+
+  if (!allowed) return null;
+
+  return (
+    <div>
+      <PageHeader
+        title="Karyawan"
+        description="Daftar karyawan"
+        actions={
+          canCreate ? (
+            <Button asChild>
+              <Link href="/employees/new">
+                <Plus className="mr-2 size-4" />
+                Tambah Karyawan
+              </Link>
+            </Button>
+          ) : undefined
+        }
+      />
+
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatsCard
+          label="Total Karyawan"
+          value={stats.total}
+          icon={Contact}
+          variant="primary"
+          description="Seluruh data karyawan"
+        />
+        <StatsCard
+          label="Tetap"
+          value={stats.tetap}
+          icon={Briefcase}
+          variant="success"
+          description="Karyawan status tetap"
+        />
+        <StatsCard
+          label="Kontrak"
+          value={stats.kontrak}
+          icon={FileText}
+          variant="warning"
+          description="Karyawan status kontrak"
+        />
+        <StatsCard
+          label="Freelance"
+          value={stats.freelance}
+          icon={UserPlus}
+          variant="info"
+          description="Karyawan freelance"
+        />
+      </div>
+
+      <Card className="rounded-2xl shadow-sm">
+        <CardContent className="space-y-4 pt-6">
+          <DataTableToolbar
+            searchValue={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Cari kode atau nama…"
+            filters={[
+              {
+                key: "status",
+                label: "Status",
+                options: [
+                  { label: "Semua", value: "__all__" },
+                  { label: "Aktif", value: "aktif" },
+                  { label: "Nonaktif", value: "nonaktif" },
+                ],
+                value: filterStatus,
+                onChange: (v) => {
+                  setFilterStatus(v);
+                  setPage(1);
+                },
+              },
+              {
+                key: "kategori_karyawan",
+                label: "Kategori",
+                options: [{ label: "Semua", value: "__all__" }, ...KATEGORI_OPTIONS],
+                value: filterKategori,
+                onChange: (v) => {
+                  setFilterKategori(v);
+                  setPage(1);
+                },
+              },
+              {
+                key: "tipe_gaji",
+                label: "Tipe Gaji",
+                options: [
+                  { label: "Semua", value: "__all__" },
+                  ...TIPE_GAJI_OPTIONS,
+                ],
+                value: filterTipeGaji,
+                onChange: (v) => {
+                  setFilterTipeGaji(v);
+                  setPage(1);
+                },
+              },
+            ]}
+            sort={{
+              value: sortKey,
+              options: SORT_OPTIONS.map((o) => ({ label: o.label, value: o.value })),
+              onChange: (v) => {
+                setSortKey(v as SortKey);
+                setPage(1);
+              },
+              direction: sortDir,
+              onToggleDirection: () => {
+                setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+                setPage(page);
+              },
+              defaultValue: "created_at",
+              defaultDirection: "desc",
+              onDirectionChange: (d) => {
+                setSortDir(d);
+                setPage(1);
+              },
+            }}
+          />
+
+          <div className="flex items-center gap-2">
+            <Label className="text-muted-foreground text-sm whitespace-nowrap">
+              Per halaman
+            </Label>
+            <Select
+              value={String(perPage)}
+              onValueChange={(v) => {
+                setPerPage(Number(v));
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-9 w-[100px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PER_PAGE_OPTIONS.map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <EmployeeTable
+            employees={employees}
+            loading={loading}
+            onView={(em) => router.push(`/employees/${em.id}`)}
+            onEdit={(em) => router.push(`/employees/${em.id}/edit`)}
+            onStatusChange={handleStatusChange}
+            canUpdate={canUpdate}
+          />
+
+          <DataTablePagination meta={meta} onPageChange={(p) => setPage(p)} />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

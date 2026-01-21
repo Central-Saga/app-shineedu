@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Users,
   Shield,
-  KeyRound,
   UserCircle,
 } from "lucide-react";
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
@@ -35,12 +34,10 @@ const mainNav = [
 const identityNav = [
   { href: "/users", label: "Users", icon: Users, permission: "users.view" },
   { href: "/roles", label: "Roles", icon: Shield, permission: "roles.view" },
-  {
-    href: "/permissions",
-    label: "Permissions",
-    icon: KeyRound,
-    permission: "permissions.view",
-  },
+];
+
+const hrNav = [
+  { href: "/employees", label: "Karyawan", icon: UserCircle, permission: "employees.view" },
 ];
 
 export function AppSidebar() {
@@ -115,19 +112,29 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>HR</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton disabled aria-disabled>
-                  <UserCircle className="size-4 shrink-0" />
-                  <span>Employees</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {hrNav.filter((n) => hasAny(n.permission)).length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>HR</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {hrNav.filter((n) => hasAny(n.permission)).map((item) => {
+                  const Icon = item.icon;
+                  const active = pathname === item.href;
+                  return (
+                    <SidebarMenuItem key={item.href}>
+                      <SidebarMenuButton asChild isActive={active}>
+                        <Link href={item.href}>
+                          <Icon className="size-4 shrink-0" />
+                          <span>{item.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
     </Sidebar>
   );
