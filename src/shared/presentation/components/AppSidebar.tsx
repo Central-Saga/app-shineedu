@@ -124,9 +124,9 @@ export function AppSidebar() {
           <Image
             src="/shine-logo.png"
             alt="Shine Edu"
-            width={120}
-            height={40}
-            className="object-contain"
+            width={160}
+            height={48}
+            className="w-full h-auto object-contain"
           />
         </Link>
       </SidebarHeader>
