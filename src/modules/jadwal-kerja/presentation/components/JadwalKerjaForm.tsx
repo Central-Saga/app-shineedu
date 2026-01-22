@@ -35,10 +35,10 @@ const schema = z.object({
   nomor_sesi: z.string().min(1, "Nomor sesi wajib diisi"),
   jam_mulai: z.string().min(1, "Jam mulai wajib diisi"),
   jam_selesai: z.string().min(1, "Jam selesai wajib diisi"),
-  tarif: z.union([z.string(), z.number()]).transform(v => Number(v)),
+  tarif: z.union([z.string(), z.number()]),
   status: z.enum(JADWAL_KERJA_STATUS_VALUES),
   ruangan_kelas: z.string().optional().nullable(),
-  guru_pengajar_id: z.union([z.string(), z.number()]).transform(v => Number(v)),
+  guru_pengajar_id: z.union([z.string(), z.number()]),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -77,10 +77,10 @@ export function JadwalKerjaForm({
       nomor_sesi: initialData.nomor_sesi,
       jam_mulai: initialData.jam_mulai,
       jam_selesai: initialData.jam_selesai,
-      tarif: Number(initialData.tarif),
+      tarif: initialData.tarif,
       status: initialData.status,
       ruangan_kelas: initialData.ruangan_kelas,
-      guru_pengajar_id: Number(initialData.guru_pengajar_id),
+      guru_pengajar_id: initialData.guru_pengajar_id,
     } : {
       kategori: "coding",
       status: "Aktif",
@@ -94,8 +94,16 @@ export function JadwalKerjaForm({
   const currentStatus = watch("status");
   const currentGuru = watch("guru_pengajar_id");
 
+  const handleFormSubmit = (data: FormValues) => {
+    onSubmit({
+      ...data,
+      tarif: Number(data.tarif),
+      guru_pengajar_id: Number(data.guru_pengajar_id),
+    });
+  };
+
   return (
-    <form onSubmit={handleSubmit((data) => onSubmit(data as unknown as CreateJadwalKerjaPayload))} className="space-y-6">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
       <Accordion defaultValue="info" className="w-full">
         {/* Panel 1: Informasi Jadwal */}
         <AccordionItem value="info">

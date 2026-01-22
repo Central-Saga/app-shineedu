@@ -55,6 +55,69 @@ const hrNav = [
   },
 ];
 
+export function SidebarKehadiranToggle({ can }: { can: (key: string) => boolean }) {
+  const pathname = usePathname();
+
+  const canAbsensi = can("absensi.view");
+  const canCuti = can("cuti.view");
+  const canPengaturan = can("pengaturan_cuti.view");
+
+  if (!canAbsensi && !canCuti && !canPengaturan) return null;
+
+  const absensiActive = pathname.startsWith("/absensi");
+  const cutiActive = pathname.startsWith("/cuti");
+  const pengaturanActive = pathname.startsWith("/pengaturan-cuti");
+  const parentActive = absensiActive || cutiActive || pengaturanActive;
+
+  return (
+    <Collapsible defaultOpen={parentActive} className="group/collapsible">
+      <SidebarMenuItem>
+        <CollapsibleTrigger asChild>
+          <SidebarMenuButton isActive={parentActive} className="py-1">
+            <CalendarDays className="size-4 shrink-0" />
+            <span>Kehadiran & Cuti</span>
+            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+          </SidebarMenuButton>
+        </CollapsibleTrigger>
+
+        <CollapsibleContent>
+          <SidebarMenuSub>
+            {canAbsensi && (
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton asChild isActive={absensiActive}>
+                  <Link href="/absensi">
+                    <span>Absensi</span>
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            )}
+
+            {canCuti && (
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton asChild isActive={cutiActive}>
+                  <Link href="/cuti">
+                    <span>Cuti</span>
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            )}
+
+            {canPengaturan && (
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton asChild isActive={pengaturanActive}>
+                  <Link href="/pengaturan-cuti">
+                    <span>Pengaturan Cuti</span>
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            )}
+          </SidebarMenuSub>
+        </CollapsibleContent>
+      </SidebarMenuItem>
+    </Collapsible>
+  );
+}
+
 export function SidebarJadwalToggle({ can }: { can: (key: string) => boolean }) {
   const pathname = usePathname();
 
@@ -201,6 +264,9 @@ export function AppSidebar() {
           authStore.hasAnyPermission([
             "jadwal_kerja.view",
             "realisasi_jadwal_kerja.view",
+            "absensi.view",
+            "cuti.view",
+            "pengaturan_cuti.view",
           ])) && (
           <Collapsible defaultOpen className="group/collapsible">
             <SidebarGroup className="py-1">
@@ -229,6 +295,7 @@ export function AppSidebar() {
                           </SidebarMenuItem>
                         );
                       })}
+                    <SidebarKehadiranToggle can={(k) => authStore.hasPermission(k)} />
                     <SidebarJadwalToggle can={(k) => authStore.hasPermission(k)} />
                   </SidebarMenu>
                 </SidebarGroupContent>
