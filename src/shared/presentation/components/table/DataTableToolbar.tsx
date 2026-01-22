@@ -15,14 +15,14 @@ import {
 export interface DataTableFilterConfig {
   key: string;
   label: string;
-  options: Array<{ label: string; value: string }>;
+  options: ReadonlyArray<{ readonly label: string; readonly value: string }>;
   value: string | null;
   onChange: (value: string | null) => void;
 }
 
 export interface DataTableSortConfig {
   value: string;
-  options: Array<{ label: string; value: string }>;
+  options: ReadonlyArray<{ readonly label: string; readonly value: string }>;
   onChange: (value: string) => void;
   direction: "asc" | "desc";
   onToggleDirection: () => void;

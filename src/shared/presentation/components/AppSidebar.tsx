@@ -9,8 +9,13 @@ import {
   Shield,
   UserCircle,
   CalendarDays,
-  ClipboardCheck,
+  ChevronRight,
 } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import {
   Sidebar,
@@ -22,6 +27,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 
 const mainNav = [
@@ -39,10 +47,126 @@ const identityNav = [
 ];
 
 const hrNav = [
-  { href: "/employees", label: "Karyawan", icon: UserCircle, permission: "employees.view" },
-  { href: "/jadwal-kerja", label: "Jadwal Kerja", icon: CalendarDays, permission: "jadwal_kerja.view" },
-  { href: "/realisasi-jadwal-kerja", label: "Realisasi Jadwal Kerja", icon: ClipboardCheck, permission: "realisasi_jadwal_kerja.view" },
+  {
+    href: "/employees",
+    label: "Karyawan",
+    icon: UserCircle,
+    permission: "employees.view",
+  },
 ];
+
+export function SidebarKehadiranToggle({ can }: { can: (key: string) => boolean }) {
+  const pathname = usePathname();
+
+  const canAbsensi = can("absensi.view");
+  const canCuti = can("cuti.view");
+  const canPengaturan = can("pengaturan_cuti.view");
+
+  if (!canAbsensi && !canCuti && !canPengaturan) return null;
+
+  const absensiActive = pathname.startsWith("/absensi");
+  const cutiActive = pathname.startsWith("/cuti");
+  const pengaturanActive = pathname.startsWith("/pengaturan-cuti");
+  const parentActive = absensiActive || cutiActive || pengaturanActive;
+
+  return (
+    <Collapsible defaultOpen={parentActive} className="group/collapsible">
+      <SidebarMenuItem>
+        <CollapsibleTrigger asChild>
+          <SidebarMenuButton isActive={parentActive} className="py-1">
+            <CalendarDays className="size-4 shrink-0" />
+            <span>Kehadiran & Cuti</span>
+            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+          </SidebarMenuButton>
+        </CollapsibleTrigger>
+
+        <CollapsibleContent>
+          <SidebarMenuSub>
+            {canAbsensi && (
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton asChild isActive={absensiActive}>
+                  <Link href="/absensi">
+                    <span>Absensi</span>
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            )}
+
+            {canCuti && (
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton asChild isActive={cutiActive}>
+                  <Link href="/cuti">
+                    <span>Cuti</span>
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            )}
+
+            {canPengaturan && (
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton asChild isActive={pengaturanActive}>
+                  <Link href="/pengaturan-cuti">
+                    <span>Pengaturan Cuti</span>
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            )}
+          </SidebarMenuSub>
+        </CollapsibleContent>
+      </SidebarMenuItem>
+    </Collapsible>
+  );
+}
+
+export function SidebarJadwalToggle({ can }: { can: (key: string) => boolean }) {
+  const pathname = usePathname();
+
+  const canJadwal = can("jadwal_kerja.view");
+  const canRealisasi = can("realisasi_jadwal_kerja.view");
+  if (!canJadwal && !canRealisasi) return null;
+
+  const jadwalActive = pathname.startsWith("/jadwal-kerja");
+  const realisasiActive = pathname.startsWith("/realisasi-jadwal-kerja");
+  const parentActive = jadwalActive || realisasiActive;
+
+  return (
+    <Collapsible defaultOpen={parentActive} className="group/collapsible">
+      <SidebarMenuItem>
+        <CollapsibleTrigger asChild>
+          <SidebarMenuButton isActive={parentActive} className="py-1">
+            <CalendarDays className="size-4 shrink-0" />
+            <span>Jadwal</span>
+            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+          </SidebarMenuButton>
+        </CollapsibleTrigger>
+
+        <CollapsibleContent>
+          <SidebarMenuSub>
+            {canJadwal && (
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton asChild isActive={jadwalActive}>
+                  <Link href="/jadwal-kerja">
+                    <span>Jadwal Kerja</span>
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            )}
+
+            {canRealisasi && (
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton asChild isActive={realisasiActive}>
+                  <Link href="/realisasi-jadwal-kerja">
+                    <span>Realisasi Jadwal</span>
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            )}
+          </SidebarMenuSub>
+        </CollapsibleContent>
+      </SidebarMenuItem>
+    </Collapsible>
+  );
+}
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -55,89 +179,129 @@ export function AppSidebar() {
       side="left"
       className="border-0"
     >
-      <SidebarHeader className="p-4">
+      <SidebarHeader className="px-5 py-4">
         <Link
           href="/dashboard"
-          className="flex items-center gap-2 outline-none ring-sidebar-ring focus-visible:ring-2 rounded-md"
+          className="flex items-center outline-none ring-sidebar-ring focus-visible:ring-2 rounded-md"
         >
           <Image
-            src="/logo-tanpa-nama.png"
-            alt=""
-            width={32}
-            height={32}
-            className="shrink-0 object-contain"
+            src="/shine-logo.png"
+            alt="Shine Edu"
+            width={160}
+            height={48}
+            className="w-full h-auto object-contain"
           />
-          <span className="font-semibold text-sidebar-foreground">Shine Edu</span>
         </Link>
       </SidebarHeader>
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>MAIN</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainNav.filter((n) => hasAny(n.permission)).map((item) => {
-                const Icon = item.icon;
-                const active = pathname === item.href;
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton asChild isActive={active}>
-                      <Link href={item.href}>
-                        <Icon className="size-4 shrink-0" />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>IDENTITY</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {identityNav.filter((n) => hasAny(n.permission)).map((item) => {
-                const Icon = item.icon;
-                const active = pathname === item.href;
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton asChild isActive={active}>
-                      <Link href={item.href}>
-                        <Icon className="size-4 shrink-0" />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {hrNav.filter((n) => hasAny(n.permission)).length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel>HR</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {hrNav.filter((n) => hasAny(n.permission)).map((item) => {
-                  const Icon = item.icon;
-                  const active = pathname === item.href;
-                  return (
-                    <SidebarMenuItem key={item.href}>
-                      <SidebarMenuButton asChild isActive={active}>
-                        <Link href={item.href}>
-                          <Icon className="size-4 shrink-0" />
-                          <span>{item.label}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
+      <SidebarContent className="gap-0">
+        <Collapsible defaultOpen className="group/collapsible">
+          <SidebarGroup className="py-1">
+            <SidebarGroupLabel asChild className="mb-0 h-7 px-2">
+              <CollapsibleTrigger className="flex w-full items-center justify-between hover:text-sidebar-foreground transition-colors">
+                MAIN
+                <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+              </CollapsibleTrigger>
+            </SidebarGroupLabel>
+            <CollapsibleContent>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {mainNav
+                    .map((item) => {
+                      const Icon = item.icon;
+                      const active = pathname === item.href;
+                      return (
+                        <SidebarMenuItem key={item.href}>
+                          <SidebarMenuButton asChild isActive={active}>
+                            <Link href={item.href} className="py-1">
+                              <Icon className="size-4 shrink-0" />
+                              <span>{item.label}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </CollapsibleContent>
           </SidebarGroup>
+        </Collapsible>
+
+        <Collapsible defaultOpen className="group/collapsible">
+          <SidebarGroup className="py-1">
+            <SidebarGroupLabel asChild className="mb-0 h-7 px-2">
+              <CollapsibleTrigger className="flex w-full items-center justify-between hover:text-sidebar-foreground transition-colors">
+                IDENTITY
+                <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+              </CollapsibleTrigger>
+            </SidebarGroupLabel>
+            <CollapsibleContent>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {identityNav
+                    .filter((n) => hasAny(n.permission))
+                    .map((item) => {
+                      const Icon = item.icon;
+                      const active = pathname === item.href;
+                      return (
+                        <SidebarMenuItem key={item.href}>
+                          <SidebarMenuButton asChild isActive={active}>
+                            <Link href={item.href} className="py-1">
+                              <Icon className="size-4 shrink-0" />
+                              <span>{item.label}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </CollapsibleContent>
+          </SidebarGroup>
+        </Collapsible>
+
+        {(hrNav.filter((n) => hasAny(n.permission)).length > 0 ||
+          authStore.hasAnyPermission([
+            "jadwal_kerja.view",
+            "realisasi_jadwal_kerja.view",
+            "absensi.view",
+            "cuti.view",
+            "pengaturan_cuti.view",
+          ])) && (
+          <Collapsible defaultOpen className="group/collapsible">
+            <SidebarGroup className="py-1">
+              <SidebarGroupLabel asChild className="mb-0 h-7 px-2">
+                <CollapsibleTrigger className="flex w-full items-center justify-between hover:text-sidebar-foreground transition-colors">
+                  HR
+                  <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                </CollapsibleTrigger>
+              </SidebarGroupLabel>
+              <CollapsibleContent>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {hrNav
+                      .filter((n) => hasAny(n.permission))
+                      .map((item) => {
+                        const Icon = item.icon;
+                        const active = pathname === item.href;
+                        return (
+                          <SidebarMenuItem key={item.href}>
+                            <SidebarMenuButton asChild isActive={active}>
+                              <Link href={item.href} className="py-1">
+                                <Icon className="size-4 shrink-0" />
+                                <span>{item.label}</span>
+                              </Link>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        );
+                      })}
+                    <SidebarKehadiranToggle can={(k) => authStore.hasPermission(k)} />
+                    <SidebarJadwalToggle can={(k) => authStore.hasPermission(k)} />
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </CollapsibleContent>
+            </SidebarGroup>
+          </Collapsible>
         )}
       </SidebarContent>
     </Sidebar>
