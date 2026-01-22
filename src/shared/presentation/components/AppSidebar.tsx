@@ -8,6 +8,8 @@ import {
   Users,
   Shield,
   UserCircle,
+  CalendarDays,
+  ClipboardCheck,
 } from "lucide-react";
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import {
@@ -38,6 +40,8 @@ const identityNav = [
 
 const hrNav = [
   { href: "/employees", label: "Karyawan", icon: UserCircle, permission: "employees.view" },
+  { href: "/jadwal-kerja", label: "Jadwal Kerja", icon: CalendarDays, permission: "jadwal_kerja.view" },
+  { href: "/realisasi-jadwal-kerja", label: "Realisasi Jadwal Kerja", icon: ClipboardCheck, permission: "realisasi_jadwal_kerja.view" },
 ];
 
 export function AppSidebar() {
