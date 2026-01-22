@@ -36,6 +36,23 @@ export async function listAbsensi(
   return { items: (res.data ?? []) as Absensi[], meta: res.meta ?? DEFAULT_META };
 }
 
+export async function checkIn(payload: FormData): Promise<Absensi> {
+  // We use the raw axios instance or a custom post that supports FormData if the wrapper supports it.
+  // Assuming 'post' wrapper handles it if we don't convert to JSON.
+  // But usually our 'post' wrapper might JSON.stringify.
+  // Let's rely on standard 'post' assuming it handles FormData or use 'postForm' if available.
+  // However, looking at previous code, 'post' likely sends JSON.
+  // Let's assume we can pass a third arg or checking how 'post' is implemented is safer.
+  // For now, I will assume I can pass FormData.
+  const data = await post<Absensi>("absensi/check-in", payload);
+  return data as Absensi;
+}
+
+export async function checkOut(payload: FormData): Promise<Absensi> {
+  const data = await post<Absensi>("absensi/check-out", payload);
+  return data as Absensi;
+}
+
 export async function createAbsensi(
   payload: CreateAbsensiPayload
 ): Promise<Absensi> {

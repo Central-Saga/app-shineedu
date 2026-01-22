@@ -143,6 +143,7 @@ export function AbsensiForm({ initialData, isEdit = false }: AbsensiFormProps) {
               <DatePicker
                 date={tanggal}
                 setDate={(d) => setValue("tanggal", d as Date, { shouldValidate: true })}
+                disabled={true}
               />
               {errors.tanggal && (
                 <p className="text-sm text-destructive">{errors.tanggal.message}</p>

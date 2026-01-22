@@ -73,6 +73,7 @@ export function PengaturanCutiTable({
               <TableRow>
                 <TableHead>Kategori</TableHead>
                 <TableHead>Subtipe</TableHead>
+                <TableHead>Mapel</TableHead>
                 <TableHead>Jenis</TableHead>
                 <TableHead>Periode</TableHead>
                 <TableHead>Maks Pengajuan</TableHead>
@@ -88,6 +89,11 @@ export function PengaturanCutiTable({
                   <TableCell className="capitalize">{item.kategori_karyawan}</TableCell>
                   <TableCell className="capitalize">
                     {item.subtipe_kontrak ? item.subtipe_kontrak.replace("_", " ") : "-"}
+                  </TableCell>
+                  <TableCell className="capitalize">
+                    <Badge variant="outline">
+                      {item.kategori_mapel === "all" ? "Semua" : item.kategori_mapel?.replace("_", " ")}
+                    </Badge>
                   </TableCell>
                   <TableCell className="capitalize">{item.jenis}</TableCell>
                   <TableCell className="capitalize">{item.periode || "-"}</TableCell>

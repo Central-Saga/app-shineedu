@@ -11,7 +11,9 @@ export interface Absensi {
   status_kehadiran: StatusKehadiran;
   jam_masuk?: string | null; // HH:mm:ss
   jam_pulang?: string | null; // HH:mm:ss
+  durasi?: number | null;
   durasi_menit?: number | null;
+  karyawan_nama?: string | null;
   sumber_absen?: SumberAbsen | null;
   catatan?: string | null;
   created_at?: string | null;

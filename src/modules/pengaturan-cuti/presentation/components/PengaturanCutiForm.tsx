@@ -28,6 +28,7 @@ import type { PengaturanCuti } from "../../domain/entities";
 const formSchema = z.object({
   kategori_karyawan: z.enum(["tetap", "kontrak", "freelance"]),
   subtipe_kontrak: z.enum(["full_time", "part_time"]).optional().nullable(),
+  kategori_mapel: z.enum(["coding", "non_coding", "all"]),
   jenis: z.enum(["cuti", "izin", "sakit"]),
   periode: z.enum(["bulanan", "tahunan"]),
   maksimal_pengajuan: z.union([z.string(), z.number()]).optional().nullable(),
@@ -58,6 +59,7 @@ export function PengaturanCutiForm({ initialData, isEdit = false }: PengaturanCu
     defaultValues: {
       kategori_karyawan: (initialData?.kategori_karyawan as any) || "tetap",
       subtipe_kontrak: (initialData?.subtipe_kontrak as any) || null,
+      kategori_mapel: initialData?.kategori_mapel || "all",
       jenis: initialData?.jenis || "cuti",
       periode: initialData?.periode || "tahunan",
       maksimal_pengajuan: initialData?.maksimal_pengajuan ?? "",
@@ -70,6 +72,7 @@ export function PengaturanCutiForm({ initialData, isEdit = false }: PengaturanCu
 
   const kategori = watch("kategori_karyawan");
   const subtipe = watch("subtipe_kontrak");
+  const kategoriMapel = watch("kategori_mapel");
   const jenis = watch("jenis");
   const periode = watch("periode");
   const potonganTipe = watch("potongan_tipe");
@@ -97,10 +100,10 @@ export function PengaturanCutiForm({ initialData, isEdit = false }: PengaturanCu
       };
 
       if (isEdit && initialData) {
-        await updatePengaturanCuti(initialData.id, payload);
+        await updatePengaturanCuti(initialData.id, payload as any);
         toast.success("Aturan cuti diperbarui");
       } else {
-        await createPengaturanCuti(payload);
+        await createPengaturanCuti(payload as any);
         toast.success("Aturan cuti dibuat");
       }
       router.push("/pengaturan-cuti");
@@ -158,6 +161,26 @@ export function PengaturanCutiForm({ initialData, isEdit = false }: PengaturanCu
                 )}
               </div>
             )}
+
+            <div className="space-y-2">
+              <Label>Kategori Mapel</Label>
+              <Select
+                value={kategoriMapel}
+                onValueChange={(v) => setValue("kategori_mapel", v as any, { shouldValidate: true })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih Kat. Mapel" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Mapel</SelectItem>
+                  <SelectItem value="coding">Coding</SelectItem>
+                  <SelectItem value="non_coding">Non-Coding</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.kategori_mapel && (
+                <p className="text-sm text-destructive">{errors.kategori_mapel.message}</p>
+              )}
+            </div>
 
             <div className="space-y-2">
               <Label>Jenis Pengajuan</Label>

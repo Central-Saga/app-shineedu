@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, BarChart2, CheckCircle, Clock } from "lucide-react";
+import { Plus, BarChart2, CheckCircle, Clock, Camera } from "lucide-react";
 import { toast } from "sonner";
 import {
   listAbsensi,
@@ -98,6 +98,7 @@ export default function AbsensiPage() {
   const [employeeOptions, setEmployeeOptions] = useState<Employee[]>([]);
 
   const canCreate = authStore.hasPermission("absensi.create");
+  const canManage = authStore.hasPermission("absensi.manage");
   const canUpdate = authStore.hasPermission("absensi.update");
   const canDelete = authStore.hasPermission("absensi.delete");
 
@@ -198,13 +199,22 @@ export default function AbsensiPage() {
         title="Absensi"
         description="Data kehadiran karyawan"
         actions={
-          canCreate && (
-            <Button asChild>
-              <Link href="/absensi/new">
-                <Plus className="mr-2 size-4" /> Tambah Absensi
-              </Link>
-            </Button>
-          )
+          <div className="flex gap-2">
+            {canCreate && (
+              <Button asChild variant="secondary">
+                <Link href="/absensi/scan">
+                  <Camera className="mr-2 size-4" /> Scan
+                </Link>
+              </Button>
+            )}
+            {canManage && (
+              <Button asChild>
+                <Link href="/absensi/new">
+                  <Plus className="mr-2 size-4" /> Tambah Absensi
+                </Link>
+              </Button>
+            )}
+          </div>
         }
       />
 
