@@ -17,8 +17,8 @@ export default function RootLayout({
   return (
     <html lang="id" suppressHydrationWarning>
       <body className="antialiased">
-        {/* <AuthStoreHydration /> */}
-        {/* <SessionTimeout /> */}
+        <AuthStoreHydration />
+        <SessionTimeout />
         {children}
         <Toaster richColors position="top-right" />
       </body>
