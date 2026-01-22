@@ -60,3 +60,11 @@ export async function updateRealisasiJadwal(
 export async function deleteRealisasiJadwal(id: number): Promise<void> {
   await del(`realisasi-jadwal-kerja/${id}`);
 }
+
+export async function syncRealisasiJadwal(tanggal?: string): Promise<{ created_count: number; date: string; day: string }> {
+  const data = await post<{ created_count: number; date: string; day: string }>(
+    "realisasi-jadwal-kerja/sync",
+    { tanggal }
+  );
+  return data;
+}

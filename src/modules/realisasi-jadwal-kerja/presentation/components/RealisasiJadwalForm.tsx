@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,11 +29,11 @@ import { REALISASI_JADWAL_STATUS_VALUES } from "../../domain/entities";
 
 const schema = z.object({
   tanggal: z.string().min(1, "Tanggal wajib diisi"),
-  jadwal_kerja_id: z.union([z.string(), z.number()]).transform(v => Number(v)),
+  jadwal_kerja_id: z.number().min(1, "Jadwal wajib dipilih"),
   status: z.enum(REALISASI_JADWAL_STATUS_VALUES),
   ruangan_kelas: z.string().optional().nullable(),
-  guru_pengajar_id: z.union([z.string(), z.number()]).optional().nullable().transform(v => v ? Number(v) : null),
-  guru_pengganti_id: z.union([z.string(), z.number()]).optional().nullable().transform(v => v ? Number(v) : null),
+  guru_pengajar_id: z.number().optional().nullable(),
+  guru_pengganti_id: z.number().optional().nullable(),
   sumber: z.string().optional().nullable(),
   catatan: z.string().optional().nullable(),
 });
@@ -86,10 +87,32 @@ export function RealisasiJadwalForm({
   const currentPengganti = watch("guru_pengganti_id");
 
   // Sync pengajar when jadwal changes
-  // const selectedJadwal = jadwalList.find(j => j.id === Number(currentJadwal));
+  const currentRuangan = watch("ruangan_kelas");
+  const currentSumber = watch("sumber");
+
+  useEffect(() => {
+    const selectedJadwal = jadwalList.find(j => j.id === Number(currentJadwal));
+    if (!selectedJadwal) return;
+
+    const isRuanganOverride = currentRuangan && currentRuangan !== selectedJadwal.ruangan_kelas;
+    const isGuruOverride = currentGuru && Number(currentGuru) !== selectedJadwal.guru_pengajar_id;
+    const isSubstitution = !!currentPengganti;
+
+    if (isRuanganOverride || isGuruOverride || isSubstitution) {
+      if (!currentSumber?.includes("Override")) {
+        setValue("sumber", "Manual (Override)", { shouldDirty: true });
+      }
+    } else {
+      // If everything matches and it was an override, maybe revert to original or Sistem?
+      // But let's check if it was originally Sistem
+      if (initialData?.sumber?.includes("Sistem") && currentSumber?.includes("Override")) {
+        setValue("sumber", initialData.sumber, { shouldDirty: true });
+      }
+    }
+  }, [currentRuangan, currentGuru, currentPengganti, currentJadwal, currentSumber, jadwalList, setValue, initialData]);
 
   return (
-    <form onSubmit={handleSubmit((data) => onSubmit(data as unknown as CreateRealisasiJadwalPayload))} className="space-y-6">
+    <form onSubmit={handleSubmit((data) => onSubmit(data as CreateRealisasiJadwalPayload))} className="space-y-6">
       <Accordion defaultValue="ref" className="w-full">
         {/* Panel 1: Referensi Jadwal & Tanggal */}
         <AccordionItem value="ref">
@@ -104,6 +127,7 @@ export function RealisasiJadwalForm({
                   date={currentTanggal ? new Date(currentTanggal) : null}
                   setDate={(d) => setValue("tanggal", d ? format(d, "yyyy-MM-dd") : "")}
                   placeholder="Pilih tanggal"
+                  disabled={!!initialData}
                 />
                 {errors.tanggal && <p className="text-destructive text-sm">{errors.tanggal.message}</p>}
               </div>
@@ -112,8 +136,9 @@ export function RealisasiJadwalForm({
                 <Select
                   value={String(currentJadwal)}
                   onValueChange={(v) => {
-                    setValue("jadwal_kerja_id", v);
-                    const j = jadwalList.find(item => String(item.id) === v);
+                    const numV = Number(v);
+                    setValue("jadwal_kerja_id", numV);
+                    const j = jadwalList.find(item => item.id === numV);
                     if (j) {
                       setValue("guru_pengajar_id", j.guru_pengajar_id);
                       setValue("ruangan_kelas", j.ruangan_kelas);
@@ -148,7 +173,7 @@ export function RealisasiJadwalForm({
                 <Label>Guru Pengajar (Default)</Label>
                 <Select
                   value={String(currentGuru || "")}
-                  onValueChange={(v) => setValue("guru_pengajar_id", v)}
+                  onValueChange={(v) => setValue("guru_pengajar_id", Number(v))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih pengajar" />
@@ -164,14 +189,14 @@ export function RealisasiJadwalForm({
               <div className="space-y-2">
                 <Label>Guru Pengganti (Jika ada)</Label>
                 <Select
-                  value={String(currentPengganti || "")}
-                  onValueChange={(v) => setValue("guru_pengganti_id", v || null)}
+                  value={currentPengganti ? String(currentPengganti) : "none"}
+                  onValueChange={(v) => setValue("guru_pengganti_id", v === "none" ? null : Number(v))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih pengganti" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tanpa Pengganti</SelectItem>
+                    <SelectItem value="none">Tanpa Pengganti</SelectItem>
                     {employees.map(e => (
                       <SelectItem key={e.id} value={String(e.id)}>{e.user?.name || e.kode_karyawan}</SelectItem>
                     ))}

@@ -12,6 +12,7 @@ import { useDebouncedValue } from "@/shared/presentation/hooks/useDebouncedValue
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import { getRealisasiJadwalListUsecase } from "@/modules/realisasi-jadwal-kerja/application/usecases/getRealisasiJadwalList.usecase";
 import { deleteRealisasiJadwalUsecase } from "@/modules/realisasi-jadwal-kerja/application/usecases/deleteRealisasiJadwal.usecase";
+import { syncRealisasiJadwal } from "@/modules/realisasi-jadwal-kerja/infrastructure/realisasi-jadwal-kerja.repository";
 import { getEmployeesUsecase } from "@/modules/employees/application/usecases/getEmployees.usecase";
 import { getJadwalKerjaListUsecase } from "@/modules/jadwal-kerja/application/usecases/getJadwalKerjaList.usecase";
 import { StatsCard } from "@/shared/presentation/components/StatsCard";
@@ -42,7 +43,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, ClipboardCheck, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { RefreshCw, ClipboardCheck, Clock, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 const SORT_OPTIONS = [
@@ -89,6 +90,7 @@ export default function RealisasiJadwalPage() {
     ditolak: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   
   const [deleteItem, setDeleteItem] = useState<RealisasiJadwal | null>(null);
 
@@ -202,6 +204,19 @@ export default function RealisasiJadwalPage() {
     }
   }
 
+  async function handleSync() {
+    setSyncing(true);
+    try {
+      const res = await syncRealisasiJadwal();
+      toast.success(`Berhasil sinkronisasi ${res.created_count} jadwal untuk hari ${res.day}`);
+      loadData(buildParams());
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal sinkronisasi jadwal");
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   if (!allowed) return null;
 
   return (
@@ -212,11 +227,9 @@ export default function RealisasiJadwalPage() {
         actions={
           <div className="flex items-center gap-2">
             {canCreate && (
-              <Button asChild>
-                <Link href="/realisasi-jadwal-kerja/new">
-                  <Plus className="mr-2 size-4" />
-                  Tambah Realisasi
-                </Link>
+              <Button onClick={handleSync} disabled={syncing}>
+                <RefreshCw className={`mr-2 size-4 ${syncing ? 'animate-spin' : ''}`} />
+                {syncing ? 'Sinkronisasi…' : 'Sinkronisasi Hari Ini'}
               </Button>
             )}
           </div>
@@ -329,6 +342,7 @@ export default function RealisasiJadwalPage() {
           <RealisasiJadwalTable
             items={items}
             loading={loading}
+            onView={(item) => router.push(`/realisasi-jadwal-kerja/${item.id}`)}
             onEdit={(item) => router.push(`/realisasi-jadwal-kerja/${item.id}/edit`)}
             onDelete={(item) => setDeleteItem(item)}
             canUpdate={canUpdate}

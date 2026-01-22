@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 
 function formatDate(s: string | null | undefined): string {
   if (!s) return "-";
@@ -32,6 +32,7 @@ function formatDate(s: string | null | undefined): string {
 interface RealisasiJadwalTableProps {
   items: RealisasiJadwal[];
   loading?: boolean;
+  onView: (item: RealisasiJadwal) => void;
   onEdit: (item: RealisasiJadwal) => void;
   onDelete: (item: RealisasiJadwal) => void;
   canUpdate: boolean;
@@ -41,6 +42,7 @@ interface RealisasiJadwalTableProps {
 export function RealisasiJadwalTable({
   items,
   loading = false,
+  onView,
   onEdit,
   onDelete,
   canUpdate,
@@ -91,7 +93,7 @@ export function RealisasiJadwalTable({
                   </div>
                 </TableCell>
                 <TableCell>
-                  {item.guru_pengajar?.user?.name || item.jadwal_kerja?.guru_pengajar?.user?.name || "-"}
+                  {item.guru_pengajar?.user?.name ?? item.jadwal_kerja?.guru_pengajar?.user?.name ?? "-"}
                 </TableCell>
                 <TableCell>
                   {item.guru_pengganti?.user?.name ?? "-"}
@@ -113,6 +115,20 @@ export function RealisasiJadwalTable({
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onView(item)}
+                          className="text-slate-500 hover:text-rose-600 hover:bg-rose-50"
+                        >
+                          <Eye className="size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Lihat Detail</TooltipContent>
+                    </Tooltip>
+
                     {canUpdate && (
                       <Tooltip>
                         <TooltipTrigger asChild>
