@@ -23,6 +23,7 @@ import { Plus, Save, Trash2, AlertCircle, Shield, Key } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { StatsCard } from "@/shared/presentation/components/StatsCard";
+import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
 
 export default function RolesPage() {
   const { allowed } = usePermissionGuard("roles.view");
@@ -155,6 +156,13 @@ export default function RolesPage() {
 
   async function handleDelete() {
     if (!selectedRole || isReadOnly) return;
+    
+    // Safety check just in case ReadOnly logic failed or was bypassed
+    if (selectedRole.name === 'superadmin') {
+         toast.error("Role Superadmin tidak dapat dihapus!");
+         return;
+    }
+
     setIsDeleting(true);
     try {
       await rolesUsecase.deleteRoleUsecase(selectedRole.id);
@@ -169,6 +177,16 @@ export default function RolesPage() {
     }
   }
 
+  const handleExport = async (format: string) => {
+    // Current filter is just sorting
+    await rolesUsecase.exportRolesUsecase(format, {
+        page: 1,
+        per_page: 1000, 
+        sort_by: "name",
+        sort_dir: "asc" 
+    });
+  };
+
   if (!allowed) return null;
 
   return (
@@ -177,14 +195,17 @@ export default function RolesPage() {
         title="Roles"
         description="Kelola role dan permission"
         actions={
-          canCreate ? (
-            <Button asChild>
-              <Link href="/roles/new">
-                <Plus className="mr-2 size-4" />
-                Tambah Role
-              </Link>
-            </Button>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            <ExportDropdown onExport={handleExport} />
+            {canCreate && (
+              <Button asChild>
+                <Link href="/roles/new">
+                  <Plus className="mr-2 size-4" />
+                  Tambah Role
+                </Link>
+              </Button>
+            )}
+          </div>
         }
       />
 

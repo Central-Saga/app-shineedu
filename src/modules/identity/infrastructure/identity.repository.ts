@@ -4,6 +4,8 @@ import {
   post,
   put,
   del,
+  download,
+  upload,
   DEFAULT_META,
 } from "@/shared/infrastructure/api/httpClient";
 import { buildQuery } from "@/shared/lib/buildQuery";
@@ -67,6 +69,10 @@ export async function syncRolePermissions(
   return put<Role>(`roles/${id}/permissions`, { permissions }) as Promise<Role>;
 }
 
+export async function exportRoles(format: string, params?: ListRolesParams): Promise<void> {
+  return download("roles/export", { ...params, export: format });
+}
+
 // Users
 export async function listUsers(
   params: ListUsersParams
@@ -107,6 +113,14 @@ export async function updateUserRole(
   roleName: string
 ): Promise<IdentityUser> {
   return put<IdentityUser>(`users/${id}/role`, { role: roleName }) as Promise<IdentityUser>;
+}
+
+export async function exportUsers(format: string, params?: ListUsersParams): Promise<void> {
+  return download("users/export", { ...params, export: format });
+}
+
+export async function importUsers(file: File): Promise<void> {
+  return upload("users/import", file);
 }
 
 // Permissions

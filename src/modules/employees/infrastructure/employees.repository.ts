@@ -4,6 +4,8 @@ import {
   post,
   put,
   del,
+  download,
+  upload,
   DEFAULT_META,
 } from "@/shared/infrastructure/api/httpClient";
 import { buildQuery } from "@/shared/lib/buildQuery";
@@ -65,3 +67,12 @@ export async function updateEmployee(
 export async function deleteEmployee(id: number): Promise<void> {
   await del(`employees/${id}`);
 }
+
+export async function exportEmployees(format: string, params?: ListEmployeesParams): Promise<void> {
+  return download("employees/export", { ...params, export: format });
+}
+
+export async function importEmployees(file: File): Promise<void> {
+  return upload("employees/import", file);
+}
+
