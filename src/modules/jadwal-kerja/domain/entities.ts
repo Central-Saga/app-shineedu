@@ -1,7 +1,7 @@
 import type { Employee } from "@/modules/employees/domain/entities";
 
 export const JADWAL_KERJA_KATEGORI_VALUES = ["coding", "non_coding"] as const;
-export const JADWAL_KERJA_STATUS_VALUES = ["aktif", "nonaktif"] as const;
+export const JADWAL_KERJA_STATUS_VALUES = ["Aktif", "Non Aktif"] as const;
 
 export type JadwalKerjaKategori = (typeof JADWAL_KERJA_KATEGORI_VALUES)[number];
 export type JadwalKerjaStatus = (typeof JADWAL_KERJA_STATUS_VALUES)[number];
@@ -11,7 +11,7 @@ export interface JadwalKerja {
   kategori: JadwalKerjaKategori;
   mata_pelajaran: string;
   hari: string;
-  nomor_sesi: number;
+  nomor_sesi: string;
   jam_mulai: string;
   jam_selesai: string;
   tarif: number | string;
@@ -27,7 +27,7 @@ export interface CreateJadwalKerjaPayload {
   kategori: JadwalKerjaKategori;
   mata_pelajaran: string;
   hari: string;
-  nomor_sesi: number;
+  nomor_sesi: string;
   jam_mulai: string;
   jam_selesai: string;
   tarif: number;

@@ -18,7 +18,7 @@ export interface ListJadwalKerjaParams {
   page?: number;
   per_page?: number;
   q?: string;
-  status?: "aktif" | "nonaktif";
+  status?: "Aktif" | "Non Aktif";
   kategori?: "coding" | "non_coding";
   hari?: string;
   guru_pengajar_id?: number | string;

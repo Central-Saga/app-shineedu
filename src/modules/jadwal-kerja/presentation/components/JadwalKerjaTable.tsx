@@ -18,14 +18,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 
 interface JadwalKerjaTableProps {
   items: JadwalKerja[];
   loading?: boolean;
+  onView: (item: JadwalKerja) => void;
   onEdit: (item: JadwalKerja) => void;
   onDelete: (item: JadwalKerja) => void;
-  onStatusChange?: (item: JadwalKerja, newStatus: "aktif" | "nonaktif") => void;
+  onStatusChange?: (item: JadwalKerja, newStatus: "Aktif" | "Non Aktif") => void;
   canUpdate: boolean;
   canDelete: boolean;
 }
@@ -33,34 +34,24 @@ interface JadwalKerjaTableProps {
 export function JadwalKerjaTable({
   items,
   loading = false,
+  onView,
   onEdit,
   onDelete,
   onStatusChange,
   canUpdate,
   canDelete,
 }: JadwalKerjaTableProps) {
-  const colCount = 8;
-
-  const formatCurrency = (val: string | number) => {
-    const n = typeof val === "string" ? parseFloat(val) : val;
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(n);
-  };
+  const colCount = 6;
 
   return (
     <div className="w-full overflow-x-auto">
       <Table className="min-w-[1000px]">
         <TableHeader>
           <TableRow>
-            <TableHead>Kategori</TableHead>
             <TableHead>Mata Pelajaran</TableHead>
             <TableHead>Hari / Sesi</TableHead>
             <TableHead>Waktu</TableHead>
             <TableHead>Pengajar</TableHead>
-            <TableHead>Tarif</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="w-[120px]">Aksi</TableHead>
           </TableRow>
@@ -86,11 +77,6 @@ export function JadwalKerjaTable({
           ) : (
             items.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>
-                  <Badge variant="secondary" className="capitalize">
-                    {item.kategori.replace("_", " ")}
-                  </Badge>
-                </TableCell>
                 <TableCell className="font-medium">{item.mata_pelajaran}</TableCell>
                 <TableCell>
                   {item.hari} / Sesi {item.nomor_sesi}
@@ -101,12 +87,11 @@ export function JadwalKerjaTable({
                 <TableCell>
                   {item.guru_pengajar?.user?.name ?? "-"}
                 </TableCell>
-                <TableCell>{formatCurrency(item.tarif)}</TableCell>
                 <TableCell>
                   <Badge
                     variant="outline"
                     className={
-                      item.status === "aktif"
+                      item.status === "Aktif"
                         ? "border-emerald-300 bg-emerald-50 text-emerald-700"
                         : "border-rose-200 bg-rose-50 text-rose-700"
                     }
@@ -116,11 +101,25 @@ export function JadwalKerjaTable({
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onView(item)}
+                          className="text-slate-500 hover:text-rose-600 hover:bg-rose-50"
+                        >
+                          <Eye className="size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Lihat Detail</TooltipContent>
+                    </Tooltip>
+
                     {canUpdate && onStatusChange && (
                       <Switch
-                        checked={item.status === "aktif"}
+                        checked={item.status === "Aktif"}
                         onCheckedChange={(c: boolean) => 
-                          onStatusChange(item, c ? "aktif" : "nonaktif")
+                          onStatusChange(item, c ? "Aktif" : "Non Aktif")
                         }
                         className="scale-75 shrink-0 mr-1"
                       />

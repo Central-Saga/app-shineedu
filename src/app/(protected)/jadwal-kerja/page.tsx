@@ -172,8 +172,8 @@ export default function JadwalKerjaPage() {
       (async () => {
         const [all, a, n, c, nc] = await Promise.all([
           getJadwalKerjaListUsecase({ per_page: 1 }),
-          getJadwalKerjaListUsecase({ per_page: 1, status: "aktif" }),
-          getJadwalKerjaListUsecase({ per_page: 1, status: "nonaktif" }),
+          getJadwalKerjaListUsecase({ per_page: 1, status: "Aktif" }),
+          getJadwalKerjaListUsecase({ per_page: 1, status: "Non Aktif" }),
           getJadwalKerjaListUsecase({ per_page: 1, kategori: "coding" }),
           getJadwalKerjaListUsecase({ per_page: 1, kategori: "non_coding" }),
         ]);
@@ -200,7 +200,7 @@ export default function JadwalKerjaPage() {
     sortDir,
   ]);
 
-  function handleStatusChange(item: JadwalKerja, newStatus: "aktif" | "nonaktif") {
+  function handleStatusChange(item: JadwalKerja, newStatus: "Aktif" | "Non Aktif") {
     const prev = item.status;
     setItems((prevI) =>
       prevI.map((i) => (i.id === item.id ? { ...i, status: newStatus } : i))
@@ -294,8 +294,8 @@ export default function JadwalKerjaPage() {
                 label: "Status",
                 options: [
                   { label: "Semua Status", value: "__all__" },
-                  { label: "Aktif", value: "aktif" },
-                  { label: "Nonaktif", value: "nonaktif" },
+                  { label: "Aktif", value: "Aktif" },
+                  { label: "Non Aktif", value: "Non Aktif" },
                 ],
                 value: filterStatus,
                 onChange: setFilterStatus,
@@ -371,6 +371,7 @@ export default function JadwalKerjaPage() {
           <JadwalKerjaTable
             items={items}
             loading={loading}
+            onView={(item) => router.push(`/jadwal-kerja/${item.id}`)}
             onEdit={(item) => router.push(`/jadwal-kerja/${item.id}/edit`)}
             onDelete={(item) => setDeleteItem(item)}
             onStatusChange={handleStatusChange}

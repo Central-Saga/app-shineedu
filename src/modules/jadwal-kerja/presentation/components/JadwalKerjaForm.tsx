@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -22,13 +21,18 @@ import {
 } from "@/components/ui/select";
 import type { Employee } from "@/modules/employees/domain/entities";
 import type { JadwalKerja, CreateJadwalKerjaPayload } from "../../domain/entities";
-import { JADWAL_KERJA_KATEGORI_VALUES, JADWAL_KERJA_STATUS_VALUES } from "../../domain/entities";
+import {
+  JADWAL_KERJA_KATEGORI_VALUES,
+  JADWAL_KERJA_STATUS_VALUES,
+  type JadwalKerjaKategori,
+  type JadwalKerjaStatus,
+} from "../../domain/entities";
 
 const schema = z.object({
   kategori: z.enum(JADWAL_KERJA_KATEGORI_VALUES),
   mata_pelajaran: z.string().min(1, "Mata pelajaran wajib diisi"),
   hari: z.string().min(1, "Hari wajib diisi"),
-  nomor_sesi: z.union([z.string(), z.number()]).transform(v => Number(v)),
+  nomor_sesi: z.string().min(1, "Nomor sesi wajib diisi"),
   jam_mulai: z.string().min(1, "Jam mulai wajib diisi"),
   jam_selesai: z.string().min(1, "Jam selesai wajib diisi"),
   tarif: z.union([z.string(), z.number()]).transform(v => Number(v)),
@@ -73,15 +77,15 @@ export function JadwalKerjaForm({
       nomor_sesi: initialData.nomor_sesi,
       jam_mulai: initialData.jam_mulai,
       jam_selesai: initialData.jam_selesai,
-      tarif: initialData.tarif,
+      tarif: Number(initialData.tarif),
       status: initialData.status,
       ruangan_kelas: initialData.ruangan_kelas,
-      guru_pengajar_id: initialData.guru_pengajar_id,
+      guru_pengajar_id: Number(initialData.guru_pengajar_id),
     } : {
       kategori: "coding",
-      status: "aktif",
+      status: "Aktif",
       hari: "Senin",
-      nomor_sesi: 1,
+      nomor_sesi: "1",
     },
   });
 
@@ -91,8 +95,8 @@ export function JadwalKerjaForm({
   const currentGuru = watch("guru_pengajar_id");
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <Accordion type="multiple" defaultValue={["info", "waktu", "pengajar"]} className="w-full">
+    <form onSubmit={handleSubmit((data) => onSubmit(data as unknown as CreateJadwalKerjaPayload))} className="space-y-6">
+      <Accordion defaultValue="info" className="w-full">
         {/* Panel 1: Informasi Jadwal */}
         <AccordionItem value="info">
           <AccordionTrigger className="text-lg font-semibold">
@@ -104,7 +108,7 @@ export function JadwalKerjaForm({
                 <Label>Kategori</Label>
                 <Select
                   value={currentKategori}
-                  onValueChange={(v) => setValue("kategori", v as any)}
+                  onValueChange={(v) => setValue("kategori", v as JadwalKerjaKategori)}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -125,14 +129,14 @@ export function JadwalKerjaForm({
                 <Label>Status</Label>
                 <Select
                   value={currentStatus}
-                  onValueChange={(v) => setValue("status", v as any)}
+                  onValueChange={(v) => setValue("status", v as JadwalKerjaStatus)}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="aktif">Aktif</SelectItem>
-                    <SelectItem value="nonaktif">Non Aktif</SelectItem>
+                    <SelectItem value="Aktif">Aktif</SelectItem>
+                    <SelectItem value="Non Aktif">Non Aktif</SelectItem>
                   </SelectContent>
                 </Select>
                 {errors.status && <p className="text-destructive text-sm">{errors.status.message}</p>}
@@ -167,7 +171,7 @@ export function JadwalKerjaForm({
               </div>
               <div className="space-y-2">
                 <Label>Nomor Sesi</Label>
-                <Input type="number" {...register("nomor_sesi")} placeholder="1" />
+                <Input {...register("nomor_sesi")} placeholder="1" />
                 {errors.nomor_sesi && <p className="text-destructive text-sm">{errors.nomor_sesi.message}</p>}
               </div>
               <div className="space-y-2">
@@ -199,8 +203,8 @@ export function JadwalKerjaForm({
               <div className="space-y-2">
                 <Label>Guru Pengajar</Label>
                 <Select
-                  value={String(currentGuru)}
-                  onValueChange={(v) => setValue("guru_pengajar_id", v)}
+                  value={String(currentGuru || "")}
+                  onValueChange={(v) => setValue("guru_pengajar_id", Number(v))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih pengajar" />

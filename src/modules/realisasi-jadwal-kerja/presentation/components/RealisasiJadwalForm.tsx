@@ -90,7 +90,7 @@ export function RealisasiJadwalForm({
 
   return (
     <form onSubmit={handleSubmit((data) => onSubmit(data as unknown as CreateRealisasiJadwalPayload))} className="space-y-6">
-      <Accordion type="multiple" defaultValue={["ref", "pengajar", "ruangan", "status"]} className="w-full">
+      <Accordion defaultValue="ref" className="w-full">
         {/* Panel 1: Referensi Jadwal & Tanggal */}
         <AccordionItem value="ref">
           <AccordionTrigger className="text-lg font-semibold">
