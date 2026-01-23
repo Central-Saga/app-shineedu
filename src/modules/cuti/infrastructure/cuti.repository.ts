@@ -37,7 +37,9 @@ export async function listCuti(
   return { items: (res.data ?? []) as Cuti[], meta: res.meta ?? DEFAULT_META };
 }
 
-export async function createCuti(payload: CreateCutiPayload): Promise<Cuti> {
+export async function createCuti(
+  payload: CreateCutiPayload | FormData
+): Promise<Cuti> {
   const data = await post<Cuti>("cuti", payload);
   return data as Cuti;
 }

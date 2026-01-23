@@ -20,7 +20,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, addDays, isBefore, startOfDay, differenceInDays } from "date-fns";
 import { toast } from "sonner";
-import { Info, AlertTriangle, Paperclip, X } from "lucide-react";
+import { AlertTriangle, Paperclip, X } from "lucide-react";
 import {
   createCuti,
   updateCuti,
@@ -31,13 +31,13 @@ import type { PengaturanCuti } from "@/modules/pengaturan-cuti/domain/entities";
 import { getEmployeesUsecase } from "@/modules/employees/application/usecases/getEmployees.usecase";
 import type { Employee } from "@/modules/employees/domain/entities";
 import { authStore, useAuthStore } from "@/modules/auth/infrastructure/auth.store";
-import { Separator } from "@/components/ui/separator";
+
 
 const formSchema = z.object({
   karyawan_id: z.string().min(1, "Karyawan wajib dipilih"),
   jenis: z.enum(["izin", "sakit"]),
-  start_date: z.date({ required_error: "Tanggal mulai wajib diisi" }),
-  end_date: z.date({ required_error: "Tanggal selesai wajib diisi" }),
+  start_date: z.date({ message: "Tanggal mulai wajib diisi" }),
+  end_date: z.date({ message: "Tanggal selesai wajib diisi" }),
   status: z.enum(["diajukan", "disetujui", "ditolak", "dibatalkan"]),
   catatan: z.string().optional(),
   bukti_pendukung: z.any().optional(),
@@ -83,7 +83,6 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
   const buktiPendukung = watch("bukti_pendukung");
 
   const selectedEmployee = employees.find((e) => String(e.id) === selectedKaryawanId);
-  const isFreelance = selectedEmployee?.kategori_karyawan === "freelance";
   const isIzin = selectedJenis === "izin";
   const isSakit = selectedJenis === "sakit";
 
@@ -161,7 +160,7 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
         }
       }
     }
-  }, [isSakit, disabledDates.before, setValue]);
+  }, [isSakit, disabledDates.before, setValue, selectedEndDate, selectedStartDate]);
 
   useEffect(() => {
     if (selectedStartDate && selectedEndDate && isBefore(startOfDay(selectedEndDate), startOfDay(selectedStartDate))) {
@@ -197,10 +196,10 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
       }
 
       if (isEdit && initialData) {
-        await updateCuti(initialData.id, formData as any);
+        await updateCuti(initialData.id, formData);
         toast.success("Pengajuan cuti diperbarui");
       } else {
-        await createCuti(formData as any);
+        await createCuti(formData);
         toast.success("Pengajuan cuti dibuat");
       }
       router.push("/cuti");
