@@ -16,6 +16,8 @@ import { deleteJadwalKerjaUsecase } from "@/modules/jadwal-kerja/application/use
 import { getEmployeesUsecase } from "@/modules/employees/application/usecases/getEmployees.usecase";
 import { StatsCard } from "@/shared/presentation/components/StatsCard";
 import { JadwalKerjaTable } from "@/modules/jadwal-kerja/presentation/components/JadwalKerjaTable";
+import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
+import { exportJadwalKerjaUsecase } from "@/modules/jadwal-kerja/application/usecases/exportJadwalKerja.usecase";
 import {
   ForbiddenError,
   NotFoundError,
@@ -228,6 +230,11 @@ export default function JadwalKerjaPage() {
     }
   }
 
+  const handleExport = async (format: string) => {
+    const params = buildParams();
+    await exportJadwalKerjaUsecase(format, params);
+  };
+
   if (!allowed) return null;
 
   return (
@@ -237,6 +244,7 @@ export default function JadwalKerjaPage() {
         description="Pengelolaan jadwal kerja guru"
         actions={
           <div className="flex items-center gap-2">
+            <ExportDropdown onExport={handleExport} />
             {canCreate && (
               <Button asChild>
                 <Link href="/jadwal-kerja/new">

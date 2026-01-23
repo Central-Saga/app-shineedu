@@ -4,6 +4,7 @@ import {
   post,
   put,
   del,
+  download,
   DEFAULT_META,
 } from "@/shared/infrastructure/api/httpClient";
 import { buildQuery } from "@/shared/lib/buildQuery";
@@ -67,4 +68,8 @@ export async function syncRealisasiJadwal(tanggal?: string): Promise<{ created_c
     { tanggal }
   );
   return data;
+}
+
+export async function exportRealisasiJadwalKerja(format: string, params?: ListRealisasiJadwalParams): Promise<void> {
+  return download("realisasi-jadwal-kerja/export", { ...params, export: format });
 }

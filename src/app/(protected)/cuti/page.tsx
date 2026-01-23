@@ -26,6 +26,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Plus, CheckSquare, XCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
+import { exportCutiUsecase } from "@/modules/cuti/application/usecases/exportCuti.usecase";
 import {
   listCuti,
   deleteCuti,
@@ -184,6 +186,20 @@ export default function CutiPage() {
      }
   }
 
+  const handleExport = async (exportFormat: string) => {
+    const params = {
+      q: debouncedQ || undefined,
+      karyawan_id: karyawanFilter || undefined,
+      jenis: jenisFilter || undefined,
+      status: statusFilter || undefined,
+      start_date: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined,
+      end_date: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
+      sort_by: sortKey,
+      sort_dir: sortDir,
+    };
+    await exportCutiUsecase(exportFormat, params);
+  };
+
   if (!allowed) return null;
 
   return (
@@ -192,13 +208,16 @@ export default function CutiPage() {
         title="Pengajuan Cuti"
         description="Daftar pengajuan cuti dan izin karyawan"
         actions={
-          canCreate && (
-            <Button asChild>
-              <Link href="/cuti/new">
-                <Plus className="mr-2 size-4" /> Ajukan Cuti
-              </Link>
-            </Button>
-          )
+          <div className="flex gap-2">
+            <ExportDropdown onExport={handleExport} />
+            {canCreate && (
+              <Button asChild>
+                <Link href="/cuti/new">
+                  <Plus className="mr-2 size-4" /> Ajukan Cuti
+                </Link>
+              </Button>
+            )}
+          </div>
         }
       />
 

@@ -17,6 +17,8 @@ import { getEmployeesUsecase } from "@/modules/employees/application/usecases/ge
 import { getJadwalKerjaListUsecase } from "@/modules/jadwal-kerja/application/usecases/getJadwalKerjaList.usecase";
 import { StatsCard } from "@/shared/presentation/components/StatsCard";
 import { RealisasiJadwalTable } from "@/modules/realisasi-jadwal-kerja/presentation/components/RealisasiJadwalTable";
+import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
+import { exportRealisasiJadwalKerjaUsecase } from "@/modules/realisasi-jadwal-kerja/application/usecases/exportRealisasiJadwalKerja.usecase";
 import {
   ForbiddenError,
 } from "@/shared/infrastructure/api/errors";
@@ -217,6 +219,11 @@ export default function RealisasiJadwalPage() {
     }
   }
 
+  const handleExport = async (format: string) => {
+    const params = buildParams();
+    await exportRealisasiJadwalKerjaUsecase(format, params);
+  };
+
   if (!allowed) return null;
 
   return (
@@ -226,8 +233,9 @@ export default function RealisasiJadwalPage() {
         description="Pencatatan realisasi jadwal kerja guru"
         actions={
           <div className="flex items-center gap-2">
+            <ExportDropdown onExport={handleExport} />
             {canCreate && (
-              <Button onClick={handleSync} disabled={syncing}>
+              <Button onClick={handleSync} disabled={syncing} variant="outline">
                 <RefreshCw className={`mr-2 size-4 ${syncing ? 'animate-spin' : ''}`} />
                 {syncing ? 'Sinkronisasi…' : 'Sinkronisasi Hari Ini'}
               </Button>

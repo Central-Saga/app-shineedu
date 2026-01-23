@@ -5,6 +5,7 @@ import {
   post,
   put,
   del,
+  download,
   DEFAULT_META,
 } from "@/shared/infrastructure/api/httpClient";
 import { buildQuery } from "@/shared/lib/buildQuery";
@@ -80,4 +81,8 @@ export async function deleteAbsensi(id: number): Promise<void> {
 export async function getTodayAbsensi(): Promise<Absensi | null> {
   const data = await get<Absensi | null>("absensi/today");
   return data;
+}
+
+export async function exportAbsensi(format: string, params?: ListAbsensiParams): Promise<void> {
+  return download("absensi/export", { ...params, export: format });
 }

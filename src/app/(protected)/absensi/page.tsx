@@ -26,6 +26,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Plus, BarChart2, CheckCircle, Clock, Camera } from "lucide-react";
 import { toast } from "sonner";
+import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
+import { exportAbsensiUsecase } from "@/modules/absensi/application/usecases/exportAbsensi.usecase";
 import {
   listAbsensi,
   deleteAbsensi,
@@ -192,6 +194,20 @@ export default function AbsensiPage() {
     }
   }
 
+  const handleExport = async (exportFormat: string) => {
+    const params = {
+      q: debouncedQ || undefined,
+      status_kehadiran: statusFilter || undefined,
+      karyawan_id: karyawanFilter || undefined,
+      sumber_absen: sumberFilter || undefined,
+      start_date: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined,
+      end_date: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
+      sort_by: sortKey,
+      sort_dir: sortDir,
+    };
+    await exportAbsensiUsecase(exportFormat, params);
+  };
+
   if (!allowed) return null;
 
   return (
@@ -202,12 +218,13 @@ export default function AbsensiPage() {
         actions={
           <div className="flex gap-2">
             {canCreate && (
-              <Button asChild variant="secondary">
+              <Button asChild variant="outline">
                 <Link href="/absensi/scan">
                   <Camera className="mr-2 size-4" /> Scan
                 </Link>
               </Button>
             )}
+            <ExportDropdown onExport={handleExport} />
             {canManage && (
               <Button asChild>
                 <Link href="/absensi/new">

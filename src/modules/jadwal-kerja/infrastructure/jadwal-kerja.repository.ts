@@ -4,6 +4,7 @@ import {
   post,
   put,
   del,
+  download,
   DEFAULT_META,
 } from "@/shared/infrastructure/api/httpClient";
 import { buildQuery } from "@/shared/lib/buildQuery";
@@ -59,4 +60,8 @@ export async function updateJadwalKerja(
 
 export async function deleteJadwalKerja(id: number): Promise<void> {
   await del(`jadwal-kerja/${id}`);
+}
+
+export async function exportJadwalKerja(format: string, params?: ListJadwalKerjaParams): Promise<void> {
+  return download("jadwal-kerja/export", { ...params, export: format });
 }
