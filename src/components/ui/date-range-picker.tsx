@@ -19,19 +19,24 @@ export function DatePickerWithRange({
   className,
   date,
   setDate,
+  disabled,
+  disabledDates,
 }: React.HTMLAttributes<HTMLDivElement> & {
   date: DateRange | undefined
   setDate: (date: DateRange | undefined) => void
+  disabled?: boolean
+  disabledDates?: any
 }) {
   return (
     <div className={cn("grid gap-2", className)}>
-      <Popover>
+      <Popover open={disabled ? false : undefined}>
         <PopoverTrigger asChild>
           <Button
             id="date"
             variant={"outline"}
+            disabled={disabled}
             className={cn(
-              "w-[300px] justify-start text-left font-normal",
+              "w-full justify-start text-left font-normal h-10",
               !date && "text-muted-foreground"
             )}
           >
@@ -39,14 +44,14 @@ export function DatePickerWithRange({
             {date?.from ? (
               date.to ? (
                 <>
-                  {format(date.from, "LLL dd, y")} -{" "}
-                  {format(date.to, "LLL dd, y")}
+                  {format(date.from, "dd LLL y")} -{" "}
+                  {format(date.to, "dd LLL y")}
                 </>
               ) : (
-                format(date.from, "LLL dd, y")
+                format(date.from, "dd LLL y")
               )
             ) : (
-              <span>Pick a date</span>
+              <span>Pick a date range</span>
             )}
           </Button>
         </PopoverTrigger>
@@ -57,6 +62,7 @@ export function DatePickerWithRange({
             defaultMonth={date?.from}
             selected={date}
             onSelect={setDate}
+            disabled={disabledDates}
             numberOfMonths={2}
           />
         </PopoverContent>

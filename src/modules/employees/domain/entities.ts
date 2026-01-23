@@ -26,6 +26,7 @@ export interface Employee {
   user?: EmployeeUser | null;
   created_at?: string | null;
   updated_at?: string | null;
+  divisi?: string | null;
 }
 
 export interface CreateEmployeePayload {
@@ -41,6 +42,7 @@ export interface CreateEmployeePayload {
   alamat?: string | null;
   tanggal_lahir?: string | null;
   status: "aktif" | "nonaktif";
+  divisi?: string | null;
 }
 
 export interface UpdateEmployeePayload {
@@ -56,4 +58,5 @@ export interface UpdateEmployeePayload {
   alamat?: string | null;
   tanggal_lahir?: string | null;
   status?: "aktif" | "nonaktif" | null;
+  divisi?: string | null;
 }

@@ -29,8 +29,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Pencil, Trash, Check, X } from "lucide-react";
-import { format } from "date-fns";
+import { MoreHorizontal, Pencil, Trash, Check, X, FileText } from "lucide-react";
+import { format, differenceInDays } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import type { Cuti } from "../../domain/entities";
 
@@ -39,6 +39,7 @@ interface CutiTableProps {
   loading: boolean;
   onEdit: (item: Cuti) => void;
   onDelete: (item: Cuti) => void;
+  onView: (item: Cuti) => void;
   canUpdate: boolean;
   canDelete: boolean;
   canApprove?: boolean;
@@ -51,6 +52,7 @@ export function CutiTable({
   loading,
   onEdit,
   onDelete,
+  onView,
   canUpdate,
   canDelete,
   canApprove,
@@ -90,12 +92,32 @@ export function CutiTable({
             <TableBody>
               {items.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell>
-                    {item.tanggal
-                      ? format(new Date(item.tanggal), "dd MMMM yyyy", { locale: idLocale })
-                      : "-"}
+                  <TableCell className="cursor-pointer hover:text-primary transition-colors" onClick={() => onView(item)}>
+                    {(() => {
+                      const start = item.start_date || item.tanggal;
+                      const end = item.end_date || item.tanggal;
+                      
+                      if (!start) return "-";
+                      
+                      const startDate = new Date(start);
+                      const displayStart = format(startDate, "dd MMM yyyy", { locale: idLocale });
+                      
+                      if (end && end !== start) {
+                        const endDate = new Date(end);
+                        const displayEnd = format(endDate, "dd MMM yyyy", { locale: idLocale });
+                        return (
+                          <div className="flex flex-col text-xs">
+                            <span className="font-medium text-primary">{displayStart}</span>
+                            <span className="text-[10px] text-muted-foreground italic leading-none">sampai</span>
+                            <span className="font-medium text-primary">{displayEnd}</span>
+                          </div>
+                        );
+                      }
+                      
+                      return displayStart;
+                    })()}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="cursor-pointer hover:text-primary transition-colors" onClick={() => onView(item)}>
                     <div className="font-medium">{item.karyawan?.user?.name || item.karyawan?.kode_karyawan}</div>
                     <div className="text-xs text-muted-foreground">{item.karyawan?.kode_karyawan}</div>
                   </TableCell>
@@ -119,6 +141,9 @@ export function CutiTable({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => onView(item)}>
+                          <FileText className="mr-2 h-4 w-4" /> Detail
+                        </DropdownMenuItem>
                         {canUpdate && (
                           <DropdownMenuItem onClick={() => onEdit(item)}>
                             <Pencil className="mr-2 h-4 w-4" /> Edit

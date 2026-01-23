@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format, addDays, isBefore, startOfDay } from "date-fns";
+import { format, addDays, isBefore, startOfDay, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 import { Info, AlertTriangle, Paperclip, X } from "lucide-react";
 import {
@@ -26,14 +26,18 @@ import {
   updateCuti,
 } from "../../infrastructure/cuti.repository";
 import type { Cuti } from "../../domain/entities";
+import { listPengaturanCuti } from "@/modules/pengaturan-cuti/infrastructure/pengaturan-cuti.repository";
+import type { PengaturanCuti } from "@/modules/pengaturan-cuti/domain/entities";
 import { getEmployeesUsecase } from "@/modules/employees/application/usecases/getEmployees.usecase";
 import type { Employee } from "@/modules/employees/domain/entities";
 import { authStore, useAuthStore } from "@/modules/auth/infrastructure/auth.store";
+import { Separator } from "@/components/ui/separator";
 
 const formSchema = z.object({
   karyawan_id: z.string().min(1, "Karyawan wajib dipilih"),
-  jenis: z.enum(["cuti", "izin", "sakit"]),
-  tanggal: z.date(),
+  jenis: z.enum(["izin", "sakit"]),
+  start_date: z.date({ required_error: "Tanggal mulai wajib diisi" }),
+  end_date: z.date({ required_error: "Tanggal selesai wajib diisi" }),
   status: z.enum(["diajukan", "disetujui", "ditolak", "dibatalkan"]),
   catatan: z.string().optional(),
   bukti_pendukung: z.any().optional(),
@@ -49,6 +53,7 @@ interface CutiFormProps {
 export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
   const router = useRouter();
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [settings, setSettings] = useState<PengaturanCuti[]>([]);
   const user = useAuthStore((state) => state.user);
   const canManage = authStore.hasPermission("cuti.manage");
 
@@ -62,8 +67,9 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
     resolver: zodResolver(formSchema) as any,
     defaultValues: {
       karyawan_id: initialData?.karyawan_id ? String(initialData.karyawan_id) : "",
-      jenis: initialData?.jenis || "cuti",
-      tanggal: initialData?.tanggal ? new Date(initialData.tanggal) : new Date(),
+      jenis: initialData?.jenis || "izin",
+      start_date: initialData?.start_date ? new Date(initialData.start_date) : (initialData?.tanggal ? new Date(initialData.tanggal) : new Date()),
+      end_date: initialData?.end_date ? new Date(initialData.end_date) : (initialData?.tanggal ? new Date(initialData.tanggal) : new Date()),
       status: initialData?.status || "diajukan",
       catatan: initialData?.catatan || "",
     },
@@ -71,41 +77,122 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
 
   const selectedKaryawanId = watch("karyawan_id");
   const selectedJenis = watch("jenis");
-  const selectedDate = watch("tanggal");
+  const selectedStartDate = watch("start_date");
+  const selectedEndDate = watch("end_date");
   const selectedStatus = watch("status");
   const buktiPendukung = watch("bukti_pendukung");
 
   const selectedEmployee = employees.find((e) => String(e.id) === selectedKaryawanId);
-  const isKontrak = selectedEmployee?.kategori_karyawan === "kontrak";
   const isFreelance = selectedEmployee?.kategori_karyawan === "freelance";
   const isIzin = selectedJenis === "izin";
+  const isSakit = selectedJenis === "sakit";
 
   useEffect(() => {
-    getEmployeesUsecase({ per_page: 100, status: "aktif" })
-      .then((res) => {
-        setEmployees(res.items);
-        // Auto-select if user is an employee and creating new
+    if (isSakit) {
+      const today = new Date();
+      setValue("start_date", today, { shouldValidate: true });
+      setValue("end_date", today, { shouldValidate: true });
+    }
+  }, [isSakit, setValue]);
+
+  useEffect(() => {
+    Promise.all([
+      getEmployeesUsecase({ per_page: 100, status: "aktif" }),
+      listPengaturanCuti({ per_page: 100, aktif: 1 })
+    ])
+      .then(([empRes, setRes]) => {
+        setEmployees(empRes.items);
+        setSettings(setRes.items);
         if (!isEdit && !selectedKaryawanId && user) {
-          const matched = res.items.find((e) => e.user?.id === user.id);
+          const matched = empRes.items.find((e) => e.user?.id === user.id);
           if (matched) {
             setValue("karyawan_id", String(matched.id));
           }
         }
       })
-      .catch(() => toast.error("Gagal memuat list karyawan"));
+      .catch(() => toast.error("Gagal memuat data pendukung"));
   }, [user, isEdit, setValue, selectedKaryawanId]);
 
+  const normalizeDivisi = (val: string | null | undefined) => 
+    val?.toLowerCase().replace("-", "_").trim();
+
+  const applicableRule = useMemo(() => {
+    return settings
+      .filter(s => 
+        s.kategori_karyawan === selectedEmployee?.kategori_karyawan &&
+        s.jenis === selectedJenis &&
+        (s.subtipe_kontrak ? s.subtipe_kontrak === selectedEmployee?.subtipe_kontrak : !selectedEmployee?.subtipe_kontrak)
+      )
+      .find(s => {
+        const ruleDivisi = normalizeDivisi(s.divisi);
+        const empDivisi = normalizeDivisi(selectedEmployee?.divisi);
+        return ruleDivisi === empDivisi || ruleDivisi === "all";
+      });
+  }, [settings, selectedEmployee, selectedJenis]);
+
+  const minDays = useMemo(() => applicableRule?.minimal_hari_pengajuan ?? 0, [applicableRule]);
+  const maxDays = useMemo(() => applicableRule?.maksimal_pengajuan ?? null, [applicableRule]);
+
+  const disabledDates = useMemo(() => {
+    const today = startOfDay(new Date());
+    return {
+      before: addDays(today, isSakit ? 0 : minDays)
+    };
+  }, [isSakit, minDays]);
+
+  const duration = useMemo(() => {
+    if (!selectedStartDate || !selectedEndDate) return 0;
+    const start = startOfDay(selectedStartDate);
+    const end = startOfDay(selectedEndDate);
+    if (isBefore(end, start)) return 0;
+    return differenceInDays(end, start) + 1;
+  }, [selectedStartDate, selectedEndDate]);
+
+  const isDurationExceeded = !!(maxDays && duration > maxDays);
+
+  // Reset selected date if it becomes invalid
+  useEffect(() => {
+    if (selectedStartDate && !isSakit) {
+      const fromDate = startOfDay(selectedStartDate);
+      if (isBefore(fromDate, disabledDates.before)) {
+        setValue("start_date", disabledDates.before, { shouldValidate: true });
+        if (selectedEndDate && isBefore(startOfDay(selectedEndDate), disabledDates.before)) {
+          setValue("end_date", disabledDates.before, { shouldValidate: true });
+        }
+      }
+    }
+  }, [isSakit, disabledDates.before, setValue]);
+
+  useEffect(() => {
+    if (selectedStartDate && selectedEndDate && isBefore(startOfDay(selectedEndDate), startOfDay(selectedStartDate))) {
+      setValue("end_date", selectedStartDate, { shouldValidate: true });
+    }
+  }, [selectedStartDate, selectedEndDate, setValue]);
+
   async function onSubmit(values: FormValues) {
+    if (isDurationExceeded) {
+      toast.error(`Durasi pengajuan melebihi batas maksimal (${maxDays} hari)`);
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append("karyawan_id", String(values.karyawan_id));
       formData.append("jenis", values.jenis);
-      formData.append("tanggal", format(values.tanggal, "yyyy-MM-dd"));
-      // Force status if not manager
+      
+      const startStr = format(values.start_date, "yyyy-MM-dd");
+      const endStr = format(values.end_date, "yyyy-MM-dd");
+      
+      formData.append("start_date", startStr);
+      formData.append("end_date", endStr);
+      formData.append("tanggal", startStr);
+
       formData.append("status", canManage ? values.status : "diajukan");
       formData.append("catatan", values.catatan || "");
-      
-      if (values.bukti_pendukung?.[0]) {
+
+      if (values.bukti_pendukung instanceof File) {
+        formData.append("bukti_pendukung", values.bukti_pendukung);
+      } else if (values.bukti_pendukung?.[0] instanceof File) {
         formData.append("bukti_pendukung", values.bukti_pendukung[0]);
       }
 
@@ -122,21 +209,18 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
     }
   }
 
-  const isEmployeeOnly = !canManage;
   const showH3Warning =
-    isKontrak &&
     isIzin &&
-    selectedDate &&
-    isBefore(selectedDate, addDays(startOfDay(new Date()), 3)) &&
-    !isBefore(selectedDate, startOfDay(new Date()));
+    selectedStartDate &&
+    isBefore(startOfDay(selectedStartDate), addDays(startOfDay(new Date()), minDays || 3)) &&
+    !isBefore(startOfDay(selectedStartDate), startOfDay(new Date()));
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Panel 1: Karyawan & Jenis */}
         <Card>
           <CardHeader>
-            <CardTitle>Karyawan & Jenis</CardTitle>
+            <CardTitle>Info Karyawan</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -144,7 +228,7 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
               <Select
                 value={selectedKaryawanId}
                 onValueChange={(v) => setValue("karyawan_id", v, { shouldValidate: true })}
-                disabled={isEdit || isEmployeeOnly}
+                disabled={isEdit || !canManage}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih Karyawan" />
@@ -162,18 +246,6 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
               )}
             </div>
 
-            {isFreelance && (
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-blue-800 text-sm">
-                <div className="flex items-center gap-2 font-medium">
-                  <Info className="h-4 w-4" />
-                  Freelance
-                </div>
-                <div className="mt-1">
-                  Tidak ada batasan kuota; konsekuensi: tidak mendapat fee sesi.
-                </div>
-              </div>
-            )}
-
             <div className="space-y-2">
               <Label>Jenis Pengajuan</Label>
               <Select
@@ -184,7 +256,6 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
                   <SelectValue placeholder="Pilih Jenis" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="cuti">Cuti</SelectItem>
                   <SelectItem value="izin">Izin</SelectItem>
                   <SelectItem value="sakit">Sakit</SelectItem>
                 </SelectContent>
@@ -192,31 +263,55 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
               {errors.jenis && (
                 <p className="text-sm text-destructive">{errors.jenis.message}</p>
               )}
-              {isKontrak && isIzin && (
-                <p className="text-xs text-muted-foreground italic">Minimal 3 hari sebelum tanggal izin.</p>
-              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Panel 2: Tanggal & Bukti */}
         <Card>
           <CardHeader>
             <CardTitle>Tanggal & Dokumen</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Tanggal</Label>
-              <DatePicker
-                date={selectedDate}
-                setDate={(d) => setValue("tanggal", d as Date, { shouldValidate: true })}
-                disabled={true} // Locked for everyone
-              />
-              <p className="text-[11px] text-muted-foreground">Tanggal pengajuan terkunci pada hari ini.</p>
-              {errors.tanggal && (
-                <p className="text-sm text-destructive">{errors.tanggal.message}</p>
-              )}
-            </div>
+             <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Mulai</Label>
+                  <DatePicker
+                    date={selectedStartDate}
+                    setDate={(d) => setValue("start_date", d as Date, { shouldValidate: true })}
+                    disabled={isSakit}
+                    disabledDates={disabledDates}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Selesai</Label>
+                  <DatePicker
+                    date={selectedEndDate}
+                    setDate={(d) => setValue("end_date", d as Date, { shouldValidate: true })}
+                    disabled={isSakit}
+                    disabledDates={{ before: selectedStartDate || disabledDates.before }}
+                  />
+                </div>
+             </div>
+
+             <div className="rounded-md bg-muted p-3 text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Durasi:</span>
+                  <span className={`font-bold ${isDurationExceeded ? "text-destructive" : "text-primary"}`}>
+                    {duration} Hari
+                  </span>
+                </div>
+                {maxDays && (
+                   <div className="flex justify-between">
+                      <span className="text-muted-foreground">Maksimal:</span>
+                      <span>{maxDays} Hari</span>
+                   </div>
+                )}
+                {isDurationExceeded && (
+                   <p className="text-destructive font-bold text-center pt-1 border-t mt-1">
+                      (!) Melebihi batas maksimal pengajuan
+                   </p>
+                )}
+             </div>
 
             <div className="space-y-2">
               <Label>Bukti Pendukung (Opsional)</Label>
@@ -253,69 +348,56 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
               <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-yellow-800 text-sm">
                 <div className="flex items-center gap-2 font-medium">
                   <AlertTriangle className="h-4 w-4" />
-                  H-3 Warning
+                  Warning
                 </div>
                 <div className="mt-1">
-                  Pengajuan izin kurang dari 3 hari. Mohon hubungi admin jika mendesak.
+                  Pengajuan kurang dari {minDays} hari sebelum tanggal mulai.
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Panel 3: Status & Catatan */}
         <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Status & Catatan</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select
-                value={selectedStatus}
-                onValueChange={(v) => setValue("status", v as any, { shouldValidate: true })}
-                disabled={!canManage}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="diajukan">Diajukan</SelectItem>
-                  {canManage && (
-                    <>
+          <CardContent className="pt-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+               <div className="md:col-span-1 space-y-2">
+                  <Label>Status</Label>
+                  <Select
+                    value={selectedStatus}
+                    onValueChange={(v) => setValue("status", v as any, { shouldValidate: true })}
+                    disabled={!canManage}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="diajukan">Diajukan</SelectItem>
                       <SelectItem value="disetujui">Disetujui</SelectItem>
                       <SelectItem value="ditolak">Ditolak</SelectItem>
                       <SelectItem value="dibatalkan">Dibatalkan</SelectItem>
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                {canManage ? "Pilih status pengajuan." : "Status pengajuan otomatis 'Diajukan'."}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Catatan / Alasan</Label>
-              <textarea
-                {...register("catatan")}
-                placeholder="Tuliskan alasan pengajuan secara jelas..."
-                className="flex min-h-[100px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-              {errors.catatan && (
-                <p className="text-sm text-destructive">{errors.catatan.message}</p>
-              )}
+                    </SelectContent>
+                  </Select>
+               </div>
+               <div className="md:col-span-2 space-y-2">
+                  <Label>Catatan / Alasan</Label>
+                  <textarea
+                    {...register("catatan")}
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    placeholder="Alasan pengajuan..."
+                  />
+               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="flex justify-end gap-4 p-4 border-t bg-muted/20">
+      <div className="flex justify-end gap-3 pt-4 border-t">
         <Button variant="outline" type="button" onClick={() => router.back()}>
           Batal
         </Button>
-        <Button type="submit" disabled={isSubmitting} className="min-w-[120px]">
-          {isSubmitting ? "Menyimpan..." : "Simpan Pengajuan"}
+        <Button type="submit" disabled={isSubmitting || isDurationExceeded} className="min-w-[120px]">
+          {isSubmitting ? "Menyimpan..." : isEdit ? "Update" : "Simpan"}
         </Button>
       </div>
     </form>

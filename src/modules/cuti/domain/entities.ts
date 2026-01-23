@@ -1,14 +1,16 @@
 
 import type { Employee } from "@/modules/employees/domain/entities";
 
-export type JenisCuti = "cuti" | "izin" | "sakit";
+export type JenisCuti = "izin" | "sakit";
 export type StatusCuti = "diajukan" | "disetujui" | "ditolak" | "dibatalkan";
 
 export interface Cuti {
   id: number;
   karyawan_id: number;
   jenis: JenisCuti;
-  tanggal: string; // YYYY-MM-DD
+  start_date: string; // YYYY-MM-DD
+  end_date: string;   // YYYY-MM-DD
+  tanggal?: string;   // Legacy/Backwards compat
   status: StatusCuti;
   catatan?: string | null;
   disetujui_oleh?: number | null; // User ID
@@ -22,7 +24,8 @@ export interface Cuti {
 export interface CreateCutiPayload {
   karyawan_id: number;
   jenis: JenisCuti;
-  tanggal: string;
+  start_date: string;
+  end_date: string;
   catatan?: string | null;
   status?: StatusCuti;
 }
@@ -30,7 +33,8 @@ export interface CreateCutiPayload {
 export interface UpdateCutiPayload {
   karyawan_id?: number;
   jenis?: JenisCuti;
-  tanggal?: string;
+  start_date?: string;
+  end_date?: string;
   catatan?: string | null;
   status?: StatusCuti;
   disetujui_oleh?: number | null;

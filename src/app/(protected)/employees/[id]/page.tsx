@@ -232,6 +232,7 @@ export default function EmployeeDetailPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-1.5 px-1">
                 <DetailItem icon={Briefcase} label="ID Karyawan" value={employee.kode_karyawan} />
+                <DetailItem icon={Briefcase} label="Divisi / Kategori" value={employee.divisi} badge />
                 <DetailItem icon={Briefcase} label="Kategori Kerja" value={employee.kategori_karyawan} badge />
                 <DetailItem icon={Briefcase} label="Subtipe Kontrak" value={employee.subtipe_kontrak} badge />
                 <DetailItem icon={Calendar} label="Tanggal Lahir" value={formatDate(employee.tanggal_lahir)} />

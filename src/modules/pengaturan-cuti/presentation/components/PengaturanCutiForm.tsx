@@ -18,18 +18,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import {
   createPengaturanCuti,
   updatePengaturanCuti,
 } from "../../infrastructure/pengaturan-cuti.repository";
 import type { PengaturanCuti } from "../../domain/entities";
+import { Users, BookOpen, Clock, Banknote, ShieldCheck } from "lucide-react";
 
 const formSchema = z.object({
   kategori_karyawan: z.enum(["tetap", "kontrak", "freelance"]),
   subtipe_kontrak: z.enum(["full_time", "part_time"]).optional().nullable(),
-  kategori_mapel: z.enum(["coding", "non_coding", "all"]),
-  jenis: z.enum(["cuti", "izin", "sakit"]),
+  divisi: z.string(), // changed from kategori_mapel enum to string for flexibility or matching enum
+  jenis: z.enum(["izin", "sakit"]),
   periode: z.enum(["bulanan", "tahunan"]),
   maksimal_pengajuan: z.union([z.string(), z.number()]).optional().nullable(),
   minimal_hari_pengajuan: z.union([z.string(), z.number()]),
@@ -59,8 +61,8 @@ export function PengaturanCutiForm({ initialData, isEdit = false }: PengaturanCu
     defaultValues: {
       kategori_karyawan: (initialData?.kategori_karyawan as any) || "tetap",
       subtipe_kontrak: (initialData?.subtipe_kontrak as any) || null,
-      kategori_mapel: initialData?.kategori_mapel || "all",
-      jenis: initialData?.jenis || "cuti",
+      divisi: (initialData as any)?.divisi || "all", // use 'all' as default for safety
+      jenis: initialData?.jenis || "izin",
       periode: initialData?.periode || "tahunan",
       maksimal_pengajuan: initialData?.maksimal_pengajuan ?? "",
       minimal_hari_pengajuan: initialData?.minimal_hari_pengajuan ?? 0,
@@ -72,7 +74,7 @@ export function PengaturanCutiForm({ initialData, isEdit = false }: PengaturanCu
 
   const kategori = watch("kategori_karyawan");
   const subtipe = watch("subtipe_kontrak");
-  const kategoriMapel = watch("kategori_mapel");
+  const divisi = watch("divisi");
   const jenis = watch("jenis");
   const periode = watch("periode");
   const potonganTipe = watch("potongan_tipe");
@@ -116,9 +118,12 @@ export function PengaturanCutiForm({ initialData, isEdit = false }: PengaturanCu
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="grid gap-6 md:grid-cols-2">
         {/* Panel 1: Target Karyawan */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Target Karyawan</CardTitle>
+        <Card className="shadow-sm border-muted-foreground/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Users className="h-5 w-5 text-primary" />
+              Target Karyawan
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -161,24 +166,30 @@ export function PengaturanCutiForm({ initialData, isEdit = false }: PengaturanCu
                 )}
               </div>
             )}
+            
+            <Separator className="my-2" />
 
             <div className="space-y-2">
-              <Label>Kategori Mapel</Label>
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-muted-foreground" />
+                <Label>Divisi / Kategori Mengajar</Label>
+              </div>
               <Select
-                value={kategoriMapel}
-                onValueChange={(v) => setValue("kategori_mapel", v as any, { shouldValidate: true })}
+                value={divisi}
+                onValueChange={(v) => setValue("divisi", v, { shouldValidate: true })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Pilih Kat. Mapel" />
+                  <SelectValue placeholder="Pilih Divisi" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Semua Mapel</SelectItem>
-                  <SelectItem value="coding">Coding</SelectItem>
-                  <SelectItem value="non_coding">Non-Coding</SelectItem>
+                  <SelectItem value="all">Semua Divisi</SelectItem>
+                  <SelectItem value="Coding">Coding</SelectItem>
+                  <SelectItem value="Non-Coding">Non-Coding</SelectItem>
+                  <SelectItem value="Operasional">Operasional</SelectItem>
                 </SelectContent>
               </Select>
-              {errors.kategori_mapel && (
-                <p className="text-sm text-destructive">{errors.kategori_mapel.message}</p>
+              {errors.divisi && (
+                <p className="text-sm text-destructive">{errors.divisi.message}</p>
               )}
             </div>
 
@@ -192,7 +203,6 @@ export function PengaturanCutiForm({ initialData, isEdit = false }: PengaturanCu
                   <SelectValue placeholder="Jenis" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="cuti">Cuti</SelectItem>
                   <SelectItem value="izin">Izin</SelectItem>
                   <SelectItem value="sakit">Sakit</SelectItem>
                 </SelectContent>
@@ -205,9 +215,12 @@ export function PengaturanCutiForm({ initialData, isEdit = false }: PengaturanCu
         </Card>
 
         {/* Panel 2: Aturan Kuota */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Aturan Kuota & Minimal Hari</CardTitle>
+        <Card className="shadow-sm border-muted-foreground/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Clock className="h-5 w-5 text-primary" />
+              Aturan Kuota & Minimal Hari
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -258,9 +271,12 @@ export function PengaturanCutiForm({ initialData, isEdit = false }: PengaturanCu
         </Card>
 
         {/* Panel 3: Potongan */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Potongan</CardTitle>
+        <Card className="shadow-sm border-muted-foreground/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Banknote className="h-5 w-5 text-primary" />
+              Potongan
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -304,9 +320,12 @@ export function PengaturanCutiForm({ initialData, isEdit = false }: PengaturanCu
         </Card>
 
         {/* Panel 4: Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Status</CardTitle>
+        <Card className="shadow-sm border-muted-foreground/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <ShieldCheck className="h-5 w-5 text-primary" />
+              Status
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-row items-center justify-between rounded-lg border p-4">

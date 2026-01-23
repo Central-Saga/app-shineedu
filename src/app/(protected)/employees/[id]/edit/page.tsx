@@ -71,6 +71,7 @@ const schema = z.object({
   alamat: z.string().optional(),
   tanggal_lahir: z.string().optional(),
   status: z.enum(STATUS_OPTIONS).optional(),
+  divisi: z.string().optional(),
 });
 
 type Form = z.infer<typeof schema>;
@@ -102,6 +103,7 @@ function mapEmployeeToForm(e: Employee): Form {
     alamat: e.kontak?.alamat ?? "",
     tanggal_lahir: e.tanggal_lahir ?? "",
     status: (e.status === "aktif" || e.status === "nonaktif" ? e.status : "aktif") as "aktif" | "nonaktif",
+    divisi: e.divisi ?? "",
   };
 }
 
@@ -139,6 +141,7 @@ export default function EmployeesEditPage() {
       alamat: "",
       tanggal_lahir: "",
       status: "aktif",
+      divisi: "",
     },
   });
 
@@ -222,7 +225,8 @@ export default function EmployeesEditPage() {
         nomor_hp: values.nomor_hp || null,
         alamat: values.alamat || null,
         tanggal_lahir: values.tanggal_lahir || null,
-        status: "aktif",
+        status: values.status || "aktif",
+        divisi: values.divisi || null,
       });
 
       // 2. Update linked User if exists
@@ -342,6 +346,23 @@ export default function EmployeesEditPage() {
                       <SelectItem value="tetap">Tetap</SelectItem>
                       <SelectItem value="kontrak">Kontrak</SelectItem>
                       <SelectItem value="freelance">Freelance</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Divisi / Kategori Mengajar</Label>
+                  <Select
+                    value={watch("divisi") ?? ""}
+                    onValueChange={(v) => setValue("divisi", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih Divisi" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Coding">Coding</SelectItem>
+                      <SelectItem value="Non-Coding">Non-Coding</SelectItem>
+                      <SelectItem value="Operasional">Operasional</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

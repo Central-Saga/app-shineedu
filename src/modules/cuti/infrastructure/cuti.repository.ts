@@ -49,8 +49,13 @@ export async function getCutiDetail(id: number): Promise<Cuti> {
 
 export async function updateCuti(
   id: number,
-  payload: UpdateCutiPayload
+  payload: UpdateCutiPayload | FormData
 ): Promise<Cuti> {
+  if (payload instanceof FormData) {
+    payload.append("_method", "PUT");
+    const data = await post<Cuti>(`cuti/${id}`, payload);
+    return data as Cuti;
+  }
   const data = await put<Cuti>(`cuti/${id}`, payload);
   return data as Cuti;
 }

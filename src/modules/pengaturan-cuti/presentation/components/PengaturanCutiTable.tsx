@@ -19,7 +19,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash, Eye } from "lucide-react";
 import type { PengaturanCuti } from "../../domain/entities";
 import {
   AlertDialog,
@@ -31,13 +31,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Switch } from "@/components/ui/switch";
 
 interface PengaturanCutiTableProps {
   items: PengaturanCuti[];
   loading: boolean;
   onEdit: (item: PengaturanCuti) => void;
   onDelete: (item: PengaturanCuti) => void;
+  onView: (item: PengaturanCuti) => void;
   canUpdate: boolean;
   canDelete: boolean;
 }
@@ -47,6 +47,7 @@ export function PengaturanCutiTable({
   loading,
   onEdit,
   onDelete,
+  onView,
   canUpdate,
   canDelete,
 }: PengaturanCutiTableProps) {
@@ -73,7 +74,7 @@ export function PengaturanCutiTable({
               <TableRow>
                 <TableHead>Kategori</TableHead>
                 <TableHead>Subtipe</TableHead>
-                <TableHead>Mapel</TableHead>
+                <TableHead>Divisi</TableHead>
                 <TableHead>Jenis</TableHead>
                 <TableHead>Periode</TableHead>
                 <TableHead>Maks Pengajuan</TableHead>
@@ -92,7 +93,7 @@ export function PengaturanCutiTable({
                   </TableCell>
                   <TableCell className="capitalize">
                     <Badge variant="outline">
-                      {item.kategori_mapel === "all" ? "Semua" : item.kategori_mapel?.replace("_", " ")}
+                      {item.divisi === "all" ? "Semua" : item.divisi?.replace("_", " ")}
                     </Badge>
                   </TableCell>
                   <TableCell className="capitalize">{item.jenis}</TableCell>
@@ -130,6 +131,9 @@ export function PengaturanCutiTable({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => onView(item)}>
+                          <Eye className="mr-2 h-4 w-4" /> Detail
+                        </DropdownMenuItem>
                         {canUpdate && (
                           <DropdownMenuItem onClick={() => onEdit(item)}>
                             <Pencil className="mr-2 h-4 w-4" /> Edit
@@ -153,7 +157,7 @@ export function PengaturanCutiTable({
         </div>
       </div>
 
-       <AlertDialog open={!!deleteData} onOpenChange={(open) => !open && setDeleteData(null)}>
+      <AlertDialog open={!!deleteData} onOpenChange={(open) => !open && setDeleteData(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus Aturan Cuti?</AlertDialogTitle>

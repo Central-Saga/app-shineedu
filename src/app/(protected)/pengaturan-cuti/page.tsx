@@ -244,6 +244,7 @@ export default function PengaturanCutiPage() {
             loading={loading}
             onEdit={(item) => router.push(`/pengaturan-cuti/${item.id}/edit`)}
             onDelete={handleDelete}
+            onView={(item) => router.push(`/pengaturan-cuti/${item.id}`)}
             canUpdate={canUpdate}
             canDelete={canDelete}
           />

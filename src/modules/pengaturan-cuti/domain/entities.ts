@@ -1,19 +1,19 @@
 
-export const KATEGORI_MAPEL_VALUES = ["coding", "non_coding", "all"] as const;
-export type KategoriMapel = (typeof KATEGORI_MAPEL_VALUES)[number];
+export const DIVISI_VALUES = ["coding", "non_coding", "all"] as const;
+export type Divisi = (typeof DIVISI_VALUES)[number];
 
 export const PERIODE_VALUES = ["bulanan", "tahunan"] as const;
 export const POTONGAN_TIPE_VALUES = ["per_hari", "flat", "none"] as const;
 
 export type PeriodeCuti = (typeof PERIODE_VALUES)[number];
 export type PotonganTipe = (typeof POTONGAN_TIPE_VALUES)[number];
-export type JenisPengaturanCuti = "cuti" | "izin" | "sakit";
+export type JenisPengaturanCuti = "izin" | "sakit";
 
 export interface PengaturanCuti {
   id: number;
   kategori_karyawan: string;
   subtipe_kontrak?: string | null;
-  kategori_mapel: KategoriMapel;
+  divisi: Divisi;
   jenis: JenisPengaturanCuti;
   periode: PeriodeCuti;
   maksimal_pengajuan?: number | null; // null = unlimited
@@ -28,7 +28,7 @@ export interface PengaturanCuti {
 export interface CreatePengaturanCutiPayload {
   kategori_karyawan: string;
   subtipe_kontrak?: string | null;
-  kategori_mapel: KategoriMapel;
+  divisi: Divisi;
   jenis: JenisPengaturanCuti;
   periode: PeriodeCuti;
   maksimal_pengajuan?: number | null;
@@ -41,7 +41,7 @@ export interface CreatePengaturanCutiPayload {
 export interface UpdatePengaturanCutiPayload {
   kategori_karyawan?: string;
   subtipe_kontrak?: string | null;
-  kategori_mapel?: KategoriMapel;
+  divisi?: Divisi;
   jenis?: JenisPengaturanCuti;
   periode?: PeriodeCuti;
   maksimal_pengajuan?: number | null;

@@ -54,6 +54,7 @@ const employeeSchema = z.object({
   alamat: z.string().optional(),
   tanggal_lahir: z.string().optional(),
   status: z.enum(STATUS_OPTIONS),
+  divisi: z.string().optional(),
 });
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
@@ -79,6 +80,7 @@ function toEmployeePayload(
     alamat: v.alamat || null,
     tanggal_lahir: v.tanggal_lahir || null,
     status: v.status,
+    divisi: v.divisi || null,
   };
 }
 
@@ -109,6 +111,7 @@ export default function EmployeesNewPage() {
       alamat: "",
       tanggal_lahir: "",
       status: "aktif",
+      divisi: "",
     },
   });
 
@@ -316,6 +319,25 @@ export default function EmployeesNewPage() {
                   </Select>
                   <p className="text-[11px] text-muted-foreground">Hubungan kerja utama</p>
                 </div>
+                
+                <div className="space-y-2">
+                  <Label>Divisi / Kategori Mengajar</Label>
+                  <Select
+                    value={watch("divisi") ?? ""}
+                    onValueChange={(v) => setValue("divisi", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih Divisi" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Coding">Coding</SelectItem>
+                      <SelectItem value="Non-Coding">Non-Coding</SelectItem>
+                      <SelectItem value="Operasional">Operasional</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] text-muted-foreground">Wajib untuk pengajar (Coding/Non-Coding)</p>
+                </div>
+
                 {kategori === "kontrak" && (
                   <div className="space-y-2 animate-in fade-in slide-in-from-left-2">
                     <Label>Subtipe Kontrak</Label>

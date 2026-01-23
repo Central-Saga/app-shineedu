@@ -306,6 +306,7 @@ export default function CutiPage() {
             items={items}
             loading={loading}
             onEdit={(item) => router.push(`/cuti/${item.id}/edit`)}
+            onView={(item) => router.push(`/cuti/${item.id}`)}
             onDelete={handleDelete}
             onApprove={handleApprove}
             onReject={handleReject}

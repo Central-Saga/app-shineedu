@@ -47,7 +47,7 @@ export function EmployeeTable({
   onStatusChange,
   canUpdate,
 }: EmployeeTableProps) {
-  const colCount = 7;
+  const colCount = 8;
 
   return (
     <div className="w-full overflow-x-auto">
@@ -56,6 +56,7 @@ export function EmployeeTable({
           <TableRow>
             <TableHead>Kode</TableHead>
             <TableHead>Nama / Email</TableHead>
+            <TableHead>Divisi</TableHead>
             <TableHead>Kategori</TableHead>
             <TableHead>Tipe Gaji</TableHead>
             <TableHead>Status</TableHead>
@@ -100,6 +101,13 @@ export function EmployeeTable({
                       </span>
                     )}
                   </div>
+                </TableCell>
+                <TableCell>
+                  {em.divisi ? (
+                    <Badge variant="outline" className="text-slate-600 border-slate-200">
+                      {em.divisi}
+                    </Badge>
+                  ) : "-"}
                 </TableCell>
                 <TableCell>
                   {em.kategori_karyawan ? (
