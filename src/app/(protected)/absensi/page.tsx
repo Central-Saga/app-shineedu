@@ -170,7 +170,7 @@ export default function AbsensiPage() {
         izin: izinRes.meta.total,
       });
 
-    } catch (e) {
+    } catch {
       toast.error("Gagal memuat data absensi");
     } finally {
       setLoading(false);
@@ -182,7 +182,8 @@ export default function AbsensiPage() {
       await deleteAbsensi(item.id);
       toast.success("Absensi berhasil dihapus");
       loadData();
-    } catch (e: any) {
+    } catch (error: unknown) {
+      const e = error as any;
       if (e?.response?.status === 403) {
         toast.error("Anda tidak memiliki akses menghapus data ini");
       } else {
@@ -328,6 +329,7 @@ export default function AbsensiPage() {
             loading={loading}
             onEdit={(item) => router.push(`/absensi/${item.id}/edit`)}
             onDelete={handleDelete}
+            onView={(item) => router.push(`/absensi/${item.id}`)}
             canUpdate={canUpdate}
             canDelete={canDelete}
           />

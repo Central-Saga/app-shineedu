@@ -18,7 +18,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash } from "lucide-react";
+import { Eye, MoreHorizontal, Pencil, Trash } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import type { Absensi } from "../../domain/entities";
@@ -39,6 +39,7 @@ interface AbsensiTableProps {
   loading: boolean;
   onEdit: (item: Absensi) => void;
   onDelete: (item: Absensi) => void;
+  onView: (item: Absensi) => void;
   canUpdate: boolean;
   canDelete: boolean;
 }
@@ -48,6 +49,7 @@ export function AbsensiTable({
   loading,
   onEdit,
   onDelete,
+  onView,
   canUpdate,
   canDelete,
 }: AbsensiTableProps) {
@@ -77,7 +79,7 @@ export function AbsensiTable({
                 <TableHead>Status</TableHead>
                 <TableHead>Jam Masuk</TableHead>
                 <TableHead>Jam Pulang</TableHead>
-                <TableHead>Durasi (Menit)</TableHead>
+                <TableHead>Durasi Kerja</TableHead>
                 <TableHead>Sumber</TableHead>
                 <TableHead className="w-[80px]"></TableHead>
               </TableRow>
@@ -99,7 +101,7 @@ export function AbsensiTable({
                   </TableCell>
                   <TableCell>{item.jam_masuk || "-"}</TableCell>
                   <TableCell>{item.jam_pulang || "-"}</TableCell>
-                  <TableCell>{item.durasi_menit ?? "-"}</TableCell>
+                  <TableCell className="font-medium">{item.durasi_formatted ?? "-"}</TableCell>
                   <TableCell className="capitalize">{item.sumber_absen || "-"}</TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -111,6 +113,9 @@ export function AbsensiTable({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => onView(item)}>
+                          <Eye className="mr-2 h-4 w-4" /> Lihat Detail
+                        </DropdownMenuItem>
                         {canUpdate && (
                           <DropdownMenuItem onClick={() => onEdit(item)}>
                             <Pencil className="mr-2 h-4 w-4" /> Edit

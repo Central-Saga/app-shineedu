@@ -76,3 +76,8 @@ export async function updateAbsensi(
 export async function deleteAbsensi(id: number): Promise<void> {
   await del(`absensi/${id}`);
 }
+
+export async function getTodayAbsensi(): Promise<Absensi | null> {
+  const data = await get<Absensi | null>("absensi/today");
+  return data;
+}

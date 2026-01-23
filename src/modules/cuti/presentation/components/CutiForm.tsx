@@ -15,11 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, addDays, isBefore, startOfDay } from "date-fns";
 import { toast } from "sonner";
-import { Info, AlertTriangle } from "lucide-react";
+import { Info, AlertTriangle, Paperclip, X } from "lucide-react";
 import {
   createCuti,
   updateCuti,
@@ -27,7 +28,7 @@ import {
 import type { Cuti } from "../../domain/entities";
 import { getEmployeesUsecase } from "@/modules/employees/application/usecases/getEmployees.usecase";
 import type { Employee } from "@/modules/employees/domain/entities";
-import { authStore } from "@/modules/auth/infrastructure/auth.store";
+import { authStore, useAuthStore } from "@/modules/auth/infrastructure/auth.store";
 
 const formSchema = z.object({
   karyawan_id: z.string().min(1, "Karyawan wajib dipilih"),
@@ -35,6 +36,7 @@ const formSchema = z.object({
   tanggal: z.date(),
   status: z.enum(["diajukan", "disetujui", "ditolak", "dibatalkan"]),
   catatan: z.string().optional(),
+  bukti_pendukung: z.any().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -47,7 +49,8 @@ interface CutiFormProps {
 export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
   const router = useRouter();
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const canUpdateStatus = authStore.hasAnyPermission(["cuti.update", "cuti.approve"]);
+  const user = useAuthStore((state) => state.user);
+  const canManage = authStore.hasPermission("cuti.manage");
 
   const {
     register,
@@ -70,6 +73,7 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
   const selectedJenis = watch("jenis");
   const selectedDate = watch("tanggal");
   const selectedStatus = watch("status");
+  const buktiPendukung = watch("bukti_pendukung");
 
   const selectedEmployee = employees.find((e) => String(e.id) === selectedKaryawanId);
   const isKontrak = selectedEmployee?.kategori_karyawan === "kontrak";
@@ -78,25 +82,38 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
 
   useEffect(() => {
     getEmployeesUsecase({ per_page: 100, status: "aktif" })
-      .then((res) => setEmployees(res.items))
+      .then((res) => {
+        setEmployees(res.items);
+        // Auto-select if user is an employee and creating new
+        if (!isEdit && !selectedKaryawanId && user) {
+          const matched = res.items.find((e) => e.user?.id === user.id);
+          if (matched) {
+            setValue("karyawan_id", String(matched.id));
+          }
+        }
+      })
       .catch(() => toast.error("Gagal memuat list karyawan"));
-  }, []);
+  }, [user, isEdit, setValue, selectedKaryawanId]);
 
   async function onSubmit(values: FormValues) {
     try {
-      const payload = {
-        karyawan_id: Number(values.karyawan_id),
-        jenis: values.jenis,
-        tanggal: format(values.tanggal, "yyyy-MM-dd"),
-        status: values.status,
-        catatan: values.catatan,
-      };
+      const formData = new FormData();
+      formData.append("karyawan_id", String(values.karyawan_id));
+      formData.append("jenis", values.jenis);
+      formData.append("tanggal", format(values.tanggal, "yyyy-MM-dd"));
+      // Force status if not manager
+      formData.append("status", canManage ? values.status : "diajukan");
+      formData.append("catatan", values.catatan || "");
+      
+      if (values.bukti_pendukung?.[0]) {
+        formData.append("bukti_pendukung", values.bukti_pendukung[0]);
+      }
 
       if (isEdit && initialData) {
-        await updateCuti(initialData.id, payload);
+        await updateCuti(initialData.id, formData as any);
         toast.success("Pengajuan cuti diperbarui");
       } else {
-        await createCuti(payload);
+        await createCuti(formData as any);
         toast.success("Pengajuan cuti dibuat");
       }
       router.push("/cuti");
@@ -105,7 +122,7 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
     }
   }
 
-  // Logic: H-3 warning for Kontrak + Izin
+  const isEmployeeOnly = !canManage;
   const showH3Warning =
     isKontrak &&
     isIzin &&
@@ -127,7 +144,7 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
               <Select
                 value={selectedKaryawanId}
                 onValueChange={(v) => setValue("karyawan_id", v, { shouldValidate: true })}
-                disabled={isEdit}
+                disabled={isEdit || isEmployeeOnly}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih Karyawan" />
@@ -146,12 +163,12 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
             </div>
 
             {isFreelance && (
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-blue-800">
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-blue-800 text-sm">
                 <div className="flex items-center gap-2 font-medium">
                   <Info className="h-4 w-4" />
                   Freelance
                 </div>
-                <div className="mt-1 text-sm">
+                <div className="mt-1">
                   Tidak ada batasan kuota; konsekuensi: tidak mendapat fee sesi.
                 </div>
               </div>
@@ -176,16 +193,16 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
                 <p className="text-sm text-destructive">{errors.jenis.message}</p>
               )}
               {isKontrak && isIzin && (
-                <p className="text-xs text-muted-foreground">Minimal 3 hari sebelum tanggal izin.</p>
+                <p className="text-xs text-muted-foreground italic">Minimal 3 hari sebelum tanggal izin.</p>
               )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Panel 2: Tanggal & Aturan */}
+        {/* Panel 2: Tanggal & Bukti */}
         <Card>
           <CardHeader>
-            <CardTitle>Tanggal</CardTitle>
+            <CardTitle>Tanggal & Dokumen</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -193,20 +210,53 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
               <DatePicker
                 date={selectedDate}
                 setDate={(d) => setValue("tanggal", d as Date, { shouldValidate: true })}
+                disabled={true} // Locked for everyone
               />
+              <p className="text-[11px] text-muted-foreground">Tanggal pengajuan terkunci pada hari ini.</p>
               {errors.tanggal && (
                 <p className="text-sm text-destructive">{errors.tanggal.message}</p>
               )}
             </div>
 
+            <div className="space-y-2">
+              <Label>Bukti Pendukung (Opsional)</Label>
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <Input
+                    type="file"
+                    className="hidden"
+                    id="bukti_pendukung"
+                    onChange={(e) => setValue("bukti_pendukung", e.target.files)}
+                  />
+                  <Label
+                    htmlFor="bukti_pendukung"
+                    className="flex cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed p-4 hover:bg-muted/50"
+                  >
+                    <Paperclip className="h-4 w-4" />
+                    <span>{buktiPendukung?.[0]?.name || "Upload File (PDF/Image)"}</span>
+                  </Label>
+                </div>
+                {buktiPendukung?.[0] && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setValue("bukti_pendukung", undefined)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
             {showH3Warning && (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
+              <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-yellow-800 text-sm">
                 <div className="flex items-center gap-2 font-medium">
                   <AlertTriangle className="h-4 w-4" />
-                  Perhatian
+                  H-3 Warning
                 </div>
-                <div className="mt-1 text-sm">
-                  Tanggal izin kurang dari 3 hari. Mohon pastikan kebijakan perusahaan.
+                <div className="mt-1">
+                  Pengajuan izin kurang dari 3 hari. Mohon hubungi admin jika mendesak.
                 </div>
               </div>
             )}
@@ -224,29 +274,33 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
               <Select
                 value={selectedStatus}
                 onValueChange={(v) => setValue("status", v as any, { shouldValidate: true })}
-                disabled={!canUpdateStatus && !isEdit}
+                disabled={!canManage}
               >
-                <SelectTrigger disabled={!canUpdateStatus}>
+                <SelectTrigger>
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="diajukan">Diajukan</SelectItem>
-                  <SelectItem value="disetujui">Disetujui</SelectItem>
-                  <SelectItem value="ditolak">Ditolak</SelectItem>
-                  <SelectItem value="dibatalkan">Dibatalkan</SelectItem>
+                  {canManage && (
+                    <>
+                      <SelectItem value="disetujui">Disetujui</SelectItem>
+                      <SelectItem value="ditolak">Ditolak</SelectItem>
+                      <SelectItem value="dibatalkan">Dibatalkan</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
-              {errors.status && (
-                <p className="text-sm text-destructive">{errors.status.message}</p>
-              )}
+              <p className="text-xs text-muted-foreground">
+                {canManage ? "Pilih status pengajuan." : "Status pengajuan otomatis 'Diajukan'."}
+              </p>
             </div>
 
             <div className="space-y-2">
-              <Label>Catatan</Label>
+              <Label>Catatan / Alasan</Label>
               <textarea
                 {...register("catatan")}
-                placeholder="Alasan cuti/izin..."
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="Tuliskan alasan pengajuan secara jelas..."
+                className="flex min-h-[100px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               />
               {errors.catatan && (
                 <p className="text-sm text-destructive">{errors.catatan.message}</p>
@@ -256,11 +310,11 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
         </Card>
       </div>
 
-      <div className="flex justify-end gap-4">
+      <div className="flex justify-end gap-4 p-4 border-t bg-muted/20">
         <Button variant="outline" type="button" onClick={() => router.back()}>
           Batal
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting} className="min-w-[120px]">
           {isSubmitting ? "Menyimpan..." : "Simpan Pengajuan"}
         </Button>
       </div>
