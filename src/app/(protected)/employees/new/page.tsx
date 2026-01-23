@@ -424,7 +424,10 @@ export default function EmployeesNewPage() {
                 <div className="space-y-2">
                   <Label>Tanggal Lahir</Label>
                   <DatePicker
-                    date={(val => val ? new Date(val) : undefined)(watch("tanggal_lahir"))}
+                    date={(() => {
+                      const tanggalLahir = watch("tanggal_lahir");
+                      return tanggalLahir ? new Date(tanggalLahir) : null;
+                    })()}
                     setDate={(d) => setValue("tanggal_lahir", d ? format(d, "yyyy-MM-dd") : "")}
                     placeholder="Pilih tanggal lahir"
                   />
