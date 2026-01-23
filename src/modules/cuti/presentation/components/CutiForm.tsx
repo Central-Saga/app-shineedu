@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, addDays, isBefore, startOfDay, differenceInDays } from "date-fns";
 import { toast } from "sonner";
@@ -31,6 +32,7 @@ import type { PengaturanCuti } from "@/modules/pengaturan-cuti/domain/entities";
 import { getEmployeesUsecase } from "@/modules/employees/application/usecases/getEmployees.usecase";
 import type { Employee } from "@/modules/employees/domain/entities";
 import { authStore, useAuthStore } from "@/modules/auth/infrastructure/auth.store";
+import type { DateRange } from "react-day-picker";
 
 
 const formSchema = z.object({
@@ -271,26 +273,39 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
             <CardTitle>Tanggal & Dokumen</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-             <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Mulai</Label>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>{isSakit ? "Tanggal (Hanya Hari Ini)" : "Rentang Tanggal"}</Label>
+                {isSakit ? (
                   <DatePicker
                     date={selectedStartDate}
-                    setDate={(d) => setValue("start_date", d as Date, { shouldValidate: true })}
-                    disabled={isSakit}
+                    setDate={(d) => {
+                      if (d) {
+                        setValue("start_date", d, { shouldValidate: true });
+                        setValue("end_date", d, { shouldValidate: true });
+                      }
+                    }}
+                    disabled={true}
+                  />
+                ) : (
+                  <DatePickerWithRange
+                    date={{ from: selectedStartDate, to: selectedEndDate }}
+                    setDate={(range: DateRange | undefined) => {
+                      if (range?.from) {
+                        setValue("start_date", range.from, { shouldValidate: true });
+                      }
+                      if (range?.to) {
+                        setValue("end_date", range.to, { shouldValidate: true });
+                      } else if (range?.from) {
+                        // If only from is selected, set end_date equal to from
+                        setValue("end_date", range.from, { shouldValidate: true });
+                      }
+                    }}
                     disabledDates={disabledDates}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label>Selesai</Label>
-                  <DatePicker
-                    date={selectedEndDate}
-                    setDate={(d) => setValue("end_date", d as Date, { shouldValidate: true })}
-                    disabled={isSakit}
-                    disabledDates={{ before: selectedStartDate || disabledDates.before }}
-                  />
-                </div>
-             </div>
+                )}
+              </div>
+            </div>
 
              <div className="rounded-md bg-muted p-3 text-xs space-y-1">
                 <div className="flex justify-between">
@@ -358,7 +373,10 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
         </Card>
 
         <Card className="md:col-span-2">
-          <CardContent className="pt-6 space-y-4">
+          <CardHeader>
+            <CardTitle>Status & Catatan</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                <div className="md:col-span-1 space-y-2">
                   <Label>Status</Label>
