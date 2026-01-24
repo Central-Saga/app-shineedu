@@ -158,7 +158,7 @@ export default function PayrollDetailPage({ params }: PageProps) {
                                 </div>
                             </div>
                             <h2 className="text-2xl font-bold text-slate-800 leading-tight mb-1">
-                                {payroll.employee.nama}
+                                {payroll.employee.user?.name || (payroll.employee as any).nama}
                             </h2>
                             <p className="text-sm text-slate-400 font-medium mb-6">
                                 {payroll.employee.kode_karyawan}

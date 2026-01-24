@@ -51,7 +51,7 @@ export function PayrollTable({ data, loading = false }: PayrollTableProps) {
                     <TableCell><Skeleton className="h-10 w-full" /></TableCell>
                 </TableRow>
              ))
-          ) : data.length === 0 ? (
+          ) : (!Array.isArray(data) || data.length === 0) ? (
             <TableRow>
               <TableCell colSpan={7} className="text-center h-48 text-muted-foreground">
                 <div className="flex flex-col items-center gap-2">
@@ -67,7 +67,7 @@ export function PayrollTable({ data, loading = false }: PayrollTableProps) {
                 <TableRow key={item.id} className="hover:bg-slate-50/50 transition-colors border-slate-100">
                     <TableCell className="py-4">
                     <div className="flex flex-col gap-1">
-                        <span className="font-bold text-slate-800">{item.employee.nama}</span>
+                        <span className="font-bold text-slate-800">{item.employee.user?.name || (item.employee as any).nama}</span>
                         <div className="flex items-center gap-2">
                             <span className="text-[10px] font-mono font-bold text-muted-foreground">{item.employee.kode_karyawan}</span>
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-slate-200 text-slate-600 bg-slate-50/50">
