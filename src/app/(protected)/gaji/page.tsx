@@ -12,14 +12,13 @@ import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.sto
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { authStore } from "@/modules/auth/infrastructure/auth.store";
+import { authStore, useAuthStore } from "@/modules/auth/infrastructure/auth.store";
 
 export default function GajiPage() {
     const { allowed } = usePermissionGuard("gaji.view");
-    const canManage = authStore.hasPermission("gaji.manage");
+    const canManage = useAuthStore((state) => authStore.hasPermission("gaji.manage"));
     const searchParams = useSearchParams();
     const { setItems } = useBreadcrumbStore();
-    const router = useRouter();
 
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
