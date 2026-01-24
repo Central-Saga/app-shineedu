@@ -103,9 +103,17 @@ export default function PayrollDetailPage({ params }: PageProps) {
     }
 
     async function handleDownload() {
-        // Temporary implementation: Print view
-        // Ideally: window.open(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payrolls/${id}/export?format=pdf`, '_blank');
-        window.print();
+        if (!payroll) return;
+        setProcessing(true);
+        try {
+            const filename = `slip_gaji_${payroll.employee.user?.name || payroll.employee.kode_karyawan}_${payroll.bulan}_${payroll.tahun}.pdf`;
+            await payrollService.downloadSlip(payroll.id, filename);
+            toast.success("Mempersiapkan download slip...");
+        } catch (e) {
+            toast.error("Gagal mendownload slip gaji");
+        } finally {
+            setProcessing(false);
+        }
     }
 
     if (!allowed) return null;

@@ -1,4 +1,4 @@
-import { get, getPaginated, post, put } from "@/shared/infrastructure/api/httpClient";
+import { get, getPaginated, post, put, download } from "@/shared/infrastructure/api/httpClient";
 
 export interface PayrollParams {
   page?: number;
@@ -48,5 +48,9 @@ export const payrollService = {
 
   updateStatus: async (id: number, status: string) => {
     return await put<Payroll>(`/payrolls/${id}/status`, { status });
+  },
+
+  downloadSlip: async (id: number, filename?: string) => {
+    return await download(`/payrolls/${id}/export`, {}, filename);
   },
 };
