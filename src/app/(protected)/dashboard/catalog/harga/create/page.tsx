@@ -39,7 +39,7 @@ export default function CreatePaketHargaPage() {
         title="Tambah Harga Paket"
         description="Buat aturan harga baru"
       />
-      <div className="max-w-2xl">
+      <div className="w-full">
         <PaketHargaForm 
             mode="create" 
             programs={programs}

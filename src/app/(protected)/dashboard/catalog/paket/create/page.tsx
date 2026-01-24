@@ -23,7 +23,7 @@ export default function CreatePaketPage() {
         title="Tambah Paket"
         description="Buat data paket baru"
       />
-      <div className="max-w-2xl">
+      <div className="w-full">
         <PaketForm mode="create" />
       </div>
     </div>

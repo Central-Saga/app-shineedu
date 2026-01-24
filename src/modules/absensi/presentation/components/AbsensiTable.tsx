@@ -22,16 +22,7 @@ import { Eye, MoreHorizontal, Pencil, Trash } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import type { Absensi } from "../../domain/entities";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDeleteDialog } from "@/shared/presentation/components/ConfirmDeleteDialog";
 import { useState } from "react";
 
 interface AbsensiTableProps {
@@ -139,29 +130,16 @@ export function AbsensiTable({
         </div>
       </div>
 
-      <AlertDialog open={!!deleteData} onOpenChange={(open) => !open && setDeleteData(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Apakah anda yakin?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Data absensi tanggal <b>{deleteData?.tanggal}</b> untuk{" "}
-              <b>{deleteData?.karyawan?.user?.name || "Karyawan"}</b> akan dihapus permanen.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive hover:bg-destructive/90"
-              onClick={() => {
-                if (deleteData) onDelete(deleteData);
-                setDeleteData(null);
-              }}
-            >
-              Hapus
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteDialog
+        isOpen={!!deleteData}
+        onOpenChange={(open) => !open && setDeleteData(null)}
+        onConfirm={() => {
+          if (deleteData) onDelete(deleteData);
+          setDeleteData(null);
+        }}
+        title="Hapus Data Absensi?"
+        description={`Apakah Anda yakin ingin menghapus data absensi ${deleteData?.karyawan?.user?.name || "Karyawan"} pada tanggal ${deleteData?.tanggal || ""}?`}
+      />
     </>
   );
 }

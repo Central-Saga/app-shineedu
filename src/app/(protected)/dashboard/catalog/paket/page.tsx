@@ -12,6 +12,7 @@ import { useAuthStore } from "@/modules/auth/infrastructure/auth.store";
 import { listPaket, deletePaket } from "@/modules/catalog/infrastructure/catalog.repository";
 import { PaketTable } from "@/modules/catalog/presentation/components/PaketTable";
 import { StatsCard } from "@/shared/presentation/components/StatsCard";
+import { ConfirmDeleteDialog } from "@/shared/presentation/components/ConfirmDeleteDialog";
 import type { Paket } from "@/modules/catalog/domain/entities";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,11 @@ export default function PaketPage() {
   const [status, setStatus] = useState<string | null>(searchParams.get("status") || null);
   const [sortBy, setSortBy] = useState<string>(searchParams.get("sort_by") || "created_at");
   const [sortDir, setSortDir] = useState<"asc" | "desc">((searchParams.get("sort_dir") as "asc" | "desc") || "desc");
+
+  // State for delete dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<Paket | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { setItems } = useBreadcrumbStore();
   const canCreate = useAuthStore((s) => s.permissionsSet.has("catalog.paket.create"));
@@ -119,14 +125,24 @@ export default function PaketPage() {
     }
   }, [allowed, page, perPage, debouncedQ, status, sortBy, sortDir]);
 
-  const handleDelete = async (item: Paket) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus paket ${item.nama}?`)) return;
+  const handleDelete = (item: Paket) => {
+    setItemToDelete(item);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    setIsDeleting(true);
     try {
-      await deletePaket(item.id);
+      await deletePaket(itemToDelete.id);
       toast.success("Paket berhasil dihapus");
+      setDeleteDialogOpen(false);
       fetchData();
     } catch (error: any) {
       toast.error(error.message || "Gagal menghapus paket");
+    } finally {
+      setIsDeleting(false);
+      setItemToDelete(null);
     }
   };
 
@@ -255,6 +271,15 @@ export default function PaketPage() {
           />
         </CardContent>
       </Card>
+
+      <ConfirmDeleteDialog
+        isOpen={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        isLoading={isDeleting}
+        title="Hapus Paket Bimbingan?"
+        description={`Apakah Anda yakin ingin menghapus paket "${itemToDelete?.nama}"? Seluruh data yang berkaitan dengan paket ini mungkin akan terpengaruh.`}
+      />
     </div>
   );
 }

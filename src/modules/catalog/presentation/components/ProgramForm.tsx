@@ -196,27 +196,39 @@ export function ProgramForm({ initialData, jenjangOptions, mode }: ProgramFormPr
               </AccordionTrigger>
               <AccordionContent>
                 <div className="max-w-md">
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Pilih Status</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPending}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Pilih status" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Aktif">Aktif</SelectItem>
-                            <SelectItem value="Non Aktif">Non Aktif</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {mode === "create" ? (
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2 rounded-xl border px-4 py-3 bg-slate-50/50 cursor-not-allowed opacity-70">
+                        <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-sm font-medium">Status: Aktif</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground max-w-xs">
+                        Data baru secara otomatis berstatus <strong>Aktif</strong>. Gunakan halaman edit untuk merubah status di masa mendatang.
+                      </p>
+                    </div>
+                  ) : (
+                    <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Pilih Status</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPending}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih status" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Aktif">Aktif</SelectItem>
+                              <SelectItem value="Non Aktif">Non Aktif</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </div>
               </AccordionContent>
             </AccordionItem>

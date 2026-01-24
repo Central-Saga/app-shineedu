@@ -29,7 +29,7 @@ export default function CreateProgramPage() {
         title="Tambah Program"
         description="Buat data program baru"
       />
-      <div className="max-w-2xl">
+      <div className="w-full">
         <ProgramForm mode="create" jenjangOptions={jenjangs} />
       </div>
     </div>

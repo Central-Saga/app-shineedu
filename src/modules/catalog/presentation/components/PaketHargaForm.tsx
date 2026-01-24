@@ -227,56 +227,68 @@ export function PaketHargaForm({ initialData, programs, jenjangs, pakets, mode }
                 Masa Berlaku & Status
               </AccordionTrigger>
               <AccordionContent>
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                  <FormField
-                    control={form.control}
-                    name="effective_from"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Berlaku Mulai</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} disabled={isPending} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="effective_to"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Sampai Dengan</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} disabled={isPending} />
-                        </FormControl>
-                        <FormDescription className="text-[11px]">Kosongkan jika tidak ada batas</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Status Aktif</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPending}>
+                {mode === "create" ? (
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 rounded-xl border px-4 py-3 bg-slate-50/50 cursor-not-allowed opacity-70">
+                      <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-sm font-medium">Status: Aktif</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground max-w-xs">
+                      Data baru secara otomatis berstatus <strong>Aktif</strong>. Gunakan halaman edit untuk merubah status di masa mendatang.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                    <FormField
+                      control={form.control}
+                      name="effective_from"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Berlaku Mulai</FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Pilih status" />
-                            </SelectTrigger>
+                            <Input type="date" {...field} disabled={isPending} />
                           </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Aktif">Aktif</SelectItem>
-                            <SelectItem value="Non Aktif">Non Aktif</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="effective_to"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sampai Dengan</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} disabled={isPending} />
+                          </FormControl>
+                          <FormDescription className="text-[11px]">Kosongkan jika tidak ada batas</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Status Aktif</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPending}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih status" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Aktif">Aktif</SelectItem>
+                              <SelectItem value="Non Aktif">Non Aktif</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
               </AccordionContent>
             </AccordionItem>
           </Accordion>

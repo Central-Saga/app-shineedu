@@ -23,7 +23,7 @@ export default function CreateJenjangPage() {
         title="Tambah Jenjang"
         description="Buat data jenjang baru"
       />
-      <div className="max-w-2xl">
+      <div className="w-full">
         <JenjangForm mode="create" />
       </div>
     </div>

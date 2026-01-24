@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
 import { PageHeader } from "@/shared/presentation/components/PageHeader";
 import { PaketHargaForm } from "@/modules/catalog/presentation/components/PaketHargaForm";
@@ -10,10 +10,11 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default function EditPaketHargaPage({ params }: Props) {
+  const { id } = use(params);
   const { setItems } = useBreadcrumbStore();
   const [data, setData] = useState<PaketHarga | undefined>(undefined);
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -30,7 +31,7 @@ export default function EditPaketHargaPage({ params }: Props) {
     ]);
 
     Promise.all([
-        getPaketHarga(Number(params.id)),
+        getPaketHarga(Number(id)),
         listProgram({ per_page: 999 }),
         listJenjang({ per_page: 999 }),
         listPaket({ per_page: 999 })
@@ -43,12 +44,12 @@ export default function EditPaketHargaPage({ params }: Props) {
       })
       .catch((err) => toast.error("Gagal memuat data"))
       .finally(() => setLoading(false));
-  }, [setItems, params.id]);
+  }, [setItems, id]);
 
   if (loading) {
      return <div className="space-y-6">
           <Skeleton className="h-10 w-48" />
-          <Skeleton className="h-[400px] max-w-2xl" />
+          <Skeleton className="h-[400px] w-full" />
       </div>
   }
 
@@ -58,7 +59,7 @@ export default function EditPaketHargaPage({ params }: Props) {
         title="Edit Harga Paket"
         description="Ubah aturan harga"
       />
-      <div className="max-w-2xl">
+      <div className="w-full">
         <PaketHargaForm 
             mode="edit" 
             initialData={data} 

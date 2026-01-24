@@ -18,6 +18,7 @@ import {
 } from "@/modules/catalog/infrastructure/catalog.repository";
 import { PaketHargaTable } from "@/modules/catalog/presentation/components/PaketHargaTable";
 import { StatsCard } from "@/shared/presentation/components/StatsCard";
+import { ConfirmDeleteDialog } from "@/shared/presentation/components/ConfirmDeleteDialog";
 import type { PaketHarga } from "@/modules/catalog/domain/entities";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,11 @@ export default function PaketHargaPage() {
   const [paketId, setPaketId] = useState<string>(searchParams.get("paket_id") || "all");
   const [sortBy, setSortBy] = useState<string>(searchParams.get("sort_by") || "created_at");
   const [sortDir, setSortDir] = useState<"asc" | "desc">((searchParams.get("sort_dir") as "asc" | "desc") || "desc");
+
+  // State for delete dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<PaketHarga | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Options state
   const [programOptions, setProgramOptions] = useState<{label: string, value: string}[]>([]);
@@ -147,14 +153,24 @@ export default function PaketHargaPage() {
     }
   }, [allowed, page, perPage, debouncedQ, status, programId, jenjangId, paketId, sortBy, sortDir]);
 
-  const handleDelete = async (item: PaketHarga) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus harga ini?`)) return;
+  const handleDelete = (item: PaketHarga) => {
+    setItemToDelete(item);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    setIsDeleting(true);
     try {
-      await deletePaketHarga(item.id);
+      await deletePaketHarga(itemToDelete.id);
       toast.success("Harga berhasil dihapus");
+      setDeleteDialogOpen(false);
       fetchData();
     } catch (error: any) {
       toast.error(error.message || "Gagal menghapus harga");
+    } finally {
+      setIsDeleting(false);
+      setItemToDelete(null);
     }
   };
 
@@ -312,6 +328,15 @@ export default function PaketHargaPage() {
           />
         </CardContent>
       </Card>
+
+      <ConfirmDeleteDialog
+        isOpen={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        isLoading={isDeleting}
+        title="Hapus Aturan Harga?"
+        description="Apakah Anda yakin ingin menghapus aturan harga ini? Tindakan ini dapat memengaruhi perhitungan biaya pada pendaftaran siswa baru."
+      />
     </div>
   );
 }

@@ -28,6 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ConfirmDeleteDialog } from "@/shared/presentation/components/ConfirmDeleteDialog";
 import { MoreHorizontal, Pencil, Trash, Check, X, FileText, Ban } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -178,28 +179,16 @@ export function CutiTable({
         </div>
       </div>
 
-       <AlertDialog open={!!deleteData} onOpenChange={(open) => !open && setDeleteData(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Pengajuan Cuti?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Data cuti tanggal <b>{deleteData?.tanggal}</b> akan dihapus permanen.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive hover:bg-destructive/90"
-              onClick={() => {
-                if (deleteData) onDelete(deleteData);
-                setDeleteData(null);
-              }}
-            >
-              Hapus
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteDialog
+        isOpen={!!deleteData}
+        onOpenChange={(open) => !open && setDeleteData(null)}
+        onConfirm={() => {
+          if (deleteData) onDelete(deleteData);
+          setDeleteData(null);
+        }}
+        title="Hapus Pengajuan Cuti?"
+        description={`Apakah Anda yakin ingin menghapus data pengajuan cuti ${deleteData?.karyawan?.user?.name || "Karyawan"} untuk tanggal ${deleteData?.tanggal || deleteData?.start_date || ""}?`}
+      />
 
       <AlertDialog open={!!cancelData} onOpenChange={(open) => !open && setCancelData(null)}>
         <AlertDialogContent>

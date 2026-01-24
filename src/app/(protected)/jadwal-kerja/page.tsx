@@ -17,6 +17,7 @@ import { getEmployeesUsecase } from "@/modules/employees/application/usecases/ge
 import { StatsCard } from "@/shared/presentation/components/StatsCard";
 import { JadwalKerjaTable } from "@/modules/jadwal-kerja/presentation/components/JadwalKerjaTable";
 import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
+import { ConfirmDeleteDialog } from "@/shared/presentation/components/ConfirmDeleteDialog";
 import { exportJadwalKerjaUsecase } from "@/modules/jadwal-kerja/application/usecases/exportJadwalKerja.usecase";
 import {
   ForbiddenError,
@@ -391,22 +392,13 @@ export default function JadwalKerjaPage() {
         </CardContent>
       </Card>
 
-      <AlertDialog open={!!deleteItem} onOpenChange={(open) => !open && setDeleteItem(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Jadwal Kerja?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. Jadwal <strong>{deleteItem?.mata_pelajaran}</strong> akan dihapus permanen.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-rose-600 hover:bg-rose-700">
-              Hapus
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteDialog
+        isOpen={!!deleteItem}
+        onOpenChange={(open) => !open && setDeleteItem(null)}
+        onConfirm={confirmDelete}
+        title="Hapus Jadwal Kerja?"
+        description={`Tindakan ini tidak dapat dibatalkan. Jadwal "${deleteItem?.mata_pelajaran}" akan dihapus permanen.`}
+      />
     </div>
   );
 }

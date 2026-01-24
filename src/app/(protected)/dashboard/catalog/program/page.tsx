@@ -12,6 +12,7 @@ import { useAuthStore } from "@/modules/auth/infrastructure/auth.store";
 import { listProgram, deleteProgram } from "@/modules/catalog/infrastructure/catalog.repository";
 import { ProgramTable } from "@/modules/catalog/presentation/components/ProgramTable";
 import { StatsCard } from "@/shared/presentation/components/StatsCard";
+import { ConfirmDeleteDialog } from "@/shared/presentation/components/ConfirmDeleteDialog";
 import type { Program } from "@/modules/catalog/domain/entities";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,11 @@ export default function ProgramPage() {
   const [status, setStatus] = useState<string | null>(searchParams.get("status") || null);
   const [sortBy, setSortBy] = useState<string>(searchParams.get("sort_by") || "created_at");
   const [sortDir, setSortDir] = useState<"asc" | "desc">((searchParams.get("sort_dir") as "asc" | "desc") || "desc");
+
+  // State for delete dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<Program | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { setItems } = useBreadcrumbStore();
   const canCreate = useAuthStore((s) => s.permissionsSet.has("catalog.program.create"));
@@ -119,14 +125,24 @@ export default function ProgramPage() {
     }
   }, [allowed, page, perPage, debouncedQ, status, sortBy, sortDir]);
 
-  const handleDelete = async (item: Program) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus program ${item.nama}?`)) return;
+  const handleDelete = (item: Program) => {
+    setItemToDelete(item);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    setIsDeleting(true);
     try {
-      await deleteProgram(item.id);
+      await deleteProgram(itemToDelete.id);
       toast.success("Program berhasil dihapus");
+      setDeleteDialogOpen(false);
       fetchData();
     } catch (error: any) {
       toast.error(error.message || "Gagal menghapus program");
+    } finally {
+      setIsDeleting(false);
+      setItemToDelete(null);
     }
   };
 
@@ -255,6 +271,15 @@ export default function ProgramPage() {
           />
         </CardContent>
       </Card>
+
+      <ConfirmDeleteDialog
+        isOpen={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        isLoading={isDeleting}
+        title="Hapus Program Mata Pelajaran?"
+        description={`Apakah Anda yakin ingin menghapus program "${itemToDelete?.nama}"? Seluruh data yang berkaitan dengan program ini mungkin akan terpengaruh.`}
+      />
     </div>
   );
 }

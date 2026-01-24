@@ -13,6 +13,7 @@ import { listJenjang } from "@/modules/catalog/infrastructure/catalog.repository
 import { deleteJenjang } from "@/modules/catalog/infrastructure/catalog.repository";
 import { JenjangTable } from "@/modules/catalog/presentation/components/JenjangTable";
 import { StatsCard } from "@/shared/presentation/components/StatsCard";
+import { ConfirmDeleteDialog } from "@/shared/presentation/components/ConfirmDeleteDialog";
 import type { Jenjang } from "@/modules/catalog/domain/entities";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,11 @@ export default function JenjangPage() {
   const [status, setStatus] = useState<string | null>(searchParams.get("status") || null);
   const [sortBy, setSortBy] = useState<string>(searchParams.get("sort_by") || "created_at");
   const [sortDir, setSortDir] = useState<"asc" | "desc">((searchParams.get("sort_dir") as "asc" | "desc") || "desc");
+
+  // State for delete dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<Jenjang | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { setItems } = useBreadcrumbStore();
   const canCreate = useAuthStore((s) => s.permissionsSet.has("catalog.jenjang.create"));
@@ -122,14 +128,24 @@ export default function JenjangPage() {
     }
   }, [allowed, page, perPage, debouncedQ, status, sortBy, sortDir]);
 
-  const handleDelete = async (item: Jenjang) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus jenjang ${item.nama}?`)) return;
+  const handleDelete = (item: Jenjang) => {
+    setItemToDelete(item);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    setIsDeleting(true);
     try {
-      await deleteJenjang(item.id);
+      await deleteJenjang(itemToDelete.id);
       toast.success("Jenjang berhasil dihapus");
+      setDeleteDialogOpen(false);
       fetchData();
     } catch (error: any) {
       toast.error(error.message || "Gagal menghapus jenjang");
+    } finally {
+      setIsDeleting(false);
+      setItemToDelete(null);
     }
   };
 
@@ -258,6 +274,15 @@ export default function JenjangPage() {
           />
         </CardContent>
       </Card>
+
+      <ConfirmDeleteDialog
+        isOpen={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        isLoading={isDeleting}
+        title="Hapus Jenjang Pendidikan?"
+        description={`Apakah Anda yakin ingin menghapus jenjang "${itemToDelete?.nama}"? Seluruh data yang berkaitan dengan jenjang ini mungkin akan terpengaruh.`}
+      />
     </div>
   );
 }
