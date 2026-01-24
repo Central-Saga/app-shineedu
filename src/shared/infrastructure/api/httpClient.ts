@@ -110,7 +110,7 @@ async function request<T>(
 ): Promise<T> {
   const url = `${BASE.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
   const isFormData = body instanceof FormData;
-
+  
   const headers: Record<string, string> = {
     Accept: "application/json",
     ...getAuthHeaders(),
@@ -123,7 +123,7 @@ async function request<T>(
   const res = await fetch(url, {
     method,
     headers,
-    body: body != null ? (isFormData ? (body as FormData) : JSON.stringify(body)) : undefined,
+    body: isFormData ? body : (body != null ? JSON.stringify(body) : undefined),
   });
 
   if (res.status === 204) {
