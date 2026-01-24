@@ -235,7 +235,7 @@ export default function RealisasiJadwalPage() {
           <div className="flex items-center gap-2">
             <ExportDropdown onExport={handleExport} />
             {canCreate && (
-              <Button onClick={handleSync} disabled={syncing} variant="outline">
+              <Button onClick={handleSync} disabled={syncing}>
                 <RefreshCw className={`mr-2 size-4 ${syncing ? 'animate-spin' : ''}`} />
                 {syncing ? 'Sinkronisasi…' : 'Sinkronisasi Hari Ini'}
               </Button>
