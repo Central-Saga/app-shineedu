@@ -138,12 +138,24 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
 
   const remaining = maxQuota !== null ? Math.max(0, maxQuota - usedCount) : 999;
 
-  const disabledDates = useMemo(() => {
-    const today = startOfDay(new Date());
-    return {
-      before: addDays(today, isSakit ? 0 : minDaysBefore)
-    };
+  const firstValidDate = useMemo(() => {
+     const today = startOfDay(new Date());
+     return addDays(today, isSakit ? 0 : minDaysBefore);
   }, [isSakit, minDaysBefore]);
+
+  const disabledDates = useMemo(() => {
+    return {
+      before: firstValidDate
+    };
+  }, [firstValidDate]);
+
+  // Adjust dates if they become invalid due to rule/type changes
+  useEffect(() => {
+    if (!isEdit && selectedStartDate && isBefore(startOfDay(selectedStartDate), firstValidDate)) {
+        setValue("start_date", firstValidDate);
+        setValue("end_date", firstValidDate);
+    }
+  }, [firstValidDate, isEdit, selectedStartDate, setValue]);
 
   const duration = useMemo(() => {
     if (!selectedStartDate || !selectedEndDate) return 0;
@@ -169,14 +181,12 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
     if (!range?.from) return;
     
     const from = range.from;
-    let to = range.to || range.from;
+    const to = range.to || range.from;
 
     const newDuration = differenceInDays(to, from) + 1;
     
     if (newDuration > remaining) {
-        toast.error(`Sisa kuota anda tidak cukup (${remaining} hari tersisa)`);
-        // Adjust 'to' to max possible if desired, or just reset range
-        to = addDays(from, Math.max(0, remaining - 1));
+        toast.warning(`Sisa kuota anda tidak cukup (${remaining} hari tersisa). Durasi terpilih: ${newDuration} hari.`);
     }
 
     setValue("start_date", from, { shouldValidate: true });
