@@ -39,7 +39,7 @@ export default function GajiPage() {
     useEffect(() => {
         setItems([
             { label: "Dashboard", href: "/dashboard" },
-            { label: "Gaji Bulanan" },
+            { label: "Payroll" },
         ]);
     }, [setItems]);
 
@@ -56,7 +56,7 @@ export default function GajiPage() {
             setData(result.data);
             setMeta(result.meta);
         } catch (error) {
-            toast.error("Gagal memuat data gaji");
+            toast.error("Gagal memuat data payroll");
         } finally {
             setLoading(false);
         }
@@ -67,12 +67,12 @@ export default function GajiPage() {
     }, [allowed, bulan, tahun, q, page]);
 
     async function handleSync() {
-        if (!confirm("Generate ulang data gaji untuk periode ini? Data draft yang belum dibayar akan diperbarui.")) return;
+        if (!confirm("Generate ulang data payroll untuk periode ini? Data draft yang belum dibayar akan diperbarui.")) return;
         
         setGenerating(true);
         try {
             await payrollService.generatePayroll(bulan, tahun);
-            toast.success("Sinkronisasi gaji berhasil!");
+            toast.success("Sinkronisasi payroll berhasil!");
             loadData();
         } catch (error: any) {
             toast.error(error?.message || "Gagal melakukan sinkronisasi");
@@ -86,8 +86,8 @@ export default function GajiPage() {
     return (
         <div className="flex flex-col gap-6">
             <PageHeader
-                title="Gaji Bulanan"
-                description={`Data penggajian periode ${bulan}/${tahun}`}
+                title="Payroll"
+                description={`Data pengupahan karyawan periode ${bulan}/${tahun}`}
                 actions={
                     canManage && (
                         <Button onClick={handleSync} disabled={generating || loading}>
