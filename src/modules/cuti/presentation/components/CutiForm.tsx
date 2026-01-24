@@ -20,7 +20,7 @@ import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, addDays, isBefore, startOfDay, differenceInDays } from "date-fns";
 import { toast } from "sonner";
-import { AlertTriangle, Paperclip, X } from "lucide-react";
+import { AlertTriangle, Paperclip, X, FileText } from "lucide-react";
 import {
   createCuti,
   updateCuti,
@@ -299,12 +299,31 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
 
             <div className="space-y-2">
               <Label>Bukti Pendukung (Opsional)</Label>
+
+              {(isEdit && (initialData?.bukti_url || (initialData as any)?.bukti_pendukung_url)) && (
+                <div className="mb-2 p-2 bg-slate-50 border rounded-md flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <FileText className="size-3.5" />
+                    <span>Sudah ada file bukti terupload</span>
+                  </div>
+                  <Button 
+                    variant="link" 
+                    size="sm" 
+                    className="h-auto p-0 text-indigo-600" 
+                    onClick={() => window.open(initialData.bukti_url || (initialData as any).bukti_pendukung_url, "_blank")}
+                    type="button"
+                  >
+                    Lihat File
+                  </Button>
+                </div>
+              )}
+
               <div className="flex items-center gap-4">
                 <div className="flex-1">
                   <Input type="file" className="hidden" id="bukti_pendukung" onChange={(e) => setValue("bukti_pendukung", e.target.files)} />
                   <Label htmlFor="bukti_pendukung" className="flex cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed p-4 hover:bg-muted/50">
                     <Paperclip className="h-4 w-4" />
-                    <span>{buktiPendukung?.[0]?.name || "Upload File"}</span>
+                    <span>{buktiPendukung?.[0]?.name || "Upload File Baru (Ganti)"}</span>
                   </Label>
                 </div>
                 {buktiPendukung?.[0] && (

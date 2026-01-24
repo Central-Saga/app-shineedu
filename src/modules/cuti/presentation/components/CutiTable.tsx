@@ -29,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Pencil, Trash, Check, X } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash, Check, X, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import type { Cuti } from "../../domain/entities";
@@ -126,6 +126,11 @@ export function CutiTable({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                        {(item.bukti_url || (item as any).bukti_pendukung_url) && (
+                          <DropdownMenuItem onClick={() => window.open(item.bukti_url || (item as any).bukti_pendukung_url, "_blank")}>
+                            <FileText className="mr-2 h-4 w-4" /> Lihat Bukti
+                          </DropdownMenuItem>
+                        )}
                         {canUpdate && (
                           <DropdownMenuItem onClick={() => onEdit(item)}>
                             <Pencil className="mr-2 h-4 w-4" /> Edit
