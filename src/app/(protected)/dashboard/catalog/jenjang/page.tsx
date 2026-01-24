@@ -62,6 +62,12 @@ export default function JenjangPage() {
   const canUpdate = useAuthStore((s) => s.permissionsSet.has("catalog.jenjang.update"));
   const canDelete = useAuthStore((s) => s.permissionsSet.has("catalog.jenjang.delete"));
 
+  const [stats, setStats] = useState({
+    total: 0,
+    aktif: 0,
+    nonAktif: 0,
+  });
+
   useEffect(() => {
     setItems([
       { label: "Dashboard", href: "/dashboard" },
@@ -73,16 +79,27 @@ export default function JenjangPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const { items, meta } = await listJenjang({
-        page,
-        per_page: perPage,
-        q: debouncedQ,
-        status: status === "all" ? undefined : (status as "Aktif" | "Non Aktif" | undefined),
-        sort_by: sortBy,
-        sort_dir: sortDir,
+      const [listRes, allRes, aktifRes, nonAktifRes] = await Promise.all([
+        listJenjang({
+          page,
+          per_page: perPage,
+          q: debouncedQ,
+          status: status === "all" ? undefined : (status as "Aktif" | "Non Aktif" | undefined),
+          sort_by: sortBy,
+          sort_dir: sortDir,
+        }),
+        listJenjang({ per_page: 1 }),
+        listJenjang({ per_page: 1, status: "Aktif" }),
+        listJenjang({ per_page: 1, status: "Non Aktif" }),
+      ]);
+
+      setData(listRes.items);
+      setMeta(listRes.meta);
+      setStats({
+        total: allRes.meta.total,
+        aktif: aktifRes.meta.total,
+        nonAktif: nonAktifRes.meta.total,
       });
-      setData(items);
-      setMeta(meta);
     } catch (error: any) {
       toast.error(error.message || "Gagal memuat data jenjang");
     } finally {
@@ -138,12 +155,25 @@ export default function JenjangPage() {
        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatsCard
           label="Total Jenjang"
-          value={meta.total}
+          value={stats.total}
           icon={GraduationCap}
           variant="primary"
           description="Semua jenjang terdaftar"
         />
-         {/* We could fetch stats separately if needed, for now just showing total is okay or filter client side if small data, but pagination makes it hard */}
+        <StatsCard
+          label="Jenjang Aktif"
+          value={stats.aktif}
+          icon={CheckCircle}
+          variant="success"
+          description="Jenjang yang sedang aktif"
+        />
+        <StatsCard
+          label="Jenjang Non Aktif"
+          value={stats.nonAktif}
+          icon={XCircle}
+          variant="danger"
+          description="Jenjang tidak aktif"
+        />
       </div>
 
       <Card>

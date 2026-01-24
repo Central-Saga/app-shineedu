@@ -4,7 +4,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { 
+  Accordion, 
+  AccordionContent, 
+  AccordionItem, 
+  AccordionTrigger 
+} from "@/components/ui/accordion";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,7 +26,6 @@ import { paketSchema, type PaketFormValues } from "../schemas";
 import { createPaket, updatePaket } from "@/modules/catalog/infrastructure/catalog.repository";
 import type { Paket } from "@/modules/catalog/domain/entities";
 import { useTransition } from "react";
-import { Settings2 } from "lucide-react";
 
 interface PaketFormProps {
   initialData?: Paket;
@@ -60,11 +64,10 @@ export function PaketForm({ initialData, mode }: PaketFormProps) {
         }
         router.push("/dashboard/catalog/paket");
         router.refresh();
-      } catch (error: unknown) {
-        const err = error as { details?: Record<string, string[]> };
-        if (err?.details) {
-            Object.keys(err.details).forEach((key) => {
-                form.setError(key as any, { message: (err.details as any)[key][0] });
+      } catch (error: any) {
+        if (error?.details) {
+            Object.keys(error.details).forEach((key) => {
+                form.setError(key as any, { message: error.details[key][0] });
             });
         }
       }
@@ -72,239 +75,224 @@ export function PaketForm({ initialData, mode }: PaketFormProps) {
   };
 
   return (
-    <Card className="border-none shadow-premium ring-1 ring-slate-100 rounded-2xl overflow-hidden py-0">
-      <CardHeader className="border-b border-slate-50 bg-slate-50/30 pb-4">
-        <CardTitle className="text-lg font-bold text-slate-800">
-          {mode === "create" ? "Buat Paket Bimbingan" : `Edit Paket: ${initialData?.kode}`}
-        </CardTitle>
-        <CardDescription>
-          Tentukan parameter sesi, durasi, dan fitur yang tersedia dalam paket ini.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-6">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-              <FormField
-                control={form.control}
-                name="kode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-tight text-slate-700">Kode Paket</FormLabel>
-                    <FormControl>
-                      <Input placeholder="REG_4X" {...field} disabled={isPending} className="bg-slate-50/50" />
-                    </FormControl>
-                    <FormDescription className="text-[10px]">Kode identifikasi paket.</FormDescription>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
-                )}
-              />
+    <div className="w-full">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <Accordion defaultValue="data-paket" className="w-full">
+            <AccordionItem value="data-paket">
+              <AccordionTrigger description="Informasi dasar dan tipe layanan bimbingan">
+                Data Paket
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="kode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Kode Paket</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Contoh: REG_4X" {...field} disabled={isPending} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={form.control}
-                name="nama"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-tight text-slate-700">Nama Paket</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Reguler 4 Pertemuan" {...field} disabled={isPending} className="bg-slate-50/50" />
-                    </FormControl>
-                    <FormDescription className="text-[10px]">Nama tampilan paket untuk admin & siswa.</FormDescription>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="tipe"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-tight text-slate-700">Tipe Layanan</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPending}>
-                      <FormControl>
-                        <SelectTrigger className="bg-slate-50/50">
-                          <SelectValue placeholder="Pilih tipe" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="REGULER">Reguler (Grup Kecil)</SelectItem>
-                        <SelectItem value="PRIVATE">Private (1 on 1)</SelectItem>
-                        <SelectItem value="GROUP">Group (Grup Besar)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={form.control}
+                    name="nama"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nama Paket</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Contoh: Reguler 4 Pertemuan" {...field} disabled={isPending} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
+                  <FormField
+                    control={form.control}
+                    name="tipe"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tipe Layanan</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPending}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih tipe" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="REGULER">Reguler (Grup Kecil)</SelectItem>
+                            <SelectItem value="PRIVATE">Private (1 on 1)</SelectItem>
+                            <SelectItem value="GROUP">Group (Grup Besar)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="parameter-sesi">
+              <AccordionTrigger description="Pengaturan jumlah pertemuan dan durasi belajar">
+                Parameter Sesi
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  <FormField
                     control={form.control}
                     name="pertemuan_per_bulan"
                     render={({ field }) => (
-                    <FormItem>
-                        <FormLabel className="text-xs font-bold uppercase tracking-tight text-slate-700">Sesi / Bulan</FormLabel>
+                      <FormItem>
+                        <FormLabel>Sesi / Bulan</FormLabel>
                         <FormControl>
-                        <Input type="number" {...field} disabled={isPending} className="bg-slate-50/50" />
+                          <Input type="number" {...field} disabled={isPending} />
                         </FormControl>
-                        <FormMessage className="text-xs" />
-                    </FormItem>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                />
+                  />
 
-                <FormField
+                  <FormField
                     control={form.control}
                     name="durasi_menit"
                     render={({ field }) => (
-                    <FormItem>
-                        <FormLabel className="text-xs font-bold uppercase tracking-tight text-slate-700">Durasi (Menit)</FormLabel>
+                      <FormItem>
+                        <FormLabel>Durasi (Menit)</FormLabel>
                         <FormControl>
-                        <Input type="number" {...field} disabled={isPending} className="bg-slate-50/50" />
+                          <Input type="number" {...field} disabled={isPending} />
                         </FormControl>
-                        <FormMessage className="text-xs" />
-                    </FormItem>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                />
-              </div>
-
-              <div className="md:col-span-2 space-y-4 pt-2">
-                <div className="flex items-center gap-2 mb-2">
-                    <div className="p-1 bg-rose-50 rounded text-rose-600">
-                        <Settings2 className="size-3.5" />
-                    </div>
-                    <Label className="text-xs font-bold uppercase tracking-tight text-slate-700">Fitur & Kebijakan Paket</Label>
+                  />
                 </div>
-                
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="fitur-kebijakan">
+              <AccordionTrigger description="Fitur tambahan dan kebijakan operasional paket">
+                Fitur & Kebijakan
+              </AccordionTrigger>
+              <AccordionContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                        control={form.control}
-                        name="boleh_mix_mapel"
-                        render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-xl border border-slate-100 bg-slate-50/30 p-4 shadow-sm">
-                            <div className="space-y-0.5">
-                                <FormLabel className="text-sm font-semibold text-slate-700">Campur Mapel</FormLabel>
-                                <FormDescription className="text-[10px]">
-                                    Siswa bisa pilih mapel berbeda tiap sesi
-                                </FormDescription>
-                            </div>
-                            <FormControl>
-                                <Switch
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                    disabled={isPending}
-                                />
-                            </FormControl>
-                        </FormItem>
-                        )}
-                    />
-
-                    {form.watch("boleh_mix_mapel") && (
-                        <FormField
-                            control={form.control}
-                            name="max_mapel"
-                            render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between rounded-xl border border-rose-100 bg-rose-50/10 p-4 shadow-sm animate-in fade-in slide-in-from-top-1">
-                                <div className="space-y-0.5 whitespace-nowrap mr-4">
-                                    <FormLabel className="text-sm font-semibold text-rose-800">Maks. Variasi Mapel</FormLabel>
-                                    <FormDescription className="text-[10px] text-rose-600">
-                                        Limit jumlah mapel unik
-                                    </FormDescription>
-                                </div>
-                                <FormControl>
-                                    <Input type="number" {...field} disabled={isPending} className="max-w-[80px] h-9 text-center bg-white border-rose-200" />
-                                </FormControl>
-                                <FormMessage className="text-xs" />
-                            </FormItem>
-                            )}
-                        />
+                  <FormField
+                    control={form.control}
+                    name="boleh_mix_mapel"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-xl border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel>Campur Mapel</FormLabel>
+                          <FormDescription className="text-[11px]">Siswa bisa pilih mapel berbeda tiap sesi</FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch checked={field.value} onCheckedChange={field.onChange} disabled={isPending} />
+                        </FormControl>
+                      </FormItem>
                     )}
+                  />
 
+                  {form.watch("boleh_mix_mapel") && (
                     <FormField
-                        control={form.control}
-                        name="bisa_tambah_pertemuan"
-                        render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-xl border border-slate-100 bg-slate-50/30 p-4 shadow-sm">
-                            <div className="space-y-0.5">
-                                <FormLabel className="text-sm font-semibold text-slate-700">Add-on Sesi</FormLabel>
-                                <FormDescription className="text-[10px]">
-                                    Bisa beli sesi tambahan di luar paket
-                                </FormDescription>
-                            </div>
-                            <FormControl>
-                                <Switch
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                    disabled={isPending}
-                                />
-                            </FormControl>
+                      control={form.control}
+                      name="max_mapel"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-xl border p-4">
+                          <div className="space-y-0.5 mr-4">
+                            <FormLabel>Maks. Variasi Mapel</FormLabel>
+                            <FormDescription className="text-[11px]">Limit jumlah mapel unik</FormDescription>
+                          </div>
+                          <FormControl>
+                            <Input type="number" {...field} disabled={isPending} className="max-w-[80px]" />
+                          </FormControl>
                         </FormItem>
-                        )}
+                      )}
                     />
-                    <FormField
-                        control={form.control}
-                        name="bisa_ganti_hari"
-                        render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-xl border border-slate-100 bg-slate-50/30 p-4 shadow-sm">
-                            <div className="space-y-0.5">
-                                <FormLabel className="text-sm font-semibold text-slate-700">Reschedule</FormLabel>
-                                <FormDescription className="text-[10px]">
-                                    Bisa ganti jadwal hari sendiri
-                                </FormDescription>
-                            </div>
-                            <FormControl>
-                                <Switch
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                    disabled={isPending}
-                                />
-                            </FormControl>
-                        </FormItem>
-                        )}
-                    />
+                  )}
+
+                  <FormField
+                    control={form.control}
+                    name="bisa_tambah_pertemuan"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-xl border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel>Add-on Sesi</FormLabel>
+                          <FormDescription className="text-[11px]">Bisa beli sesi tambahan di luar paket</FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch checked={field.value} onCheckedChange={field.onChange} disabled={isPending} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="bisa_ganti_hari"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-xl border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel>Reschedule</FormLabel>
+                          <FormDescription className="text-[11px]">Bisa ganti jadwal hari sendiri</FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch checked={field.value} onCheckedChange={field.onChange} disabled={isPending} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
                 </div>
-              </div>
+              </AccordionContent>
+            </AccordionItem>
 
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-tight text-slate-700">Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPending}>
-                      <FormControl>
-                        <SelectTrigger className="bg-slate-50/50">
-                          <SelectValue placeholder="Pilih status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Aktif">Aktif</SelectItem>
-                        <SelectItem value="Non Aktif">Non Aktif</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <AccordionItem value="status-panel">
+              <AccordionTrigger description="Aktifkan atau nonaktifkan paket ini">
+                Status Operasional
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="max-w-md">
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Pilih Status</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPending}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Aktif">Aktif</SelectItem>
+                            <SelectItem value="Non Aktif">Non Aktif</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
 
-            <div className="flex justify-end gap-3 pt-6 border-t border-slate-50">
-                <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => router.back()}
-                    disabled={isPending}
-                    className="text-slate-500"
-                >
-                    Batal
-                </Button>
-                <Button type="submit" disabled={isPending} className="bg-rose-700 hover:bg-rose-800 shadow-sm shadow-rose-200 rounded-full px-8">
-                    {isPending ? "Menyimpan..." : mode === "create" ? "Simpan Paket" : "Perbarui Paket"}
-                </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+          <div className="flex items-center gap-3 pt-4">
+            <Button type="submit" size="lg" disabled={isPending} className="px-8 font-bold text-white">
+              {isPending ? "Menyimpan…" : mode === "create" ? "Simpan Paket" : "Simpan Perubahan"}
+            </Button>
+            <Button type="button" variant="outline" size="lg" onClick={() => router.back()} disabled={isPending}>
+              Batal
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </div>
   );
 }

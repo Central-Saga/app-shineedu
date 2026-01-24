@@ -4,11 +4,15 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { 
+  Accordion, 
+  AccordionContent, 
+  AccordionItem, 
+  AccordionTrigger 
+} from "@/components/ui/accordion";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -17,10 +21,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { paketHargaSchema, type PaketHargaFormValues } from "../schemas";
-import { createPaketHarga, updatePaketHarga } from "@/modules/catalog/infrastructure/catalog.repository";
 import type { PaketHarga, Program, Jenjang, Paket } from "@/modules/catalog/domain/entities";
+import { createPaketHarga, updatePaketHarga } from "@/modules/catalog/infrastructure/catalog.repository";
 import { useTransition } from "react";
-import { Banknote, CalendarDays, Users2, GraduationCap } from "lucide-react";
 
 interface PaketHargaFormProps {
   initialData?: PaketHarga;
@@ -61,267 +64,233 @@ export function PaketHargaForm({ initialData, programs, jenjangs, pakets, mode }
         }
         router.push("/dashboard/catalog/harga");
         router.refresh();
-      } catch (error: unknown) {
-        const err = error as { details?: Record<string, string[]> };
-        if (err?.details) {
-            Object.keys(err.details).forEach((key) => {
-                form.setError(key as any, { message: (err.details as any)[key][0] });
+      } catch (error: any) {
+        if (error?.details) {
+            Object.keys(error.details).forEach((key) => {
+                form.setError(key as any, { message: error.details[key][0] });
             });
-            if (err?.details?.base) {
-                toast.error(err.details.base[0]);
-            }
-        } else {
-             toast.error((error as Error).message || "Terjadi kesalahan");
         }
       }
     });
   };
 
   return (
-    <Card className="border-none shadow-premium ring-1 ring-slate-100 rounded-2xl overflow-hidden py-0">
-      <CardHeader className="border-b border-slate-50 bg-slate-50/30 pb-4">
-        <CardTitle className="text-lg font-bold text-slate-800">
-          {mode === "create" ? "Atur Harga Paket" : `Edit Harga Paket: ${initialData?.id}`}
-        </CardTitle>
-        <CardDescription>
-          Konfigurasi biaya berdasarkan kombinasi program, jenjang, dan jumlah siswa.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-6">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-4">
-                  <div className="p-1.5 bg-rose-50 rounded-lg text-rose-600">
-                      <GraduationCap className="size-4" />
-                  </div>
-                  <Label className="text-sm font-bold uppercase tracking-tight text-slate-700">Relasi Katalog</Label>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <FormField
+    <div className="w-full">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <Accordion defaultValue="relasi-katalog" className="w-full">
+            <AccordionItem value="relasi-katalog">
+              <AccordionTrigger description="Tentukan kombinasi program, jenjang, dan paket">
+                Relasi Katalog
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                  <FormField
                     control={form.control}
                     name="program_id"
                     render={({ field }) => (
-                    <FormItem>
-                        <FormLabel className="text-xs font-bold uppercase tracking-tight text-slate-700">Program Pelajaran</FormLabel>
+                      <FormItem>
+                        <FormLabel>Program Pelajaran</FormLabel>
                         <Select 
-                            onValueChange={(v) => field.onChange(Number(v))} 
-                            defaultValue={field.value ? String(field.value) : ""} 
-                            disabled={isPending}
+                          onValueChange={(v) => field.onChange(Number(v))} 
+                          defaultValue={field.value ? String(field.value) : ""} 
+                          disabled={isPending}
                         >
-                        <FormControl>
-                            <SelectTrigger className="bg-slate-50/50">
-                            <SelectValue placeholder="Pilih program" />
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih program" />
                             </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
+                          </FormControl>
+                          <SelectContent>
                             {programs.map(p => (
-                                <SelectItem key={p.id} value={String(p.id)}>{p.nama}</SelectItem>
+                              <SelectItem key={p.id} value={String(p.id)}>{p.nama}</SelectItem>
                             ))}
-                        </SelectContent>
+                          </SelectContent>
                         </Select>
-                        <FormMessage className="text-xs" />
-                    </FormItem>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                />
+                  />
 
-                <FormField
+                  <FormField
                     control={form.control}
                     name="jenjang_id"
                     render={({ field }) => (
-                    <FormItem>
-                        <FormLabel className="text-xs font-bold uppercase tracking-tight text-slate-700">Jenjang Pendidikan</FormLabel>
+                      <FormItem>
+                        <FormLabel>Jenjang Pendidikan</FormLabel>
                         <Select 
-                            onValueChange={(v) => field.onChange(Number(v))} 
-                            defaultValue={field.value ? String(field.value) : ""} 
-                            disabled={isPending}
+                          onValueChange={(v) => field.onChange(Number(v))} 
+                          defaultValue={field.value ? String(field.value) : ""} 
+                          disabled={isPending}
                         >
-                        <FormControl>
-                            <SelectTrigger className="bg-slate-50/50">
-                            <SelectValue placeholder="Pilih jenjang" />
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih jenjang" />
                             </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
+                          </FormControl>
+                          <SelectContent>
                             {jenjangs.map(j => (
-                                <SelectItem key={j.id} value={String(j.id)}>{j.nama}</SelectItem>
+                              <SelectItem key={j.id} value={String(j.id)}>{j.nama}</SelectItem>
                             ))}
-                        </SelectContent>
+                          </SelectContent>
                         </Select>
-                        <FormMessage className="text-xs" />
-                    </FormItem>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                />
+                  />
 
-                <FormField
+                  <FormField
                     control={form.control}
                     name="paket_id"
                     render={({ field }) => (
-                    <FormItem>
-                        <FormLabel className="text-xs font-bold uppercase tracking-tight text-slate-700">Varian Paket</FormLabel>
+                      <FormItem>
+                        <FormLabel>Varian Paket</FormLabel>
                         <Select 
-                            onValueChange={(v) => field.onChange(Number(v))} 
-                            defaultValue={field.value ? String(field.value) : ""} 
-                            disabled={isPending}
+                          onValueChange={(v) => field.onChange(Number(v))} 
+                          defaultValue={field.value ? String(field.value) : ""} 
+                          disabled={isPending}
                         >
-                        <FormControl>
-                            <SelectTrigger className="bg-slate-50/50">
-                            <SelectValue placeholder="Pilih paket" />
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih paket" />
                             </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
+                          </FormControl>
+                          <SelectContent>
                             {pakets.map(p => (
-                                <SelectItem key={p.id} value={String(p.id)}>{p.nama}</SelectItem>
+                              <SelectItem key={p.id} value={String(p.id)}>{p.nama}</SelectItem>
                             ))}
-                        </SelectContent>
+                          </SelectContent>
                         </Select>
-                        <FormMessage className="text-xs" />
-                    </FormItem>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-                <div className="space-y-6">
-                    <div className="flex items-center gap-2">
-                        <div className="p-1.5 bg-blue-50 rounded-lg text-blue-600">
-                            <Users2 className="size-4" />
-                        </div>
-                        <Label className="text-sm font-bold uppercase tracking-tight text-slate-700">Kapasitas Siswa</Label>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                            control={form.control}
-                            name="min_siswa"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="text-xs font-semibold text-slate-600">Minimal</FormLabel>
-                                <FormControl>
-                                <Input type="number" min={1} {...field} disabled={isPending} className="bg-slate-50/50 border-slate-100" />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="max_siswa"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="text-xs font-semibold text-slate-600">Maksimal</FormLabel>
-                                <FormControl>
-                                <Input type="number" min={1} {...field} disabled={isPending} className="bg-slate-50/50 border-slate-100" />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                    </div>
+                  />
                 </div>
+              </AccordionContent>
+            </AccordionItem>
 
-                <div className="space-y-6">
-                    <div className="flex items-center gap-2">
-                        <div className="p-1.5 bg-emerald-50 rounded-lg text-emerald-600">
-                            <Banknote className="size-4" />
-                        </div>
-                        <Label className="text-sm font-bold uppercase tracking-tight text-slate-700">Biaya Investasi</Label>
-                    </div>
-
+            <AccordionItem value="kapasitas-biaya">
+              <AccordionTrigger description="Pengaturan range jumlah siswa dan biaya investasi">
+                Kapasitas & Biaya
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  <div className="grid grid-cols-2 gap-4">
                     <FormField
-                        control={form.control}
-                        name="harga"
-                        render={({ field }) => (
+                      control={form.control}
+                      name="min_siswa"
+                      render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-xs font-semibold text-slate-600">Nominal per Bulan (IDR)</FormLabel>
-                            <FormControl>
-                            <Input type="number" min={0} {...field} disabled={isPending} className="bg-emerald-50/30 border-emerald-100 text-emerald-900 font-bold text-lg" />
-                            </FormControl>
-                            <FormDescription className="text-[10px]">Harga yang akan ditagihkan ke siswa.</FormDescription>
-                            <FormMessage />
+                          <FormLabel>Minimal Siswa</FormLabel>
+                          <FormControl>
+                            <Input type="number" min={1} {...field} disabled={isPending} />
+                          </FormControl>
+                          <FormMessage />
                         </FormItem>
-                        )}
-                    />
-                </div>
-              </div>
-
-              <div className="space-y-6 pt-4">
-                <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-amber-50 rounded-lg text-amber-600">
-                        <CalendarDays className="size-4" />
-                    </div>
-                    <Label className="text-sm font-bold uppercase tracking-tight text-slate-700">Masa Berlaku & Status</Label>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <FormField
-                        control={form.control}
-                        name="effective_from"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="text-xs font-semibold text-slate-600">Berlaku Mulai</FormLabel>
-                            <FormControl>
-                            <Input type="date" {...field} disabled={isPending} className="bg-slate-50/50 border-slate-100" />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
+                      )}
                     />
                     <FormField
-                        control={form.control}
-                        name="effective_to"
-                        render={({ field }) => (
+                      control={form.control}
+                      name="max_siswa"
+                      render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-xs font-semibold text-slate-600">Sampai Dengan</FormLabel>
-                            <FormControl>
-                            <Input type="date" {...field} disabled={isPending} className="bg-slate-50/50 border-slate-100" />
-                            </FormControl>
-                            <FormMessage />
+                          <FormLabel>Maksimal Siswa</FormLabel>
+                          <FormControl>
+                            <Input type="number" min={1} {...field} disabled={isPending} />
+                          </FormControl>
+                          <FormMessage />
                         </FormItem>
-                        )}
+                      )}
                     />
-                    <FormField
-                        control={form.control}
-                        name="status"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="text-xs font-semibold text-slate-600">Status Aktif</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPending}>
-                            <FormControl>
-                                <SelectTrigger className="bg-slate-50/50 border-slate-100">
-                                <SelectValue placeholder="Pilih status" />
-                                </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                <SelectItem value="Aktif">Aktif</SelectItem>
-                                <SelectItem value="Non Aktif">Non Aktif</SelectItem>
-                            </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                </div>
-              </div>
-            </div>
+                  </div>
 
-            <div className="flex justify-end gap-3 pt-6 border-t border-slate-50">
-                <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => router.back()}
-                    disabled={isPending}
-                    className="text-slate-500"
-                >
-                    Batal
-                </Button>
-                <Button type="submit" disabled={isPending} className="bg-rose-700 hover:bg-rose-800 shadow-sm shadow-rose-200 rounded-full px-8">
-                    {isPending ? "Menyimpan..." : mode === "create" ? "Simpan Harga" : "Perbarui Harga"}
-                </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+                  <FormField
+                    control={form.control}
+                    name="harga"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Harga per Bulan (IDR)</FormLabel>
+                        <FormControl>
+                          <Input type="number" min={0} {...field} disabled={isPending} className="font-bold border-emerald-100" />
+                        </FormControl>
+                        <FormDescription className="text-[11px]">Harga yang akan ditagihkan ke siswa</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="masa-berlaku">
+              <AccordionTrigger description="Tentukan kapan harga ini mulai berlaku dan statusnya">
+                Masa Berlaku & Status
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                  <FormField
+                    control={form.control}
+                    name="effective_from"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Berlaku Mulai</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} disabled={isPending} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="effective_to"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sampai Dengan</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} disabled={isPending} />
+                        </FormControl>
+                        <FormDescription className="text-[11px]">Kosongkan jika tidak ada batas</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status Aktif</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPending}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Aktif">Aktif</SelectItem>
+                            <SelectItem value="Non Aktif">Non Aktif</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          <div className="flex items-center gap-3 pt-4">
+            <Button type="submit" size="lg" disabled={isPending} className="px-8 font-bold text-white">
+              {isPending ? "Menyimpan…" : mode === "create" ? "Simpan Harga" : "Simpan Perubahan"}
+            </Button>
+            <Button type="button" variant="outline" size="lg" onClick={() => router.back()} disabled={isPending}>
+              Batal
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </div>
   );
 }

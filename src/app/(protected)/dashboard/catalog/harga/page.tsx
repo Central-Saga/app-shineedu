@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, Banknote } from "lucide-react";
+import { Plus, Banknote, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useDebouncedValue } from "@/shared/presentation/hooks/useDebouncedValue";
 import type { PaginatedMeta } from "@/shared/domain/types";
@@ -75,6 +75,12 @@ export default function PaketHargaPage() {
   const canUpdate = useAuthStore((s) => s.permissionsSet.has("catalog.harga.update"));
   const canDelete = useAuthStore((s) => s.permissionsSet.has("catalog.harga.delete"));
 
+  const [stats, setStats] = useState({
+    total: 0,
+    aktif: 0,
+    nonAktif: 0,
+  });
+
   useEffect(() => {
     setItems([
       { label: "Dashboard", href: "/dashboard" },
@@ -93,19 +99,30 @@ export default function PaketHargaPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const { items, meta } = await listPaketHarga({
-        page,
-        per_page: perPage,
-        q: debouncedQ,
-        status: status === "all" ? undefined : (status as "Aktif" | "Non Aktif" | undefined),
-        program_id: programId !== "all" ? Number(programId) : undefined,
-        jenjang_id: jenjangId !== "all" ? Number(jenjangId) : undefined,
-        paket_id: paketId !== "all" ? Number(paketId) : undefined,
-        sort_by: sortBy,
-        sort_dir: sortDir,
+      const [listRes, allRes, aktifRes, nonAktifRes] = await Promise.all([
+        listPaketHarga({
+          page,
+          per_page: perPage,
+          q: debouncedQ,
+          status: status === "all" ? undefined : (status as "Aktif" | "Non Aktif" | undefined),
+          program_id: programId !== "all" ? Number(programId) : undefined,
+          jenjang_id: jenjangId !== "all" ? Number(jenjangId) : undefined,
+          paket_id: paketId !== "all" ? Number(paketId) : undefined,
+          sort_by: sortBy,
+          sort_dir: sortDir,
+        }),
+        listPaketHarga({ per_page: 1 }),
+        listPaketHarga({ per_page: 1, status: "Aktif" }),
+        listPaketHarga({ per_page: 1, status: "Non Aktif" }),
+      ]);
+
+      setData(listRes.items);
+      setMeta(listRes.meta);
+      setStats({
+        total: allRes.meta.total,
+        aktif: aktifRes.meta.total,
+        nonAktif: nonAktifRes.meta.total,
       });
-      setData(items);
-      setMeta(meta);
     } catch (error: any) {
       toast.error(error.message || "Gagal memuat data harga");
     } finally {
@@ -163,10 +180,24 @@ export default function PaketHargaPage() {
        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatsCard
           label="Total Rule Harga"
-          value={meta.total}
+          value={stats.total}
           icon={Banknote}
           variant="primary"
-          description="Semua aturan harga aktif"
+          description="Semua aturan harga"
+        />
+        <StatsCard
+          label="Harga Aktif"
+          value={stats.aktif}
+          icon={CheckCircle}
+          variant="success"
+          description="Aturan harga aktif"
+        />
+        <StatsCard
+          label="Harga Non Aktif"
+          value={stats.nonAktif}
+          icon={XCircle}
+          variant="danger"
+          description="Aturan harga tidak aktif"
         />
       </div>
 

@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, BookOpen } from "lucide-react";
+import { Plus, BookOpen, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useDebouncedValue } from "@/shared/presentation/hooks/useDebouncedValue";
 import type { PaginatedMeta } from "@/shared/domain/types";
@@ -60,6 +60,12 @@ export default function ProgramPage() {
   const canUpdate = useAuthStore((s) => s.permissionsSet.has("catalog.program.update"));
   const canDelete = useAuthStore((s) => s.permissionsSet.has("catalog.program.delete"));
 
+  const [stats, setStats] = useState({
+    total: 0,
+    aktif: 0,
+    nonAktif: 0,
+  });
+
   useEffect(() => {
     setItems([
       { label: "Dashboard", href: "/dashboard" },
@@ -71,16 +77,27 @@ export default function ProgramPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const { items, meta } = await listProgram({
-        page,
-        per_page: perPage,
-        q: debouncedQ,
-        status: status === "all" ? undefined : (status as "Aktif" | "Non Aktif" | undefined),
-        sort_by: sortBy,
-        sort_dir: sortDir,
+      const [listRes, allRes, aktifRes, nonAktifRes] = await Promise.all([
+        listProgram({
+          page,
+          per_page: perPage,
+          q: debouncedQ,
+          status: status === "all" ? undefined : (status as "Aktif" | "Non Aktif" | undefined),
+          sort_by: sortBy,
+          sort_dir: sortDir,
+        }),
+        listProgram({ per_page: 1 }),
+        listProgram({ per_page: 1, status: "Aktif" }),
+        listProgram({ per_page: 1, status: "Non Aktif" }),
+      ]);
+
+      setData(listRes.items);
+      setMeta(listRes.meta);
+      setStats({
+        total: allRes.meta.total,
+        aktif: aktifRes.meta.total,
+        nonAktif: nonAktifRes.meta.total,
       });
-      setData(items);
-      setMeta(meta);
     } catch (error: any) {
       toast.error(error.message || "Gagal memuat data program");
     } finally {
@@ -135,10 +152,24 @@ export default function ProgramPage() {
        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatsCard
           label="Total Program"
-          value={meta.total}
+          value={stats.total}
           icon={BookOpen}
           variant="primary"
           description="Semua program terdaftar"
+        />
+        <StatsCard
+          label="Program Aktif"
+          value={stats.aktif}
+          icon={CheckCircle}
+          variant="success"
+          description="Program yang sedang aktif"
+        />
+        <StatsCard
+          label="Program Non Aktif"
+          value={stats.nonAktif}
+          icon={XCircle}
+          variant="danger"
+          description="Program tidak aktif"
         />
       </div>
 

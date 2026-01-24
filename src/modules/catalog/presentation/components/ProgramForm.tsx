@@ -4,7 +4,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { 
+  Accordion, 
+  AccordionContent, 
+  AccordionItem, 
+  AccordionTrigger 
+} from "@/components/ui/accordion";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -56,11 +61,10 @@ export function ProgramForm({ initialData, jenjangOptions, mode }: ProgramFormPr
         }
         router.push("/dashboard/catalog/program");
         router.refresh();
-      } catch (error: unknown) {
-        const err = error as { details?: Record<string, string[]> };
-        if (err?.details) {
-            Object.keys(err.details).forEach((key) => {
-                form.setError(key as any, { message: (err.details as any)[key][0] });
+      } catch (error: any) {
+        if (error?.details) {
+            Object.keys(error.details).forEach((key) => {
+                form.setError(key as any, { message: error.details[key][0] });
             });
         }
       }
@@ -68,158 +72,166 @@ export function ProgramForm({ initialData, jenjangOptions, mode }: ProgramFormPr
   };
 
   return (
-    <Card className="border-none shadow-premium ring-1 ring-slate-100 rounded-2xl overflow-hidden py-0">
-      <CardHeader className="border-b border-slate-50 bg-slate-50/30 pb-4">
-        <CardTitle className="text-lg font-bold text-slate-800">
-          {mode === "create" ? "Tambah Program Pelajaran" : `Edit Program: ${initialData?.kode}`}
-        </CardTitle>
-        <CardDescription>
-          Konfigurasi program mata pelajaran dan keterkaitannya dengan jenjang pendidikan.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-6">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-              <FormField
-                control={form.control}
-                name="kode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-tight text-slate-700">Kode Program</FormLabel>
-                    <FormControl>
-                      <Input placeholder="MATH" {...field} disabled={isPending} className="bg-slate-50/50" />
-                    </FormControl>
-                    <FormDescription className="text-[10px]">Kode unik referensi program.</FormDescription>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
-                )}
-              />
+    <div className="w-full">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <Accordion defaultValue="data-program" className="w-full">
+            <AccordionItem value="data-program">
+              <AccordionTrigger description="Informasi dasar dan deskripsi program mata pelajaran">
+                Data Program
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="kode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Kode Program</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Contoh: MATH" {...field} disabled={isPending} />
+                          </FormControl>
+                          <FormDescription className="text-[11px]">Kode unik referensi program</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-              <FormField
-                control={form.control}
-                name="nama"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-tight text-slate-700">Nama Program</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Matematika" {...field} disabled={isPending} className="bg-slate-50/50" />
-                    </FormControl>
-                    <FormDescription className="text-[10px]">Nama lengkap mata pelajaran.</FormDescription>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="md:col-span-2">
-                <FormField
+                    <FormField
+                      control={form.control}
+                      name="nama"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nama Program</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Contoh: Matematika" {...field} disabled={isPending} />
+                          </FormControl>
+                          <FormDescription className="text-[11px]">Nama lengkap mata pelajaran</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
                     control={form.control}
                     name="deskripsi"
                     render={({ field }) => (
-                    <FormItem>
-                        <FormLabel className="text-xs font-bold uppercase tracking-tight text-slate-700">Deskripsi</FormLabel>
+                      <FormItem>
+                        <FormLabel>Deskripsi</FormLabel>
                         <FormControl>
-                        <Textarea placeholder="Berikan deskripsi singkat mengenai program ini..." {...field} disabled={isPending} className="bg-slate-50/50 min-h-[100px]" />
+                          <Textarea 
+                            placeholder="Berikan deskripsi singkat mengenai program ini..." 
+                            {...field} 
+                            disabled={isPending} 
+                            className="min-h-[100px]" 
+                          />
                         </FormControl>
-                        <FormMessage className="text-xs" />
-                    </FormItem>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                />
-              </div>
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
 
-              <div className="md:col-span-2 space-y-3">
-                <Label className="text-xs font-bold uppercase tracking-tight text-slate-700">Akses Jenjang Pendidikan</Label>
-                <Card className="bg-slate-50/30 border-slate-100 shadow-none rounded-xl">
-                  <CardContent className="p-4">
-                    <FormField
-                        control={form.control}
-                        name="jenjang_ids"
-                        render={() => (
-                            <FormItem>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    {jenjangOptions.map((jenjang) => (
-                                        <FormField
-                                            key={jenjang.id}
-                                            control={form.control}
-                                            name="jenjang_ids"
-                                            render={({ field }) => {
-                                                return (
-                                                    <FormItem
-                                                        key={jenjang.id}
-                                                        className="flex flex-row items-start space-x-3 space-y-0"
-                                                    >
-                                                        <FormControl>
-                                                            <Checkbox
-                                                                checked={field.value?.includes(jenjang.id)}
-                                                                onCheckedChange={(checked) => {
-                                                                    return checked
-                                                                        ? field.onChange([...field.value, jenjang.id])
-                                                                        : field.onChange(
-                                                                            field.value?.filter(
-                                                                                (value) => value !== jenjang.id
-                                                                            )
-                                                                        )
-                                                                }}
-                                                            />
-                                                        </FormControl>
-                                                        <FormLabel className="text-sm font-medium text-slate-600 cursor-pointer">
-                                                            {jenjang.nama}
-                                                        </FormLabel>
-                                                    </FormItem>
+            <AccordionItem value="akses-jenjang">
+              <AccordionTrigger description="Tentukan jenjang pendidikan yang dapat mengambil program ini">
+                Akses Jenjang Pendidikan
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="jenjang_ids"
+                    render={() => (
+                      <FormItem>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {jenjangOptions.map((jenjang) => (
+                            <FormField
+                              key={jenjang.id}
+                              control={form.control}
+                              name="jenjang_ids"
+                              render={({ field }) => {
+                                return (
+                                  <FormItem
+                                    key={jenjang.id}
+                                    className="flex flex-row items-start space-x-3 space-y-0 p-3 rounded-xl border bg-slate-50/30"
+                                  >
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value?.includes(jenjang.id)}
+                                        onCheckedChange={(checked) => {
+                                          return checked
+                                            ? field.onChange([...field.value, jenjang.id])
+                                            : field.onChange(
+                                                field.value?.filter(
+                                                  (value: number) => value !== jenjang.id
                                                 )
-                                            }}
-                                        />
-                                    ))}
-                                </div>
-                                <FormMessage className="text-xs" />
-                            </FormItem>
-                        )}
-                    />
-                  </CardContent>
-                </Card>
-                <p className="text-[10px] text-slate-400">Pilih jenjang yang dapat mengambil program pelajaran ini.</p>
-              </div>
+                                              )
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <FormLabel className="text-sm font-medium cursor-pointer">
+                                      {jenjang.nama}
+                                    </FormLabel>
+                                  </FormItem>
+                                )
+                              }}
+                            />
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
 
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-tight text-slate-700">Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPending}>
-                      <FormControl>
-                        <SelectTrigger className="bg-slate-50/50">
-                          <SelectValue placeholder="Pilih status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Aktif">Aktif</SelectItem>
-                        <SelectItem value="Non Aktif">Non Aktif</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <AccordionItem value="status-panel">
+              <AccordionTrigger description="Tentukan apakah program ini aktif digunakan">
+                Status Operasional
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="max-w-md">
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Pilih Status</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPending}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Aktif">Aktif</SelectItem>
+                            <SelectItem value="Non Aktif">Non Aktif</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
 
-            <div className="flex justify-end gap-3 pt-6 border-t border-slate-50">
-                <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => router.back()}
-                    disabled={isPending}
-                    className="text-slate-500"
-                >
-                    Batal
-                </Button>
-                <Button type="submit" disabled={isPending} className="bg-rose-700 hover:bg-rose-800 shadow-sm shadow-rose-200 rounded-full px-8">
-                    {isPending ? "Menyimpan..." : mode === "create" ? "Simpan Program" : "Perbarui Program"}
-                </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+          <div className="flex items-center gap-3 pt-4">
+            <Button type="submit" size="lg" disabled={isPending} className="px-8 font-bold text-white">
+              {isPending ? "Menyimpan…" : mode === "create" ? "Simpan Program" : "Simpan Perubahan"}
+            </Button>
+            <Button type="button" variant="outline" size="lg" onClick={() => router.back()} disabled={isPending}>
+              Batal
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </div>
   );
 }

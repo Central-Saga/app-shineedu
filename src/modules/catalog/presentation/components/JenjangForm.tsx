@@ -4,7 +4,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { 
+  Accordion, 
+  AccordionContent, 
+  AccordionItem, 
+  AccordionTrigger 
+} from "@/components/ui/accordion";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -61,89 +66,91 @@ export function JenjangForm({ initialData, mode }: JenjangFormProps) {
   };
 
   return (
-    <Card className="border-none shadow-premium ring-1 ring-slate-100 rounded-2xl overflow-hidden py-0">
-      <CardHeader className="border-b border-slate-50 bg-slate-50/30 pb-4">
-        <CardTitle className="text-lg font-bold text-slate-800">
-          {mode === "create" ? "Tambah Jenjang Pendidikan" : `Edit Jenjang: ${initialData?.kode}`}
-        </CardTitle>
-        <CardDescription>
-          Informasi dasar untuk klasifikasi tingkatan siswa (Contoh: SD, SMP, SMA).
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-6">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-              <FormField
-                control={form.control}
-                name="kode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-tight text-slate-700">Kode Jenjang</FormLabel>
-                    <FormControl>
-                      <Input placeholder="SD" {...field} disabled={isPending} className="bg-slate-50/50" />
-                    </FormControl>
-                    <FormDescription className="text-[10px]">Singkatan unik jenjang.</FormDescription>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
-                )}
-              />
+    <div className="w-full">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <Accordion defaultValue="data-jenjang" className="w-full">
+            <AccordionItem value="data-jenjang">
+              <AccordionTrigger description="Informasi dasar klasifikasi tingkatan pendidikan (Contoh: SD, SMP, SMA)">
+                Data Jenjang
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="kode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Kode Jenjang</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Contoh: SD" {...field} disabled={isPending} />
+                        </FormControl>
+                        <FormDescription className="text-[11px]">Singkatan unik untuk jenjang ini</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={form.control}
-                name="nama"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-tight text-slate-700">Nama Lengkap</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Sekolah Dasar" {...field} disabled={isPending} className="bg-slate-50/50" />
-                    </FormControl>
-                    <FormDescription className="text-[10px]">Nama resmi tingkatan pendidikan.</FormDescription>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-tight text-slate-700">Status Operasional</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPending}>
-                      <FormControl>
-                        <SelectTrigger className="bg-slate-50/50">
-                          <SelectValue placeholder="Pilih status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Aktif">Aktif</SelectItem>
-                        <SelectItem value="Non Aktif">Non Aktif</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
-                )}
-              />
-            </div>
+                  <FormField
+                    control={form.control}
+                    name="nama"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nama Lengkap</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Contoh: Sekolah Dasar" {...field} disabled={isPending} />
+                        </FormControl>
+                        <FormDescription className="text-[11px]">Nama resmi tingkatan pendidikan</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
 
-            <div className="flex justify-end gap-3 pt-6 border-t border-slate-50">
-                <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => router.back()}
-                    disabled={isPending}
-                    className="text-slate-500"
-                >
-                    Batal
-                </Button>
-                <Button type="submit" disabled={isPending} className="bg-rose-700 hover:bg-rose-800 shadow-sm shadow-rose-200 rounded-full px-8">
-                    {isPending ? "Menyimpan..." : mode === "create" ? "Simpan Jenjang" : "Perbarui Jenjang"}
-                </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+            <AccordionItem value="status-panel">
+              <AccordionTrigger description="Tentukan apakah jenjang ini aktif digunakan dalam sistem">
+                Status Operasional
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="max-w-md">
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Pilih Status</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPending}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Aktif">Aktif</SelectItem>
+                            <SelectItem value="Non Aktif">Non Aktif</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          <div className="flex items-center gap-3 pt-4">
+            <Button type="submit" size="lg" disabled={isPending} className="px-8 font-bold text-white">
+              {isPending ? "Menyimpan…" : mode === "create" ? "Simpan Jenjang" : "Simpan Perubahan"}
+            </Button>
+            <Button type="button" variant="outline" size="lg" onClick={() => router.back()} disabled={isPending}>
+              Batal
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </div>
   );
 }
