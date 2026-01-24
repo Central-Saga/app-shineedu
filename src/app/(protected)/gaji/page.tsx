@@ -1,24 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { PageHeader } from "@/shared/presentation/components/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { MonthYearSelect } from "@/modules/hr/presentation/components/month-year-select";
-import { RekapListTable } from "@/modules/hr/presentation/components/rekap-list-table";
-import { rekapService, RekapBulananItem } from "@/modules/hr/infrastructure/rekap.service";
+import { PayrollTable } from "@/modules/hr/presentation/components/payroll-table";
+import { payrollService, Payroll } from "@/modules/hr/infrastructure/payroll.service";
 import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGuard";
 import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
-import { Info } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { authStore } from "@/modules/auth/infrastructure/auth.store";
 
 export default function GajiPage() {
     const { allowed } = usePermissionGuard("gaji.view");
+    const canManage = authStore.hasPermission("gaji.manage");
     const searchParams = useSearchParams();
     const { setItems } = useBreadcrumbStore();
+    const router = useRouter();
 
     const [loading, setLoading] = useState(true);
-    const [data, setData] = useState<RekapBulananItem[]>([]);
+    const [generating, setGenerating] = useState(false);
+    const [data, setData] = useState<Payroll[]>([]);
     const [meta, setMeta] = useState({
         current_page: 1,
         per_page: 15,
@@ -39,29 +44,43 @@ export default function GajiPage() {
         ]);
     }, [setItems]);
 
-    useEffect(() => {
+    async function loadData() {
         if (!allowed) return;
-
-        async function loadData() {
-            setLoading(true);
-            try {
-                const result = await rekapService.getRekapList({
-                    bulan,
-                    tahun,
-                    q,
-                    page,
-                });
-                setData(result.data);
-                setMeta(result.meta);
-            } catch (error) {
-                toast.error("Gagal memuat data karyawan");
-            } finally {
-                setLoading(false);
-            }
+        setLoading(true);
+        try {
+            const result = await payrollService.getPayrolls({
+                bulan,
+                tahun,
+                q,
+                page,
+            });
+            setData(result.data);
+            setMeta(result.meta);
+        } catch (error) {
+            toast.error("Gagal memuat data gaji");
+        } finally {
+            setLoading(false);
         }
+    }
 
+    useEffect(() => {
         loadData();
     }, [allowed, bulan, tahun, q, page]);
+
+    async function handleSync() {
+        if (!confirm("Generate ulang data gaji untuk periode ini? Data draft yang belum dibayar akan diperbarui.")) return;
+        
+        setGenerating(true);
+        try {
+            await payrollService.generatePayroll(bulan, tahun);
+            toast.success("Sinkronisasi gaji berhasil!");
+            loadData();
+        } catch (error: any) {
+            toast.error(error?.message || "Gagal melakukan sinkronisasi");
+        } finally {
+            setGenerating(false);
+        }
+    }
 
     if (!allowed) return null;
 
@@ -69,16 +88,16 @@ export default function GajiPage() {
         <div className="flex flex-col gap-6">
             <PageHeader
                 title="Gaji Bulanan"
-                description={`Preview perhitungan gaji periode ${bulan}/${tahun}`}
+                description={`Data penggajian periode ${bulan}/${tahun}`}
+                actions={
+                    canManage && (
+                        <Button onClick={handleSync} disabled={generating || loading}>
+                            <RefreshCw className={`mr-2 h-4 w-4 ${generating ? "animate-spin" : ""}`} />
+                            {generating ? "Memproses..." : "Sinkronisasi / Generate"}
+                        </Button>
+                    )
+                }
             />
-
-            <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-xl flex items-start gap-3 text-sm">
-                <Info className="size-5 shrink-0 mt-0.5" />
-                <div>
-                   <p className="font-semibold text-blue-900 mb-1">Mode Preview Payroll</p>
-                   <p>Sistem merangkum estimasi gaji berdasarkan realisasi jadwal yang sudah disetujui. Pilih karyawan di bawah untuk melihat rincian.</p>
-                </div>
-            </div>
 
             <Card>
                 <CardContent className="p-4 flex flex-col md:flex-row gap-4 items-end">
@@ -86,7 +105,7 @@ export default function GajiPage() {
                 </CardContent>
             </Card>
 
-            <RekapListTable 
+            <PayrollTable 
                 data={data} 
                 meta={meta} 
                 params={{ q, bulan, tahun }} 
