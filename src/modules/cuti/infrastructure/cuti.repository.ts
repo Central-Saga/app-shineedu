@@ -112,3 +112,8 @@ export async function rejectCuti(id: number): Promise<Cuti> {
   const data = await post<Cuti>(`cuti/${id}/reject`, {});
   return data as Cuti;
 }
+
+export async function cancelCuti(id: number): Promise<Cuti> {
+  const data = await post<Cuti>(`cuti/${id}/cancel`, {});
+  return data as Cuti;
+}

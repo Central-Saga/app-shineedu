@@ -33,6 +33,7 @@ import {
   deleteCuti,
   approveCuti,
   rejectCuti,
+  cancelCuti,
 } from "@/modules/cuti/infrastructure/cuti.repository";
 import { CutiTable } from "@/modules/cuti/presentation/components/CutiTable";
 import { getEmployeesUsecase } from "@/modules/employees/application/usecases/getEmployees.usecase";
@@ -186,6 +187,16 @@ export default function CutiPage() {
      }
   }
 
+  async function handleCancel(item: Cuti) {
+     try {
+       await cancelCuti(item.id);
+       toast.success("Pengajuan cuti dibatalkan");
+       loadData();
+     } catch (e) {
+       toast.error("Gagal membatalkan pengajuan");
+     }
+  }
+
   const handleExport = async (exportFormat: string) => {
     const params = {
       q: debouncedQ || undefined,
@@ -325,10 +336,10 @@ export default function CutiPage() {
             items={items}
             loading={loading}
             onEdit={(item) => router.push(`/cuti/${item.id}/edit`)}
-            onView={(item) => router.push(`/cuti/${item.id}`)}
             onDelete={handleDelete}
             onApprove={handleApprove}
             onReject={handleReject}
+            onCancel={handleCancel}
             canUpdate={canUpdate}
             canDelete={canDelete}
             canApprove={canApprove}

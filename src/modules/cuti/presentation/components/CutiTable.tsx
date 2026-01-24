@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -29,10 +28,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Pencil, Trash, Check, X, FileText } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash, Check, X, FileText, Ban } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import type { Cuti } from "../../domain/entities";
+import { useAuthStore } from "@/modules/auth/infrastructure/auth.store";
 
 interface CutiTableProps {
   items: Cuti[];
@@ -44,6 +44,7 @@ interface CutiTableProps {
   canApprove?: boolean;
   onApprove?: (item: Cuti) => void;
   onReject?: (item: Cuti) => void;
+  onCancel?: (item: Cuti) => void;
 }
 
 export function CutiTable({
@@ -56,8 +57,12 @@ export function CutiTable({
   canApprove,
   onApprove,
   onReject,
+  onCancel,
 }: CutiTableProps) {
   const [deleteData, setDeleteData] = useState<Cuti | null>(null);
+  const [cancelData, setCancelData] = useState<Cuti | null>(null);
+  const { user } = useAuthStore();
+  const currentUserId = user?.id;
 
   if (loading) {
     return <div className="p-8 text-center text-muted-foreground">Memuat data...</div>;
@@ -88,7 +93,14 @@ export function CutiTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => (
+              {items.map((item) => {
+                const isOwner = currentUserId && item.karyawan?.user?.id === currentUserId;
+                const showCancel = onCancel && (
+                   (isOwner && item.status === 'diajukan') || 
+                   (canApprove && (item.status === 'diajukan' || item.status === 'disetujui'))
+                );
+
+                return (
                 <TableRow key={item.id}>
                   <TableCell className="py-4">
                     <div className="flex flex-col gap-0.5">
@@ -136,6 +148,11 @@ export function CutiTable({
                             <Pencil className="mr-2 h-4 w-4" /> Edit
                           </DropdownMenuItem>
                         )}
+                        {showCancel && (
+                           <DropdownMenuItem onClick={() => setCancelData(item)} className="text-orange-600 focus:text-orange-700">
+                             <Ban className="mr-2 h-4 w-4" /> Batalkan
+                           </DropdownMenuItem>
+                        )}
                         {canApprove && item.status === "diajukan" && (
                           <>
                             <DropdownMenuItem onClick={() => onApprove?.(item)}>
@@ -158,7 +175,7 @@ export function CutiTable({
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              );})}
             </TableBody>
           </Table>
         </div>
@@ -182,6 +199,29 @@ export function CutiTable({
               }}
             >
               Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!cancelData} onOpenChange={(open) => !open && setCancelData(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Batalkan Pengajuan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin membatalkan pengajuan cuti ini? Status akan berubah menjadi <b>Dibatalkan</b>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Kembali</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+              onClick={() => {
+                if (cancelData && onCancel) onCancel(cancelData);
+                setCancelData(null);
+              }}
+            >
+              Ya, Batalkan
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
