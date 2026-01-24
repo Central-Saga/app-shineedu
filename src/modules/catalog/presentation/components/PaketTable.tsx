@@ -79,7 +79,12 @@ export function PaketTable({
                 <TableCell className="font-medium">{item.kode}</TableCell>
                 <TableCell>{item.nama}</TableCell>
                 <TableCell>
-                    <Badge variant="secondary" className="capitalize">{item.tipe}</Badge>
+                    <Badge variant="secondary" className="capitalize">
+                      {item.tipe === "REGULER" ? "Reguler" : 
+                       item.tipe === "PRIVATE" ? "Private" : 
+                       item.tipe === "GROUP" ? "Private Group" : 
+                       item.tipe}
+                    </Badge>
                 </TableCell>
                 <TableCell>{item.pertemuan_per_bulan ?? "-"}</TableCell>
                 <TableCell>{item.durasi_menit}</TableCell>

@@ -126,9 +126,9 @@ export function PaketForm({ initialData, mode }: PaketFormProps) {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="REGULER">Reguler (Grup Kecil)</SelectItem>
-                            <SelectItem value="PRIVATE">Private (1 on 1)</SelectItem>
-                            <SelectItem value="GROUP">Group (Grup Besar)</SelectItem>
+                            <SelectItem value="REGULER">Reguler</SelectItem>
+                            <SelectItem value="PRIVATE">Private</SelectItem>
+                            <SelectItem value="GROUP">Private Group</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />

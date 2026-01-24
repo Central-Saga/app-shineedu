@@ -24,6 +24,8 @@ import { paketHargaSchema, type PaketHargaFormValues } from "../schemas";
 import type { PaketHarga, Program, Jenjang, Paket } from "@/modules/catalog/domain/entities";
 import { createPaketHarga, updatePaketHarga } from "@/modules/catalog/infrastructure/catalog.repository";
 import { useTransition } from "react";
+import { format } from "date-fns";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface PaketHargaFormProps {
   initialData?: PaketHarga;
@@ -46,11 +48,18 @@ export function PaketHargaForm({ initialData, programs, jenjangs, pakets, mode }
       min_siswa: initialData?.min_siswa || 1,
       max_siswa: initialData?.max_siswa || 1,
       harga: initialData?.harga || 0,
-      effective_from: initialData?.effective_from ? initialData.effective_from.split("T")[0] : "",
-      effective_to: initialData?.effective_to ? initialData.effective_to.split("T")[0] : "",
+      effective_from: initialData?.effective_from ? format(new Date(initialData.effective_from), "yyyy-MM-dd") : "",
+      effective_to: initialData?.effective_to ? format(new Date(initialData.effective_to), "yyyy-MM-dd") : "",
       status: (initialData?.status as "Aktif" | "Non Aktif") || "Aktif",
     },
   });
+
+  // Helper to convert YYYY-MM-DD string to Date object safely (local time)
+  const stringToDate = (dateStr?: string) => {
+    if (!dateStr) return null;
+    const [year, month, day] = dateStr.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  };
 
   const onSubmit = (values: PaketHargaFormValues) => {
     startTransition(async () => {
@@ -185,6 +194,7 @@ export function PaketHargaForm({ initialData, programs, jenjangs, pakets, mode }
                           <FormControl>
                             <Input type="number" min={1} {...field} disabled={isPending} />
                           </FormControl>
+                          <FormDescription className="text-[11px]">Jumlah siswa paling sedikit</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -198,6 +208,7 @@ export function PaketHargaForm({ initialData, programs, jenjangs, pakets, mode }
                           <FormControl>
                             <Input type="number" min={1} {...field} disabled={isPending} />
                           </FormControl>
+                          <FormDescription className="text-[11px]">Jumlah siswa paling banyak</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -243,11 +254,17 @@ export function PaketHargaForm({ initialData, programs, jenjangs, pakets, mode }
                       control={form.control}
                       name="effective_from"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="flex flex-col">
                           <FormLabel>Berlaku Mulai</FormLabel>
                           <FormControl>
-                            <Input type="date" {...field} disabled={isPending} />
+                            <DatePicker
+                              date={field.value ? stringToDate(field.value) : null}
+                              setDate={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
+                              placeholder="Pilih tanggal mulai"
+                              disabled={isPending}
+                            />
                           </FormControl>
+                          <FormDescription className="text-[11px]">Tanggal mulai diberlakukan</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -256,10 +273,15 @@ export function PaketHargaForm({ initialData, programs, jenjangs, pakets, mode }
                       control={form.control}
                       name="effective_to"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="flex flex-col">
                           <FormLabel>Sampai Dengan</FormLabel>
                           <FormControl>
-                            <Input type="date" {...field} disabled={isPending} />
+                            <DatePicker
+                              date={field.value ? stringToDate(field.value) : null}
+                              setDate={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
+                              placeholder="Selamanya"
+                              disabled={isPending}
+                            />
                           </FormControl>
                           <FormDescription className="text-[11px]">Kosongkan jika tidak ada batas</FormDescription>
                           <FormMessage />
@@ -283,6 +305,7 @@ export function PaketHargaForm({ initialData, programs, jenjangs, pakets, mode }
                               <SelectItem value="Non Aktif">Non Aktif</SelectItem>
                             </SelectContent>
                           </Select>
+                          <FormDescription className="text-[11px]">Status ketersediaan aturan</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}

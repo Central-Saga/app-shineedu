@@ -1,6 +1,8 @@
 "use client";
 
 import type { PaketHarga } from "../../domain/entities";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 import {
   Table,
   TableBody,
@@ -40,6 +42,17 @@ export function PaketHargaTable({
   
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(val);
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return "∞";
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return "∞";
+      return format(date, "dd/MM/yyyy");
+    } catch (e) {
+      return "∞";
+    }
+  };
 
   return (
     <div className="w-full overflow-x-auto">
@@ -90,8 +103,8 @@ export function PaketHargaTable({
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                     <div className="flex flex-col">
-                        <span>Mulai: {item.effective_from ? new Date(item.effective_from).toLocaleDateString("id-ID") : "∞"}</span>
-                        <span>Sampai: {item.effective_to ? new Date(item.effective_to).toLocaleDateString("id-ID") : "∞"}</span>
+                        <span>Mulai: {formatDate(item.effective_from)}</span>
+                        <span>Sampai: {formatDate(item.effective_to)}</span>
                     </div>
                 </TableCell>
                 <TableCell>
