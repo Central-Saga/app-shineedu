@@ -38,9 +38,25 @@ export async function listCuti(
   return { items: (res.data ?? []) as Cuti[], meta: res.meta ?? DEFAULT_META };
 }
 
-export async function createCuti(
-  payload: CreateCutiPayload | FormData
-): Promise<Cuti> {
+export async function createCuti(payload: CreateCutiPayload | FormData): Promise<Cuti> {
+  if (payload instanceof FormData) {
+    const data = await post<Cuti>("cuti", payload);
+    return data as Cuti;
+  }
+
+  const containsFile = Object.values(payload).some(v => v instanceof File);
+  
+  if (containsFile) {
+    const formData = new FormData();
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, value instanceof File ? value : String(value));
+      }
+    });
+    const data = await post<Cuti>("cuti", formData);
+    return data as Cuti;
+  }
+
   const data = await post<Cuti>("cuti", payload);
   return data as Cuti;
 }
@@ -55,10 +71,29 @@ export async function updateCuti(
   payload: UpdateCutiPayload | FormData
 ): Promise<Cuti> {
   if (payload instanceof FormData) {
-    payload.append("_method", "PUT");
+    // Laravel needs POST + _method=PUT to handle multipart PUT requests
+    if (!payload.has("_method")) {
+        payload.append("_method", "PUT");
+    }
     const data = await post<Cuti>(`cuti/${id}`, payload);
     return data as Cuti;
   }
+
+  const containsFile = Object.values(payload).some(v => v instanceof File);
+
+  if (containsFile) {
+    const formData = new FormData();
+    formData.append("_method", "PUT");
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, value instanceof File ? value : String(value));
+      }
+    });
+    // Laravel needs POST + _method=PUT to handle multipart PUT requests
+    const data = await post<Cuti>(`cuti/${id}`, formData);
+    return data as Cuti;
+  }
+
   const data = await put<Cuti>(`cuti/${id}`, payload);
   return data as Cuti;
 }
@@ -79,6 +114,11 @@ export async function rejectCuti(id: number): Promise<Cuti> {
   return data as Cuti;
 }
 
-export async function exportCuti(format: string, params?: ListCutiParams): Promise<void> {
-  return download("cuti/export", { ...params, export: format });
+export async function cancelCuti(id: number): Promise<Cuti> {
+  const data = await post<Cuti>(`cuti/${id}/cancel`, {});
+  return data as Cuti;
+}
+
+export async function exportCuti(format: string, params: ListCutiParams = {}): Promise<void> {
+  await download("cuti/export", { ...params, export: format });
 }
