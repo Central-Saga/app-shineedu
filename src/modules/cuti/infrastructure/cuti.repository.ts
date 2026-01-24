@@ -5,6 +5,7 @@ import {
   post,
   put,
   del,
+  download,
   DEFAULT_META,
 } from "@/shared/infrastructure/api/httpClient";
 import { buildQuery } from "@/shared/lib/buildQuery";
@@ -116,4 +117,8 @@ export async function rejectCuti(id: number): Promise<Cuti> {
 export async function cancelCuti(id: number): Promise<Cuti> {
   const data = await post<Cuti>(`cuti/${id}/cancel`, {});
   return data as Cuti;
+}
+
+export async function exportCuti(format: string, params: ListCutiParams = {}): Promise<void> {
+  await download("cuti/export", { ...params, export: format });
 }

@@ -310,7 +310,11 @@ export function CutiForm({ initialData, isEdit = false }: CutiFormProps) {
                     variant="link" 
                     size="sm" 
                     className="h-auto p-0 text-indigo-600" 
-                    onClick={() => window.open(initialData.bukti_url || (initialData as any).bukti_pendukung_url, "_blank")}
+                    onClick={() => {
+                      if (initialData) {
+                        window.open(initialData.bukti_url || (initialData as any).bukti_pendukung_url, "_blank");
+                      }
+                    }}
                     type="button"
                   >
                     Lihat File

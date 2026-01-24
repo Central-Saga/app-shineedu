@@ -21,7 +21,6 @@ export interface PengaturanCuti {
   potongan_tipe: PotonganTipe;
   potongan_nilai?: number | null;
   aktif: boolean;
-  divisi?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
