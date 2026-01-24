@@ -111,7 +111,7 @@ export function CutiTable({
                     <StatusBadge status={item.status} />
                   </TableCell>
                   <TableCell>
-                    {item.approver?.name || item.disetujui_oleh || "-"}
+                    {item.approver?.name || (item as any).approver_name || (item.status === 'diajukan' ? "-" : (item.disetujui_oleh ? `User #${item.disetujui_oleh}` : "-"))}
                   </TableCell>
                   <TableCell className="max-w-[200px] truncate" title={item.catatan || ""}>
                      {item.catatan || "-"}
