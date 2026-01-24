@@ -95,10 +95,7 @@ export function CutiTable({
             <TableBody>
               {items.map((item) => {
                 const isOwner = currentUserId && item.karyawan?.user?.id === currentUserId;
-                const showCancel = onCancel && (
-                   (isOwner && item.status === 'diajukan') || 
-                   (canApprove && (item.status === 'diajukan' || item.status === 'disetujui'))
-                );
+                const showCancel = onCancel && (isOwner || canApprove) && (item.status === 'diajukan' || item.status === 'disetujui');
 
                 return (
                 <TableRow key={item.id}>
@@ -163,7 +160,7 @@ export function CutiTable({
                             </DropdownMenuItem>
                           </>
                         )}
-                        {canDelete && (
+                        {canDelete && item.status === 'diajukan' && (
                           <DropdownMenuItem
                             onClick={() => setDeleteData(item)}
                             className="text-destructive focus:text-destructive"
