@@ -297,6 +297,7 @@ export function AppSidebar() {
                       })}
                     <SidebarKehadiranToggle can={(k) => authStore.hasPermission(k)} />
                     <SidebarJadwalToggle can={(k) => authStore.hasPermission(k)} />
+                    <SidebarPayrollToggle can={(k) => authStore.hasPermission(k)} />
                   </SidebarMenu>
                 </SidebarGroupContent>
               </CollapsibleContent>
@@ -305,5 +306,25 @@ export function AppSidebar() {
         )}
       </SidebarContent>
     </Sidebar>
+  );
+}
+
+export function SidebarPayrollToggle({ can }: { can: (key: string) => boolean }) {
+  const pathname = usePathname();
+
+  const canRekap = can("rekap_bulanan.view");
+  if (!canRekap) return null;
+
+  const active = pathname.startsWith("/rekap-bulanan") || pathname.startsWith("/gaji");
+
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton asChild isActive={active} className="py-1">
+        <Link href="/rekap-bulanan">
+          <span className="size-4 shrink-0 flex items-center justify-center font-bold text-xs">$</span>
+          <span>Payroll</span>
+        </Link>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
   );
 }

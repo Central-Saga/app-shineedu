@@ -90,14 +90,21 @@ export function CutiTable({
             <TableBody>
               {items.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell>
-                    {item.tanggal
-                      ? format(new Date(item.tanggal), "dd MMMM yyyy", { locale: idLocale })
-                      : "-"}
+                  <TableCell className="py-4">
+                    <div className="flex flex-col gap-0.5">
+                        <span className="font-bold text-slate-700">
+                           {item.start_date ? format(new Date(item.start_date), "dd MMMM yyyy", { locale: idLocale }) : (item.tanggal ? format(new Date(item.tanggal), "dd MMMM yyyy", { locale: idLocale }) : "-")}
+                        </span>
+                        {item.end_date && format(new Date(item.end_date), "yyyy-MM-dd") !== format(new Date(item.start_date || item.tanggal || ""), "yyyy-MM-dd") && (
+                           <span className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter flex items-center gap-1">
+                              s/d {format(new Date(item.end_date), "dd MMMM yyyy", { locale: idLocale })}
+                           </span>
+                        )}
+                    </div>
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">{item.karyawan?.user?.name || item.karyawan?.kode_karyawan}</div>
-                    <div className="text-xs text-muted-foreground">{item.karyawan?.kode_karyawan}</div>
+                    <div className="font-medium text-slate-900">{item.karyawan?.user?.name || item.karyawan?.kode_karyawan}</div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{item.karyawan?.kode_karyawan}</div>
                   </TableCell>
                   <TableCell className="capitalize">{item.jenis}</TableCell>
                   <TableCell>

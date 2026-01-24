@@ -23,6 +23,7 @@ export interface Employee {
   kontak?: { nomor_hp?: string | null; alamat?: string | null } | null;
   tanggal_lahir?: string | null;
   status: string;
+  divisi?: string | null;
   user?: EmployeeUser | null;
   created_at?: string | null;
   updated_at?: string | null;

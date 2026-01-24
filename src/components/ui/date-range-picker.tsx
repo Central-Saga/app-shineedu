@@ -19,9 +19,11 @@ export function DatePickerWithRange({
   className,
   date,
   setDate,
+  disabled,
 }: React.HTMLAttributes<HTMLDivElement> & {
   date: DateRange | undefined
   setDate: (date: DateRange | undefined) => void
+  disabled?: any // Should be type for matchers from react-day-picker
 }) {
   return (
     <div className={cn("grid gap-2", className)}>
@@ -58,6 +60,7 @@ export function DatePickerWithRange({
             selected={date}
             onSelect={setDate}
             numberOfMonths={2}
+            disabled={disabled}
           />
         </PopoverContent>
       </Popover>
