@@ -13,6 +13,17 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { authStore, useAuthStore } from "@/modules/auth/infrastructure/auth.store";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function GajiPage() {
     const { allowed } = usePermissionGuard("gaji.view");
@@ -67,8 +78,6 @@ export default function GajiPage() {
     }, [allowed, bulan, tahun, q, page]);
 
     async function handleSync() {
-        if (!confirm("Generate ulang data payroll untuk periode ini? Data draft yang belum dibayar akan diperbarui.")) return;
-        
         setGenerating(true);
         try {
             await payrollService.generatePayroll(bulan, tahun);
@@ -90,10 +99,30 @@ export default function GajiPage() {
                 description={`Data pengupahan karyawan periode ${bulan}/${tahun}`}
                 actions={
                     canManage && (
-                        <Button onClick={handleSync} disabled={generating || loading}>
-                            <RefreshCw className={`mr-2 h-4 w-4 ${generating ? "animate-spin" : ""}`} />
-                            {generating ? "Memproses..." : "Sinkronisasi / Generate"}
-                        </Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button disabled={generating || loading}>
+                                    <RefreshCw className={`mr-2 h-4 w-4 ${generating ? "animate-spin" : ""}`} />
+                                    {generating ? "Memproses..." : "Sinkronisasi / Generate"}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Generate Ulang Payroll?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Apakah Anda yakin ingin men-generate ulang data payroll untuk periode <b>{bulan}/{tahun}</b>? 
+                                        <br/><br/>
+                                        Data draft yang belum dibayar akan diperbarui berdasarkan data absensi terbaru. Data yang sudah dibayar tidak akan berubah.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleSync} className="bg-indigo-600 hover:bg-indigo-700">
+                                        Ya, Sinkronkan Data
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     )
                 }
             />
