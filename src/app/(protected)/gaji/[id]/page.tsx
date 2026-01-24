@@ -18,6 +18,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGuard";
 import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
 import { toast } from "sonner";
@@ -79,7 +90,6 @@ export default function PayrollDetailPage({ params }: PageProps) {
     }, [allowed, id]);
 
     async function handleMarkAsPaid() {
-        if (!confirm("Tandai gaji ini sebagai sudah dibayar/ditransfer?")) return;
         setProcessing(true);
         try {
             await payrollService.updateStatus(parseInt(id), "paid");
@@ -90,6 +100,12 @@ export default function PayrollDetailPage({ params }: PageProps) {
         } finally {
             setProcessing(false);
         }
+    }
+
+    async function handleDownload() {
+        // Temporary implementation: Print view
+        // Ideally: window.open(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payrolls/${id}/export?format=pdf`, '_blank');
+        window.print();
     }
 
     if (!allowed) return null;
@@ -134,14 +150,34 @@ export default function PayrollDetailPage({ params }: PageProps) {
                 </div>
                 <div className="ml-auto flex gap-2">
                      {canManage && !isPaid && (
-                        <Button onClick={handleMarkAsPaid} disabled={processing} className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white">
-                            <CheckCircle className="mr-2 size-4" />
-                            Tandai Lunas
-                        </Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button disabled={processing} className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white">
+                                    <CheckCircle className="mr-2 size-4" />
+                                    Tandai Lunas
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Konfirmasi Pembayaran</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Apakah Anda yakin ingin menandai gaji periode {payroll.bulan}/{payroll.tahun} untuk <b>{payroll.employee.user?.name}</b> sebagai sudah dibayar?
+                                        <br/><br/>
+                                        Tindakan ini akan mencatat tanggal pembayaran hari ini.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleMarkAsPaid} className="bg-emerald-600 hover:bg-emerald-700">
+                                        Ya, Sudah Dibayar
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                      )}
-                     <Button variant="outline" className="rounded-full px-5 h-9 border-slate-200" disabled>
+                     <Button variant="outline" className="rounded-full px-5 h-9 border-slate-200" onClick={handleDownload} disabled={processing}>
                         <Printer className="mr-2 size-3.5" />
-                        Cetak Slip
+                        Download Slip
                     </Button>
                 </div>
             </div>
