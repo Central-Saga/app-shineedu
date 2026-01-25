@@ -20,6 +20,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Search, Loader2, Users } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { DatePicker } from "@/components/ui/date-picker";
 import { academicApi } from "@/modules/academic/infrastructure/api";
 import { enrollmentRepository } from "@/modules/enrollment/infrastructure/enrollment.repository";
 
@@ -125,8 +127,8 @@ export function AddAnggotaSheet({ kelasId, programId, jenjangId, onSuccess }: Ad
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="default" className="rounded-full bg-rose-700 hover:bg-rose-800 shadow-sm shadow-rose-200 px-6 h-9 transition-all active:scale-95">
-            <Plus className="mr-2 h-4 w-4" /> Tambah Anggota
+        <Button variant="default" className="rounded-xl bg-rose-700 hover:bg-rose-800 shadow-lg shadow-rose-100 px-6 h-9 transition-all active:scale-95 font-bold text-[10px] uppercase tracking-wider">
+            <Plus className="mr-2 h-3.5 w-3.5" /> Tambah Anggota
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-none rounded-[2rem] shadow-premium ring-1 ring-slate-100">
@@ -202,11 +204,11 @@ export function AddAnggotaSheet({ kelasId, programId, jenjangId, onSuccess }: Ad
              
              <div className="space-y-2 px-1">
                 <Label htmlFor="tgl_masuk" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Tanggal Masuk Kelas</Label>
-                <Input 
-                    type="date" 
-                    id="tgl_masuk" 
-                    className="h-11 rounded-xl border-slate-100 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-rose-100 transition-all font-semibold text-slate-700 text-sm shadow-sm"
-                    {...form.register("tanggal_masuk")}
+                <DatePicker
+                    date={form.watch("tanggal_masuk") ? new Date(form.watch("tanggal_masuk")!) : undefined}
+                    setDate={(date) => form.setValue("tanggal_masuk", date ? format(date, "yyyy-MM-dd") : undefined)}
+                    placeholder="Pilih Tanggal Masuk"
+                    className="h-11 rounded-xl border-slate-100 bg-slate-50/50 focus:bg-white transition-all font-semibold text-slate-700 text-sm shadow-sm hover:bg-slate-50"
                 />
              </div>
         </div>
@@ -218,7 +220,7 @@ export function AddAnggotaSheet({ kelasId, programId, jenjangId, onSuccess }: Ad
                     <span className="text-[10px] font-medium text-slate-400">Terpilih untuk masuk</span>
                 </div>
                 <Button 
-                    className="rounded-full px-8 h-11 bg-rose-700 hover:bg-rose-800 shadow-xl shadow-rose-100 font-bold text-xs uppercase tracking-widest transition-all scale-100 active:scale-95 disabled:opacity-50 border-none"
+                    className="rounded-xl px-8 h-11 bg-rose-700 hover:bg-rose-800 shadow-xl shadow-rose-100 font-bold text-xs uppercase tracking-widest transition-all scale-100 active:scale-95 disabled:opacity-50 border-none"
                     onClick={form.handleSubmit(onSubmit)} 
                     disabled={isSubmitting || selectedCount === 0}
                 >

@@ -7,13 +7,14 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 import {
   Select,
   SelectContent,
@@ -359,7 +360,12 @@ export function KelasForm({ initialData, programs, jenjangs, onSubmit, isLoading
                                     <FormItem>
                                     <FormLabel>Periode Mulai</FormLabel>
                                     <FormControl>
-                                        <Input type="date" {...field} value={field.value || ''} disabled={isLoading} />
+                                        <DatePicker 
+                                            date={field.value ? new Date(field.value) : undefined}
+                                            setDate={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
+                                            placeholder="Pilih Tanggal"
+                                            disabled={isLoading}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                     </FormItem>
@@ -372,7 +378,12 @@ export function KelasForm({ initialData, programs, jenjangs, onSubmit, isLoading
                                     <FormItem>
                                     <FormLabel>Periode Selesai</FormLabel>
                                     <FormControl>
-                                        <Input type="date" {...field} value={field.value || ''} disabled={isLoading} />
+                                        <DatePicker 
+                                            date={field.value ? new Date(field.value) : undefined}
+                                            setDate={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
+                                            placeholder="Pilih Tanggal"
+                                            disabled={isLoading}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                     </FormItem>

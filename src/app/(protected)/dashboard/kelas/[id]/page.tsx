@@ -154,26 +154,26 @@ export default function DetailKelasPage({ params }: { params: Promise<{ id: stri
   return (
     <div className="w-full pb-10">
       <div className="flex items-center gap-4 mb-8 text-left">
-        <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full h-9 w-9 text-slate-400 hover:text-rose-600">
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-xl h-10 w-10 text-slate-400 hover:text-rose-600 bg-white border border-slate-200/60 shadow-sm hover:bg-slate-50">
           <ArrowLeft className="size-4" />
         </Button>
         <div className="flex flex-col">
           <h1 className="text-xl font-bold tracking-tight text-slate-800 leading-tight">
             Detail Kelas
           </h1>
-          <div className="flex items-center gap-2 text-sm text-slate-400 mt-0.5">
-            <span className="font-mono text-xs font-bold text-rose-600 tracking-wider bg-rose-50 px-2 py-0.5 rounded-md uppercase">
+          <div className="flex items-center gap-2 text-sm text-slate-400 mt-1">
+            <span className="font-mono text-xs font-bold text-rose-600 tracking-wider bg-rose-50 px-2.5 py-1 rounded-lg uppercase border border-rose-100/50">
                {kelas.kode_kelas || "NO-CODE"}
             </span> 
             <span className="text-slate-200">|</span>
-            <Badge variant="outline" className={kelas.status === "Aktif" ? "border-emerald-200 bg-emerald-50/50 text-emerald-600 h-4 px-1.5 text-[10px] font-bold uppercase tracking-widest" : "border-slate-200 bg-slate-50/50 text-slate-500 h-4 px-1.5 text-[10px] font-bold uppercase tracking-widest"}>
+            <Badge variant="outline" className={kelas.status === "Aktif" ? "border-emerald-200 bg-emerald-50/50 text-emerald-600 h-6 px-2.5 text-[10px] font-bold uppercase tracking-widest rounded-lg" : "border-slate-200 bg-slate-50/50 text-slate-500 h-6 px-2.5 text-[10px] font-bold uppercase tracking-widest rounded-lg"}>
               {kelas.status}
             </Badge>
           </div>
         </div>
         <div className="ml-auto">
           {canUpdate && (
-            <Button asChild className="rounded-full px-5 h-9 bg-rose-700 hover:bg-rose-800 shadow-sm shadow-rose-200">
+            <Button asChild className="rounded-xl px-5 h-10 bg-rose-700 hover:bg-rose-800 shadow-lg shadow-rose-100 font-bold text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98]">
               <Link href={`/dashboard/kelas/${kelas.id}/edit`}>
                 <Pencil className="mr-2 size-3.5" />
                 Edit Data Kelas

@@ -7,12 +7,21 @@ import { KelasFormWrapper } from "@/modules/academic/presentation/components/Kel
 import { listJenjang, listProgram } from "@/modules/catalog/infrastructure/catalog.repository";
 import { Program } from "@/modules/catalog/domain/entities";
 
+import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
+
 export default function CreateKelasPage() {
+    const { setItems } = useBreadcrumbStore();
     const [loading, setLoading] = useState(true);
     const [programs, setPrograms] = useState<Program[]>([]);
     const [jenjangs, setJenjangs] = useState<{ id: number; nama: string }[]>([]);
 
     useEffect(() => {
+        setItems([
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "Kelas", href: "/dashboard/kelas" },
+            { label: "Buat Kelas" },
+        ]);
+
         const fetchData = async () => {
             try {
                 const [progRes, jenjRes] = await Promise.all([
@@ -28,14 +37,13 @@ export default function CreateKelasPage() {
             }
         };
         fetchData();
-    }, []);
+    }, [setItems]);
 
     return (
         <div className="space-y-6">
             <PageHeader
                 title="Buat Kelas Baru"
-                description="Tambahkan kelas baru ke dalam sistem"
-                backUrl="/dashboard/kelas"
+                description="Tambahkan kelas akademik baru ke dalam sistem"
             />
             
             <div className="mt-6">

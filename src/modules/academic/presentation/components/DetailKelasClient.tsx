@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { academicApi } from "@/modules/academic/infrastructure/api";
@@ -19,6 +19,11 @@ interface DetailKelasClientProps {
 export function DetailKelasClient({ kelas }: DetailKelasClientProps) {
     const router = useRouter();
     const [enrollments, setEnrollments] = useState<KelasEnrollment[]>(kelas.enrollments || []);
+
+    useEffect(() => {
+        setEnrollments(kelas.enrollments || []);
+    }, [kelas.enrollments]);
+
 
     const handleRemoveMember = async (enrollmentId: number) => {
         try {
@@ -43,7 +48,7 @@ export function DetailKelasClient({ kelas }: DetailKelasClientProps) {
                      <p className="text-[10px] text-slate-400 font-bold mt-0.5">Siswa aktif yang terdaftar di kelas</p>
                 </div>
                  <div className="flex gap-2">
-                      <Button variant="outline" className="rounded-full h-9 px-4 text-[10px] font-bold uppercase tracking-wider border-none shadow-none ring-1 ring-slate-100 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all" asChild>
+                      <Button variant="outline" className="rounded-xl h-9 px-4 text-[10px] font-bold uppercase tracking-wider border border-slate-200 shadow-sm text-slate-500 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-100 transition-all" asChild>
                           <Link href={`/dashboard/kelas/${kelas.id}/edit`}>
                              <Pencil className="mr-2 size-3" /> Edit Kelas
                           </Link>

@@ -87,7 +87,7 @@ export function AnggotaTable({ enrollments, onRemove }: AnggotaTableProps) {
                         </span>
                     </TableCell>
                     <TableCell>
-                        <Badge variant="outline" className={status === 'Aktif' ? "border-emerald-200 bg-emerald-50 text-emerald-600 h-5 px-2 text-[10px] font-bold uppercase" : "border-rose-100 bg-rose-50 text-rose-600 h-5 px-2 text-[10px] font-bold uppercase"}>
+                        <Badge variant="outline" className={status === 'Aktif' ? "border-emerald-200 bg-emerald-50 text-emerald-600 h-5 px-2 text-[10px] font-bold uppercase rounded-lg" : "border-rose-100 bg-rose-50 text-rose-600 h-5 px-2 text-[10px] font-bold uppercase rounded-lg"}>
                             {status}
                         </Badge>
                     </TableCell>
@@ -97,23 +97,21 @@ export function AnggotaTable({ enrollments, onRemove }: AnggotaTableProps) {
                                 <Button 
                                     variant="ghost" 
                                     size="icon" 
-                                    className="h-8 w-8 rounded-full text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100"
+                                    className="h-8 w-8 rounded-xl text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100"
                                 >
                                     <Trash className="h-4 w-4" />
                                 </Button>
                             </AlertDialogTrigger>
-                            <AlertDialogContent className="rounded-2xl border-none shadow-premium ring-1 ring-slate-100 max-w-[400px]">
+                            <AlertDialogContent>
                                 <AlertDialogHeader>
-                                <AlertDialogTitle className="text-xl font-bold text-slate-800">Keluarkan Anggota?</AlertDialogTitle>
-                                <AlertDialogDescription className="text-slate-500 font-medium">
-                                    Apakah Anda yakin ingin mengeluarkan <span className="text-slate-800 font-bold">{enr.murid?.nama_lengkap}</span> dari kelas ini?
+                                <AlertDialogTitle>Keluarkan Anggota?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Apakah Anda yakin ingin mengeluarkan <span className="font-semibold text-slate-900">{enr.murid?.nama_lengkap}</span> dari kelas ini?
                                 </AlertDialogDescription>
                                 </AlertDialogHeader>
-                                <AlertDialogFooter className="mt-4 gap-2">
-                                <AlertDialogCancel className="rounded-full border-slate-100 text-slate-500 font-bold text-[10px] uppercase tracking-widest px-6 h-10 hover:bg-slate-50">
-                                    Batal
-                                </AlertDialogCancel>
-                                <AlertDialogAction onClick={() => onRemove(enr.id)} className="rounded-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-[10px] uppercase tracking-widest px-6 h-10 shadow-lg shadow-rose-100 border-none transition-all">
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Batal</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => onRemove(enr.id)} className="bg-rose-600 hover:bg-rose-700">
                                     Ya, Keluarkan
                                 </AlertDialogAction>
                                 </AlertDialogFooter>

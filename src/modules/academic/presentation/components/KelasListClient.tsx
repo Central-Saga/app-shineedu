@@ -133,8 +133,25 @@ export function KelasListClient({
         }
     };
 
+    const handleStatusChange = async (item: Kelas, newStatus: string) => {
+        try {
+            // Using updateKelas for status toggle
+            await academicApi.updateKelas(item.id, { 
+                nama_kelas: item.nama_kelas,
+                program_id: item.program?.id,
+                jenjang_id: item.jenjang?.id,
+                status: newStatus 
+            } as any);
+            toast.success(`Status ${item.nama_kelas} berhasil diubah menjadi ${newStatus}`);
+            router.refresh();
+        } catch (e: any) {
+            toast.error(e.message || "Gagal mengubah status kelas");
+        }
+    };
+
     const columns = getColumns({
         onDelete: (id) => setDeleteId(id),
+        onStatusChange: handleStatusChange
     });
 
     return (
@@ -171,12 +188,12 @@ export function KelasListClient({
                     label="Kelas Selesai"
                     value={stats.finished}
                     icon={Archive}
-                    variant="info"
+                    variant="warning"
                     description="Sudah berakhir"
                  />
              </div>
 
-             <Card className="rounded-lg border bg-card shadow-sm">
+             <Card className="rounded-lg border bg-card text-card-foreground shadow-sm">
                  <CardContent className="space-y-4 pt-6">
                      <DataTableToolbar
                         searchValue={searchValue}
@@ -264,7 +281,9 @@ export function KelasListClient({
                         </Select>
                      </div>
 
-                     <DataTable columns={columns} data={data} loading={loading} />
+                     <div className="rounded-md border">
+                        <DataTable columns={columns} data={data} loading={loading} />
+                     </div>
 
                      <DataTablePagination 
                         meta={meta} 
@@ -278,12 +297,12 @@ export function KelasListClient({
                     <AlertDialogHeader>
                         <AlertDialogTitle>Hapus Kelas?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Tindakan ini tidak dapat dibatalkan. Data kelas dan riwayatnya mungkin akan hilang atau diarsipkan.
+                            Tindakan ini tidak dapat dibatalkan. Data kelas dan seluruh riwayat pengajaran di dalamnya akan hilang secara permanen.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Batal</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                             Hapus
                         </AlertDialogAction>
                     </AlertDialogFooter>

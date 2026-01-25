@@ -4,22 +4,21 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Kelas } from "@/modules/academic/domain/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Pencil, Trash, Eye } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, Pencil, Trash, Eye, Users } from "lucide-react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Switch } from "@/components/ui/switch";
 import Link from "next/link";
 
 interface KelasTableColumnsProps {
   onDelete: (id: number) => void;
+  onStatusChange: (item: Kelas, newStatus: string) => void;
 }
 
-export const getColumns = ({ onDelete }: KelasTableColumnsProps): ColumnDef<Kelas>[] => [
+export const getColumns = ({ onDelete, onStatusChange }: KelasTableColumnsProps): ColumnDef<Kelas>[] => [
   {
     accessorKey: "kode_kelas",
     header: "Kode",
@@ -28,16 +27,11 @@ export const getColumns = ({ onDelete }: KelasTableColumnsProps): ColumnDef<Kela
   {
     accessorKey: "nama_kelas",
     header: "Nama Kelas",
-    cell: ({ row }) => <div className="font-semibold">{row.getValue("nama_kelas")}</div>,
-  },
-  {
-    id: "context",
-    header: "Program / Jenjang",
     cell: ({ row }) => (
-      <div className="flex flex-col text-xs">
-        <span className="font-medium">{row.original.program?.nama || "-"}</span>
-        <span className="text-muted-foreground">{row.original.jenjang?.nama || "-"}</span>
-      </div>
+        <div className="flex flex-col">
+            <span className="font-semibold text-sm">{row.getValue("nama_kelas")}</span>
+            <span className="text-xs text-muted-foreground">{row.original.program?.nama || "-"} • {row.original.jenjang?.nama || "-"}</span>
+        </div>
     ),
   },
   {
@@ -47,10 +41,12 @@ export const getColumns = ({ onDelete }: KelasTableColumnsProps): ColumnDef<Kela
         const tipe = row.getValue("tipe_kelas") as string;
         const mode = row.original.mode_private;
         return (
-            <div className="flex flex-col space-y-1">
-                <Badge variant="outline" className="w-fit">{tipe}</Badge>
+            <div className="flex flex-col gap-1">
+                <Badge variant="secondary" className="w-fit font-medium">
+                    {tipe}
+                </Badge>
                 {tipe === 'PRIVATE' && mode && (
-                    <span className="text-[10px] text-muted-foreground">{mode}</span>
+                    <span className="text-[10px] text-muted-foreground ml-1">{mode}</span>
                 )}
             </div>
         )
@@ -61,21 +57,21 @@ export const getColumns = ({ onDelete }: KelasTableColumnsProps): ColumnDef<Kela
     header: "Status",
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
-      let className = "border-slate-300 bg-slate-50 text-slate-700"; // default/draft
+      let className = "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80"; // default
       
       switch(status) {
           case 'Aktif': 
-            className = "border-emerald-300 bg-emerald-50 text-emerald-700";
+            className = "border-transparent bg-emerald-100 text-emerald-700 hover:bg-emerald-100/80";
             break;
           case 'Selesai': 
-            className = "border-blue-300 bg-blue-50 text-blue-700";
+            className = "border-transparent bg-blue-100 text-blue-700 hover:bg-blue-100/80";
             break;
           case 'Non Aktif': 
-            className = "border-rose-200 bg-rose-50 text-rose-700";
+            className = "border-transparent bg-destructive/10 text-destructive hover:bg-destructive/20";
             break;
       }
 
-      return <Badge variant="outline" className={className}>{status}</Badge>;
+      return <Badge variant="outline" className={`${className} border-0 font-medium`}>{status}</Badge>;
     },
   },
   {
@@ -86,8 +82,9 @@ export const getColumns = ({ onDelete }: KelasTableColumnsProps): ColumnDef<Kela
         const kap = row.original.kapasitas;
         
         return (
-            <div className="flex items-center gap-1">
-                <span className="font-mono">{count}</span>
+            <div className="flex items-center gap-2 text-sm">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span>{count} Siswa</span>
                 {kap && <span className="text-muted-foreground text-xs">/ {kap}</span>}
             </div>
         ) 
@@ -95,38 +92,66 @@ export const getColumns = ({ onDelete }: KelasTableColumnsProps): ColumnDef<Kela
   },
   {
     id: "actions",
+    header: "Aksi",
     cell: ({ row }) => {
-      const kelas = row.original;
+      const item = row.original;
       
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem asChild>
-              <Link href={`/dashboard/kelas/${kelas.id}`}>
-                <Eye className="mr-2 h-4 w-4" /> Detail
-              </Link>
-            </DropdownMenuItem>
-             <DropdownMenuItem asChild>
-              <Link href={`/dashboard/kelas/${kelas.id}/edit`}>
-                <Pencil className="mr-2 h-4 w-4" /> Edit
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem 
-               className="text-destructive focus:text-destructive"
-               onClick={() => onDelete(kelas.id)}
-            >
-              <Trash className="mr-2 h-4 w-4" /> Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-1">
+          <Switch
+            checked={item.status === "Aktif"}
+            onCheckedChange={(checked) => 
+                onStatusChange(item, checked ? "Aktif" : "Non Aktif")
+            }
+            className="scale-75 shrink-0 mr-1"
+          />
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                className="text-slate-500 hover:text-blue-600 hover:bg-blue-50 h-8 w-8"
+              >
+                <Link href={`/dashboard/kelas/${item.id}`}>
+                    <Eye className="size-4" />
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Detail</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                className="text-slate-500 hover:text-amber-600 hover:bg-amber-50 h-8 w-8"
+              >
+                <Link href={`/dashboard/kelas/${item.id}/edit`}>
+                    <Pencil className="size-4" />
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Edit</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onDelete(item.id)}
+                className="text-slate-500 hover:text-rose-600 hover:bg-rose-50 h-8 w-8"
+              >
+                <Trash className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Hapus</TooltipContent>
+          </Tooltip>
+        </div>
       );
     },
   },
