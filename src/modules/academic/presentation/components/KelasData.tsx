@@ -1,11 +1,10 @@
-
 "use client";
 
-import { ColumnDef, Row } from "@tanstack/react-table";
+import { ColumnDef } from "@tanstack/react-table";
 import { Kelas } from "@/modules/academic/domain/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, MoreHorizontal, Pencil, Trash, Eye } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash, Eye } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,17 +27,7 @@ export const getColumns = ({ onDelete }: KelasTableColumnsProps): ColumnDef<Kela
   },
   {
     accessorKey: "nama_kelas",
-    header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Nama Kelas
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
-        )
-    },
+    header: "Nama Kelas",
     cell: ({ row }) => <div className="font-semibold">{row.getValue("nama_kelas")}</div>,
   },
   {

@@ -36,6 +36,7 @@ import { Kelas } from "@/modules/academic/domain/types";
 import { academicApi } from "@/modules/academic/infrastructure/api";
 import { DataTable } from "./DataTable";
 import { getColumns } from "./KelasData";
+import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
 
 interface Option {
     id: number;
@@ -52,6 +53,7 @@ interface KelasListClientProps {
     };
     programs: Option[];
     jenjangs: Option[];
+    loading?: boolean;
 }
 
 const SORT_OPTIONS = [
@@ -66,11 +68,21 @@ export function KelasListClient({
     meta, 
     stats,
     programs,
-    jenjangs
+    jenjangs,
+    loading = false
 }: KelasListClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { setItems } = useBreadcrumbStore();
     const [deleteId, setDeleteId] = useState<number | null>(null);
+
+    // Set Breadcrumbs
+    useEffect(() => {
+        setItems([
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "Kelas" },
+        ]);
+    }, [setItems]);
 
     // Initial state from URL
     const initialQ = searchParams.get("q") || "";
@@ -252,7 +264,7 @@ export function KelasListClient({
                         </Select>
                      </div>
 
-                     <DataTable columns={columns} data={data} />
+                     <DataTable columns={columns} data={data} loading={loading} />
 
                      <DataTablePagination 
                         meta={meta} 

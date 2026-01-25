@@ -41,7 +41,10 @@ export const authStore = {
   },
 
   clearSession(): void {
-    if (typeof window !== "undefined") localStorage.removeItem(STORAGE_KEY);
+    if (typeof window !== "undefined") {
+        localStorage.removeItem(STORAGE_KEY);
+        document.cookie = "auth_token=; path=/; max-age=0";
+    }
     useAuthStore.setState({
       token: null,
       user: null,
@@ -51,7 +54,10 @@ export const authStore = {
 
   async login(email: string, password: string): Promise<void> {
     const { user, token } = await usecases.loginUsecase(email, password);
-    if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, token);
+    if (typeof window !== "undefined") {
+        localStorage.setItem(STORAGE_KEY, token);
+        document.cookie = `auth_token=${token}; path=/; max-age=86400; SameSite=Lax`;
+    }
     useAuthStore.setState({
       token,
       user,

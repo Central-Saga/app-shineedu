@@ -45,9 +45,10 @@ interface KelasFormProps {
   jenjangs: Option[];
   onSubmit: (values: CreateKelasValues) => void;
   isLoading?: boolean;
+  isEdit?: boolean;
 }
 
-export function KelasForm({ initialData, programs, jenjangs, onSubmit, isLoading }: KelasFormProps) {
+export function KelasForm({ initialData, programs, jenjangs, onSubmit, isLoading, isEdit = false }: KelasFormProps) {
   const router = useRouter();
   const form = useForm<CreateKelasValues>({
     resolver: zodResolver(createKelasSchema) as any,
@@ -68,10 +69,19 @@ export function KelasForm({ initialData, programs, jenjangs, onSubmit, isLoading
 
   const tipeKelas = form.watch("tipe_kelas");
   const selectedJenjang = form.watch("jenjang_id");
+  const modePrivate = form.watch("mode_private");
+
+  // Auto-set capacity for Private Individu
+  useEffect(() => {
+     if (tipeKelas === 'PRIVATE' && modePrivate === 'INDIVIDU') {
+         form.setValue('kapasitas', 1);
+     }
+  }, [tipeKelas, modePrivate, form]);
 
   // Filter programs based on selected jenjang
   const filteredPrograms = useMemo(() => {
     // Debugging logs
+// ... (rest of filtering logic)
     console.log("All Programs:", programs);
     console.log("Selected Jenjang:", selectedJenjang);
 
@@ -132,33 +142,46 @@ export function KelasForm({ initialData, programs, jenjangs, onSubmit, isLoading
                                 )}
                             />
                             
-                            <FormField
-                                control={form.control}
-                                name="status"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Status</FormLabel>
-                                    <Select 
-                                        onValueChange={field.onChange} 
-                                        defaultValue={field.value}
-                                        disabled={isLoading}
-                                    >
-                                        <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Pilih Status" />
-                                        </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="Draft">Draft</SelectItem>
-                                            <SelectItem value="Aktif">Aktif</SelectItem>
-                                            <SelectItem value="Selesai">Selesai</SelectItem>
-                                            <SelectItem value="Non Aktif">Non Aktif</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                            {isEdit ? (
+                                <FormField
+                                    control={form.control}
+                                    name="status"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Status</FormLabel>
+                                        <Select 
+                                            onValueChange={field.onChange} 
+                                            defaultValue={field.value}
+                                            disabled={isLoading}
+                                        >
+                                            <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Pilih Status" />
+                                            </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="Draft">Draft</SelectItem>
+                                                <SelectItem value="Aktif">Aktif</SelectItem>
+                                                <SelectItem value="Selesai">Selesai</SelectItem>
+                                                <SelectItem value="Non Aktif">Non Aktif</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            ) : (
+                                <div className="flex flex-col gap-2 mt-[6px]">
+                                     <FormLabel>Status</FormLabel>
+                                     <div className="flex items-center gap-2 rounded-xl border px-4 py-2.5 bg-slate-50/50 cursor-not-allowed opacity-70">
+                                        <div className="size-2.5 rounded-full bg-emerald-500 animate-pulse ring-4 ring-emerald-500/20" />
+                                        <span className="text-sm font-medium">Status: Aktif</span>
+                                    </div>
+                                    <p className="text-[0.8rem] text-muted-foreground">
+                                        Kelas baru secara otomatis berstatus <strong>Aktif</strong>.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </AccordionContent>
                 </AccordionItem>
@@ -311,7 +334,7 @@ export function KelasForm({ initialData, programs, jenjangs, onSubmit, isLoading
                                             {...field} 
                                             value={field.value ?? ''} 
                                             onChange={e => field.onChange(e.target.valueAsNumber)} 
-                                            disabled={isLoading}
+                                            disabled={isLoading || (tipeKelas === 'PRIVATE' && modePrivate === 'INDIVIDU')}
                                         />
                                     </FormControl>
                                     <FormMessage />

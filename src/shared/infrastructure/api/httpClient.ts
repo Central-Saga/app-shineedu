@@ -11,9 +11,9 @@ import {
 } from "./errors";
 
 const BASE =
-  (typeof process !== "undefined" &&
-    process.env?.NEXT_PUBLIC_API_BASE_URL) ||
-  "";
+  typeof window === "undefined"
+    ? "http://api:8000/api/v2"
+    : process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
 let tokenGetter: (() => string | null) | null = null;
 let onUnauthorized: (() => void) | null = null;
@@ -106,7 +106,8 @@ async function handleResponse<T>(res: Response): Promise<T> {
 async function request<T>(
   method: string,
   path: string,
-  body?: unknown
+  body?: unknown,
+  options?: RequestInit
 ): Promise<T> {
   const url = `${BASE.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
   const isFormData = body instanceof FormData;
@@ -114,6 +115,7 @@ async function request<T>(
   const headers: Record<string, string> = {
     Accept: "application/json",
     ...getAuthHeaders(),
+    ...(options?.headers as Record<string, string>),
   };
 
   if (!isFormData) {
@@ -121,6 +123,7 @@ async function request<T>(
   }
 
   const res = await fetch(url, {
+    ...options,
     method,
     headers,
     body: isFormData ? body : (body != null ? JSON.stringify(body) : undefined),
@@ -133,21 +136,22 @@ async function request<T>(
   return handleResponse<T>(res);
 }
 
-export async function get<T>(path: string): Promise<T> {
-  return request<T>("GET", path);
+export async function get<T>(path: string, options?: RequestInit): Promise<T> {
+  return request<T>("GET", path, undefined, options);
 }
 
 /**
  * GET request that returns the full ApiResponse (including meta) for paginated endpoints.
  * Path may include query string, e.g. "users?page=1&q=foo".
  */
-export async function getResponse<T>(path: string): Promise<ApiResponse<T>> {
+export async function getResponse<T>(path: string, options?: RequestInit): Promise<ApiResponse<T>> {
   const url = `${BASE.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
   const headers: Record<string, string> = {
     Accept: "application/json",
     ...getAuthHeaders(),
+    ...(options?.headers as Record<string, string>),
   };
-  const res = await fetch(url, { method: "GET", headers });
+  const res = await fetch(url, { ...options, method: "GET", headers });
   const text = await res.text();
   let json: ApiResponse<T> | null = null;
   if (text) {
@@ -218,7 +222,8 @@ export const DEFAULT_META: PaginatedMeta = {
 
 export async function getPaginated<T>(
   path: string,
-  query?: object
+  query?: object,
+  options?: RequestInit
 ): Promise<{ data: T; meta: PaginatedMeta }> {
   let fullPath = `${BASE.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
   if (query && Object.keys(query).length > 0) {
@@ -228,8 +233,9 @@ export async function getPaginated<T>(
   const headers: Record<string, string> = {
     Accept: "application/json",
     ...getAuthHeaders(),
+    ...(options?.headers as Record<string, string>),
   };
-  const res = await fetch(fullPath, { method: "GET", headers });
+  const res = await fetch(fullPath, { ...options, method: "GET", headers });
   const text = await res.text();
   let json: (ApiResponse<T> & { meta?: PaginatedMeta }) | null = null;
   if (text) {

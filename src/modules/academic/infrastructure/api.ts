@@ -1,24 +1,26 @@
 import { ApiResponse } from "@/shared/domain/types";
 import { CreateKelasValues } from "../domain/schemas";
 import { Kelas } from "../domain/types";
-import { get, post, put, del } from "@/shared/infrastructure/api/httpClient";
+import { getResponse, del, post, put } from "@/shared/infrastructure/api/httpClient";
+import { buildQuery } from "@/shared/lib/buildQuery";
 
 export const academicApi = {
-  getKelasList: async (params?: any) => {
-    const queryString = new URLSearchParams(params).toString();
-    return get<ApiResponse<Kelas[]>>(`kelas?${queryString}`);
+  getKelasList: async (params: Record<string, any> = {}, token?: string) => {
+    const queryString = buildQuery(params);
+    const options = token ? { headers: { Authorization: `Bearer ${token}` } } : undefined;
+    return getResponse<Kelas[]>(`kelas?${queryString}`, options);
   },
 
   getKelasDetail: async (id: number | string) => {
-    return get<ApiResponse<Kelas>>(`kelas/${id}`);
+    return getResponse<Kelas>(`kelas/${id}`);
   },
 
   createKelas: async (data: CreateKelasValues) => {
-    return post<ApiResponse<Kelas>>(`kelas`, data);
+    return post<Kelas>(`kelas`, data);
   },
 
   updateKelas: async (id: number | string, data: CreateKelasValues) => {
-    return put<ApiResponse<Kelas>>(`kelas/${id}`, data);
+    return put<Kelas>(`kelas/${id}`, data);
   },
 
   deleteKelas: async (id: number | string) => {
@@ -26,11 +28,11 @@ export const academicApi = {
   },
 
   getKelasMembers: async (id: number | string) => {
-    return get<ApiResponse<Kelas>>(`kelas/${id}/anggota`);
+    return getResponse<Kelas>(`kelas/${id}/anggota`);
   },
 
   addKelasMembers: async (id: number | string, data: { enrollment_ids: number[], tanggal_masuk?: string }) => {
-    return post<ApiResponse<Kelas>>(`kelas/${id}/anggota`, data);
+    return post<Kelas>(`kelas/${id}/anggota`, data);
   },
 
   removeKelasMember: async (id: number | string, enrollmentId: number | string) => {
@@ -38,11 +40,10 @@ export const academicApi = {
   },
 
   getPrograms: async () => {
-      // Assuming the backend returns items array in data, or generic ApiResponse
-      return get<ApiResponse<{id: number, nama: string}[]>>('catalog/program');
+      return getResponse<{id: number, nama: string}[]>(`catalog/program`);
   },
 
   getJenjangs: async () => {
-      return get<ApiResponse<{id: number, nama: string}[]>>('catalog/jenjang');
+      return getResponse<{id: number, nama: string}[]>(`catalog/jenjang`);
   }
 };

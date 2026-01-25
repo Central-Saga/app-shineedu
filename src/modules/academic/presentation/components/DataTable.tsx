@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -16,15 +15,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  loading?: boolean;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  loading = false,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
@@ -33,8 +35,8 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div className="rounded-md border bg-card">
-      <Table>
+    <div className="w-full overflow-x-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
+        <Table className="min-w-[900px]">
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
@@ -54,7 +56,17 @@ export function DataTable<TData, TValue>({
           ))}
         </TableHeader>
         <TableBody>
-          {table.getRowModel().rows?.length ? (
+          {loading ? (
+             Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                    {columns.map((col, j) => (
+                        <TableCell key={j}>
+                             <Skeleton className="h-6 w-full opacity-50" />
+                        </TableCell>
+                    ))}
+                </TableRow>
+             ))
+          ) : table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}
@@ -71,9 +83,9 @@ export function DataTable<TData, TValue>({
             <TableRow>
               <TableCell
                 colSpan={columns.length}
-                className="h-24 text-center"
+                className="h-24 text-center text-muted-foreground"
               >
-                No results.
+                Tidak ada data.
               </TableCell>
             </TableRow>
           )}

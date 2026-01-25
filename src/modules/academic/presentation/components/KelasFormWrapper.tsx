@@ -51,6 +51,7 @@ export function KelasFormWrapper({ initialData, programs, jenjangs, isEdit, kela
             jenjangs={jenjangs}
             onSubmit={onSubmit}
             isLoading={isLoading}
+            isEdit={!!isEdit}
         />
     );
 }
