@@ -33,6 +33,8 @@ export interface ListParams {
   status?: "Aktif" | "Non Aktif";
   sort_by?: string;
   sort_dir?: "asc" | "desc";
+  jenjang_id?: number;
+  program_id?: number;
 }
 
 export interface ListPaketHargaParams extends ListParams {

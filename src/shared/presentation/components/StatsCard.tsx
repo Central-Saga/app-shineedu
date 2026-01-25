@@ -1,4 +1,4 @@
-"use client";
+
 
 import { Card, CardContent } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
