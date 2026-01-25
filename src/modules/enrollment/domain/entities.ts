@@ -44,7 +44,13 @@ export interface CreateEnrollmentRequest {
   murid_baru?: {
     nama_lengkap: string;
     no_hp: string;
-    // Add other fields as needed for Murid creation
+    jenis_kelamin?: string | null;
+    tanggal_lahir?: string | null;
+    alamat?: string | null;
+    nama_wali?: string | null;
+    no_hp_wali?: string | null;
+    email_wali?: string | null;
+    hubungan_wali?: string | null;
   } | null;
   program_id: number;
   jenjang_id: number;

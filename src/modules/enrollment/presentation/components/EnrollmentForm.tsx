@@ -516,29 +516,27 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
                             </FormItem>
                         )}
                     />
-                    {isEdit && (
-                         <FormField
-                            control={form.control}
-                            name="tanggal_selesai"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-col mt-[7px]">
-                                    <FormLabel className="mb-[6px]">Tanggal Selesai</FormLabel>
-                                    <FormControl>
-                                        <DatePicker
-                                            date={field.value && isValid(parse(field.value, "yyyy-MM-dd", new Date())) ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
-                                            setDate={(date) => {
-                                                const formatted = date ? format(date, "yyyy-MM-dd") : null;
-                                                field.onChange(formatted);
-                                            }}
-                                            placeholder="Pilih tanggal selesai"
-                                        />
-                                    </FormControl>
-                                    <FormDescription>Kosongkan jika masih berjalan</FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                         />
-                    )}
+                    <FormField
+                        control={form.control}
+                        name="tanggal_selesai"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-col mt-[7px]">
+                                <FormLabel className="mb-[6px]">Tanggal Selesai</FormLabel>
+                                <FormControl>
+                                    <DatePicker
+                                        date={field.value && isValid(parse(field.value, "yyyy-MM-dd", new Date())) ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
+                                        setDate={(date) => {
+                                            const formatted = date ? format(date, "yyyy-MM-dd") : null;
+                                            field.onChange(formatted);
+                                        }}
+                                        placeholder="Pilih tanggal selesai"
+                                    />
+                                </FormControl>
+                                <FormDescription>Kosongkan jika aktif berkelanjutan</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
 
                     {isEdit && (
                         <FormField

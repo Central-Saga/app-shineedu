@@ -202,7 +202,7 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
               </div>
 
               <Button asChild variant="outline" size="sm" className="w-full text-[10px] h-9 rounded-xl border-slate-200 text-slate-600 font-bold uppercase tracking-wider hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200">
-                <Link href={`/dashboard/murid/${enrollment.murid_id}`}>
+                <Link href={`/dashboard/murid/${enrollment.murid?.id || enrollment.murid_id}`}>
                    <User className="mr-2 size-3" />
                    Lihat Profil Lengkap Siswa
                 </Link>

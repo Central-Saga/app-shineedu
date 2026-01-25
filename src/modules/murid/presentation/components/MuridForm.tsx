@@ -333,19 +333,34 @@ export function MuridForm({
               </AccordionTrigger>
               <AccordionContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="nama_wali"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nama Wali</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nama orang tua / wali" {...field} value={field.value || ""} disabled={isLoading} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="nama_wali"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nama Wali</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Nama orang tua / wali" {...field} value={field.value || ""} disabled={isLoading} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="email_wali"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email Wali</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="example@email.com" {...field} value={field.value || ""} disabled={isLoading} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <FormField

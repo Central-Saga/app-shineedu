@@ -9,6 +9,13 @@ export const createEnrollmentSchema = z.object({
   murid_baru: z.object({
     nama_lengkap: z.string().min(1, "Nama lengkap wajib diisi"),
     no_hp: z.string().min(1, "No HP wajib diisi"),
+    jenis_kelamin: z.enum(["L", "P"]).optional().nullable(),
+    tanggal_lahir: z.string().optional().nullable(),
+    alamat: z.string().optional().nullable(),
+    nama_wali: z.string().optional().nullable(),
+    no_hp_wali: z.string().optional().nullable(),
+    email_wali: z.preprocess((val) => (val === "" ? null : val), z.string().email("Email wali tidak valid").nullable().or(z.literal(null))).default(null),
+    hubungan_wali: z.string().optional().nullable(),
   }).optional(),
 
   program_id: z.coerce.number().min(1, "Program wajib dipilih"),
@@ -18,6 +25,7 @@ export const createEnrollmentSchema = z.object({
   jumlah_siswa: z.coerce.number().min(1, "Minimal 1 siswa").default(1),
   
   tanggal_mulai: z.string().optional(), // Date string YYYY-MM-DD
+  tanggal_selesai: z.string().optional(),
   
   catatan: z.string().optional(),
 }).superRefine((data, ctx) => {

@@ -10,7 +10,8 @@ import {
   UserCircle,
   CalendarDays,
   ChevronRight,
-  BookOpen
+  BookOpen,
+  ListChecks
 } from "lucide-react";
 import {
   Collapsible,
@@ -253,7 +254,7 @@ export function AppSidebar() {
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={pathname.startsWith("/dashboard/enrollment")}>
                         <Link href="/dashboard/enrollment" className="py-1">
-                          <BookOpen className="size-4 shrink-0" />
+                          <ListChecks className="size-4 shrink-0" />
                           <span>Enrollment</span>
                         </Link>
                       </SidebarMenuButton>

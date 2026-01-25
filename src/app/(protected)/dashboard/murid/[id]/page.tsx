@@ -137,7 +137,7 @@ export default function MuridDetailPage({ params }: { params: Promise<{ id: stri
         </div>
         <h2 className="text-xl font-bold text-slate-800">Murid Tidak Ditemukan</h2>
         <p className="text-slate-400 mt-2">Data yang Anda cari mungkin sudah dihapus atau ID tidak valid.</p>
-        <Button asChild variant="link" className="mt-4 text-rose-600" onClick={() => router.replace("/dashboard/murid")}>
+        <Button variant="link" className="mt-4 text-rose-600 border-none hover:no-underline" onClick={() => router.replace("/dashboard/murid")}>
            <ArrowLeft className="mr-2 size-4" /> Kembali ke Daftar Murid
         </Button>
      </div>

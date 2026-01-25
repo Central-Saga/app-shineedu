@@ -83,8 +83,6 @@ export function InlineCreateMurid() {
             </FormItem>
             )}
         />
-
-        {/* No HP */}
         <FormField
             control={control}
             name="murid_baru.no_hp"
@@ -99,7 +97,20 @@ export function InlineCreateMurid() {
             )}
         />
 
-         {/* Alamat (Full Width) */}
+        <FormField
+            control={control}
+            name="murid_baru.email"
+            render={({ field }) => (
+            <FormItem>
+                <FormLabel>Email Siswa</FormLabel>
+                <FormControl>
+                <Input type="email" placeholder="siswa@example.com" {...field} value={field.value || ""} />
+                </FormControl>
+                <FormMessage />
+            </FormItem>
+            )}
+        />
+
          <FormField
             control={control}
             name="murid_baru.alamat"
@@ -113,6 +124,67 @@ export function InlineCreateMurid() {
             </FormItem>
             )}
         />
+
+        <div className="col-span-1 md:col-span-2 pt-2 border-t mt-2">
+            <h4 className="text-sm font-semibold text-slate-700 mb-4">Informasi Orang Tua / Wali</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                    control={control}
+                    name="murid_baru.nama_wali"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Nama Wali</FormLabel>
+                        <FormControl>
+                        <Input placeholder="Nama orang tua / wali" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+
+                <FormField
+                    control={control}
+                    name="murid_baru.email_wali"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Email Wali</FormLabel>
+                        <FormControl>
+                        <Input type="email" placeholder="email@example.com" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+
+                <FormField
+                    control={control}
+                    name="murid_baru.no_hp_wali"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>No. HP Wali</FormLabel>
+                        <FormControl>
+                        <Input placeholder="08..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+
+                <FormField
+                    control={control}
+                    name="murid_baru.hubungan_wali"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Hubungan Keluarga</FormLabel>
+                        <FormControl>
+                        <Input placeholder="Ayah / Ibu / Dsb" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            </div>
+        </div>
       </div>
        <p className="text-xs text-muted-foreground mt-2">
             * Data lainnya dapat dilengkapi nanti melalui menu Edit Murid.
