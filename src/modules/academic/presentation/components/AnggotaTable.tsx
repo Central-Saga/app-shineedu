@@ -33,26 +33,24 @@ interface AnggotaTableProps {
 export function AnggotaTable({ enrollments, onRemove }: AnggotaTableProps) {
   if (!enrollments.length) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-slate-100 rounded-[2rem] bg-slate-50/30">
-        <div className="size-12 bg-white rounded-2xl flex items-center justify-center text-slate-300 shadow-sm mb-4">
-           <Users className="size-6" />
-        </div>
-        <h3 className="text-slate-800 font-bold uppercase tracking-widest text-[10px]">Belum Ada Anggota</h3>
-        <p className="text-slate-400 text-xs mt-1">Silakan tambahkan siswa ke kelas ini.</p>
+      <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed rounded-lg bg-muted/20">
+        <Users className="size-8 text-muted-foreground mb-3" />
+        <h3 className="font-semibold">Belum Ada Anggota</h3>
+        <p className="text-sm text-muted-foreground mt-1">Silakan tambahkan siswa ke kelas ini.</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-slate-100 overflow-hidden shadow-sm bg-white">
+    <div className="rounded-lg border overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow className="hover:bg-slate-50/50">
-            <TableHead className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-6">Siswa / Peserta</TableHead>
-            <TableHead className="text-[10px] font-black uppercase tracking-widest text-slate-400">Enrollment</TableHead>
-            <TableHead className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tgl Masuk</TableHead>
-            <TableHead className="text-[10px] font-black uppercase tracking-widest text-slate-400">Status</TableHead>
-            <TableHead className="w-[80px] text-right pr-6"></TableHead>
+          <TableRow>
+            <TableHead className="pl-6">Siswa / Peserta</TableHead>
+            <TableHead>Enrollment</TableHead>
+            <TableHead>Tgl Masuk</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="w-[100px] text-right pr-6">Aksi</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -60,34 +58,33 @@ export function AnggotaTable({ enrollments, onRemove }: AnggotaTableProps) {
               const pivot = enr.pivot;
               const status = pivot?.status_anggota || 'Aktif';
               return (
-                <TableRow key={enr.id} className="group hover:bg-slate-50/50 transition-colors">
+                <TableRow key={enr.id}>
                     <TableCell className="pl-6 py-4">
                         <div className="flex items-center gap-3">
-                            <div className="size-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 shrink-0">
+                            <div className="size-8 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground shrink-0">
                                 <User className="size-4" />
                             </div>
                             <div className="flex flex-col">
-                                <span className="font-bold text-slate-700 text-sm tracking-tight">{enr.murid?.nama_lengkap}</span>
-                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{enr.murid?.no_hp || '-'}</span>
+                                <span className="font-semibold text-sm">{enr.murid?.nama_lengkap}</span>
+                                <span className="text-xs text-muted-foreground">{enr.murid?.no_hp || '-'}</span>
                             </div>
                         </div>
                     </TableCell>
                     <TableCell>
                         <Link 
                             href={`/dashboard/enrollment/${enr.id}`}
-                            className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-rose-600 hover:text-rose-700 transition-colors bg-rose-50 px-2 py-1 rounded-md"
+                            className="text-xs font-medium text-rose-600 hover:underline"
                         >
                             #{enr.kode_enrollment || enr.id}
-                            <ArrowUpRight className="size-3" />
                         </Link>
                     </TableCell>
                     <TableCell>
-                        <span className="text-xs font-semibold text-slate-500">
+                        <span className="text-sm">
                              {pivot?.tanggal_masuk || '-'}
                         </span>
                     </TableCell>
                     <TableCell>
-                        <Badge variant="outline" className={status === 'Aktif' ? "border-emerald-200 bg-emerald-50 text-emerald-600 h-5 px-2 text-[10px] font-bold uppercase rounded-lg" : "border-rose-100 bg-rose-50 text-rose-600 h-5 px-2 text-[10px] font-bold uppercase rounded-lg"}>
+                        <Badge variant={status === 'Aktif' ? 'outline' : 'secondary'} className={status === 'Aktif' ? "bg-emerald-50 text-emerald-700 border-emerald-200" : ""}>
                             {status}
                         </Badge>
                     </TableCell>
@@ -97,7 +94,7 @@ export function AnggotaTable({ enrollments, onRemove }: AnggotaTableProps) {
                                 <Button 
                                     variant="ghost" 
                                     size="icon" 
-                                    className="h-8 w-8 rounded-xl text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100"
+                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                 >
                                     <Trash className="h-4 w-4" />
                                 </Button>
