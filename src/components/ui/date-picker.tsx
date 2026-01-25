@@ -38,7 +38,7 @@ export function DatePicker({ date, setDate, placeholder = "Pick a date", classNa
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, "PPP") : <span>{placeholder}</span>}
+          {date && !isNaN(date.getTime()) ? format(date, "PPP") : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">

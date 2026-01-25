@@ -239,6 +239,16 @@ export function AppSidebar() {
             <CollapsibleContent>
               <SidebarGroupContent>
                 <SidebarMenu>
+                  {authStore.hasPermission("student.view") && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={pathname.startsWith("/dashboard/murid")}>
+                        <Link href="/dashboard/murid" className="py-1">
+                          <Users className="size-4 shrink-0" />
+                          <span>Murid</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
                   <SidebarCatalogToggle can={(k) => authStore.hasPermission(k)} />
                 </SidebarMenu>
               </SidebarGroupContent>
