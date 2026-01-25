@@ -22,9 +22,8 @@ export const enrollmentRepository = {
     return { data: res.data || [], meta: res.meta || DEFAULT_META };
   },
 
-  getEnrollment: async (id: number | string) => {
-    const data = await get<Enrollment>(`${BASE_URL}/${id}`);
-    return { data };
+  getEnrollment: async (id: number | string): Promise<Enrollment> => {
+    return await get<Enrollment>(`${BASE_URL}/${id}`);
   },
 
   createEnrollment: async (data: CreateEnrollmentRequest) => {

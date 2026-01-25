@@ -36,7 +36,7 @@ export default function EditEnrollmentPage({ params }: { params: Promise<{ id: s
         setLoading(true);
         enrollmentRepository.getEnrollment(id)
             .then((res) => {
-                setEnrollment(res.data);
+                setEnrollment(res);
             })
             .catch((err) => {
                 console.error(err);
