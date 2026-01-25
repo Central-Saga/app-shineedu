@@ -37,13 +37,13 @@ export function InlineCreateMurid() {
             control={control}
             name="murid_baru.jenis_kelamin"
             render={({ field }) => (
-            <FormItem className="space-y-3">
+            <FormItem className="space-y-1.5">
                 <FormLabel>Jenis Kelamin</FormLabel>
                 <FormControl>
                   <RadioGroup
                     onValueChange={field.onChange}
                     defaultValue={field.value || undefined}
-                    className="flex gap-6 mt-2"
+                    className="flex gap-6"
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="L" id="ik-l" />
@@ -67,7 +67,7 @@ export function InlineCreateMurid() {
             control={control}
             name="murid_baru.tanggal_lahir"
             render={({ field }) => (
-            <FormItem className="flex flex-col mt-[7px]">
+            <FormItem className="flex flex-col">
                 <FormLabel className="mb-[6px]">Tanggal Lahir</FormLabel>
                 <FormControl>
                   <DatePicker

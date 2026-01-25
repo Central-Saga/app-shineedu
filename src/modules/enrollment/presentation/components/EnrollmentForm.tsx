@@ -10,12 +10,13 @@ import { cn } from "@/lib/utils";
 import { createEnrollmentSchema, CreateEnrollmentFormValues, UpdateEnrollmentFormValues, updateEnrollmentSchema } from "@/modules/enrollment/domain/schema";
 import { Enrollment } from "@/modules/enrollment/domain/entities";
 import { enrollmentRepository } from "@/modules/enrollment/infrastructure/enrollment.repository";
-import { listJenjang, listPaket, listProgram } from "@/modules/catalog/infrastructure/catalog.repository";
+import { listJenjang, listProgram } from "@/modules/catalog/infrastructure/catalog.repository";
 import { listMurids } from "@/modules/murid/infrastructure/murid.repository";
 import { InlineCreateMurid } from "./InlineCreateMurid";
 import { PricePreviewCard } from "./PricePreviewCard";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parse, isValid } from "date-fns";
+import { Jenjang, Program, Paket } from "@/modules/catalog/domain/entities";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -59,9 +60,8 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
   const [priceError, setPriceError] = useState<string | null>(null);
 
   // Options State
-  const [programs, setPrograms] = useState<any[]>([]);
-  const [jenjangs, setJenjangs] = useState<any[]>([]);
-  const [pakets, setPakets] = useState<any[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [jenjangs, setJenjangs] = useState<Jenjang[]>([]);
   const [murids, setMurids] = useState<any[]>([]);
   const [muridSearch, setMuridSearch] = useState("");
   const [debouncedMuridSearch, setDebouncedMuridSearch] = useState(muridSearch);
@@ -88,6 +88,7 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
     },
   });
 
+  // Form Watchers
   const modeMurid = form.watch("mode_murid" as any);
   const programId = form.watch("program_id" as any);
   const jenjangId = form.watch("jenjang_id" as any);
@@ -95,8 +96,11 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
   const jumlahSiswa = form.watch("jumlah_siswa" as any);
   const tanggalMulai = form.watch("tanggal_mulai");
 
-// Duplicate imports removed
-  const selectedPaket = pakets.find(p => String(p.id) === String(paketId));
+  // Catalog Selection State
+  const [filteredPrograms, setFilteredPrograms] = useState<Program[]>([]);
+  const [filteredPakets, setFilteredPakets] = useState<Paket[]>([]);
+
+  const selectedPaket = filteredPakets.find(p => String(p.id) === String(paketId));
   const isReguler = selectedPaket?.tipe === 'REGULER';
 
   // Force jumlah_siswa to 1 if it's a regular package
@@ -106,20 +110,16 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
     }
   }, [isReguler, form]);
 
-// ...
-
-  // Fetch Catalog Options
+  // Fetch Catalog Options initially
   useEffect(() => {
     const fetchCatalog = async () => {
         try {
-             const [pRes, jRes, pktRes] = await Promise.all([
+             const [pRes, jRes] = await Promise.all([
                  listProgram({ per_page: 100 }),
-                 listJenjang({ per_page: 100 }),
-                 listPaket({ per_page: 100 })
+                 listJenjang({ per_page: 100 })
              ]);
              setPrograms(pRes.items || []);
              setJenjangs(jRes.items || []);
-             setPakets(pktRes.items || []);
         } catch (e) {
             console.error("Failed to fetch catalog options", e);
             toast.error("Gagal memuat opsi katalog");
@@ -128,7 +128,70 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
     if (!isEdit) fetchCatalog();
   }, [isEdit]);
 
-// ...
+  // 1. When Jenjang changes: Filter Programs & Reset Dependents
+  useEffect(() => {
+    if (isEdit) return;
+    
+    if (jenjangId) {
+        const filtered = programs.filter((p: any) => 
+            p.jenjangs?.some((j: any) => String(j.id) === String(jenjangId))
+        );
+        setFilteredPrograms(filtered);
+
+        // If current program is not in the filtered list, reset it
+        if (programId && !filtered.some(p => String(p.id) === String(programId))) {
+            form.setValue("program_id", undefined as any);
+            form.setValue("paket_id", undefined as any);
+        }
+    } else {
+        setFilteredPrograms([]);
+        form.setValue("program_id", undefined as any);
+        form.setValue("paket_id", undefined as any);
+    }
+  }, [jenjangId, programs, isEdit, form, programId]);
+
+  // 2. When Program or Jenjang changes: Fetch Available Packages
+  useEffect(() => {
+    if (isEdit) return;
+
+    const fetchValidPakets = async () => {
+        if (programId && jenjangId) {
+            try {
+                // Using price list to determine valid packages for the selected combination
+                const { listPaketHarga } = await import("@/modules/catalog/infrastructure/catalog.repository");
+                const res = await listPaketHarga({ 
+                    program_id: Number(programId), 
+                    jenjang_id: Number(jenjangId),
+                    per_page: 100,
+                    status: "Aktif"
+                });
+                
+                const uniquePakets: any[] = [];
+                const seenIds = new Set();
+                
+                res.items.forEach(item => {
+                    if (item.paket && !seenIds.has(item.paket.id)) {
+                        uniquePakets.push(item.paket);
+                        seenIds.add(item.paket.id);
+                    }
+                });
+
+                setFilteredPakets(uniquePakets);
+                
+                if (paketId && !seenIds.has(Number(paketId))) {
+                    form.setValue("paket_id", undefined as any);
+                }
+            } catch (e) {
+                console.error("Failed to fetch valid packages", e);
+            }
+        } else {
+            setFilteredPakets([]);
+            form.setValue("paket_id", undefined as any);
+        }
+    };
+
+    fetchValidPakets();
+  }, [programId, jenjangId, isEdit, form, paketId]);
 
   // Fetch Murids
   useEffect(() => {
@@ -323,29 +386,6 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {!isEdit ? (
                       <>
-                        <FormField
-                            control={form.control}
-                            name="program_id"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Program</FormLabel>
-                                    <Select 
-                                        onValueChange={field.onChange} 
-                                        value={field.value ? String(field.value) : undefined}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger><SelectValue placeholder="Pilih Program" /></SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {programs.map(p => (
-                                                <SelectItem key={p.id} value={String(p.id)}>{p.nama}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
                          <FormField
                             control={form.control}
                             name="jenjang_id"
@@ -369,6 +409,30 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
                                 </FormItem>
                             )}
                         />
+                        <FormField
+                            control={form.control}
+                            name="program_id"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Program</FormLabel>
+                                    <Select 
+                                        onValueChange={field.onChange} 
+                                        value={field.value ? String(field.value) : undefined}
+                                        disabled={!jenjangId}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger><SelectValue placeholder={!jenjangId ? "Pilih jenjang dulu" : "Pilih Program"} /></SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {filteredPrograms.map(p => (
+                                                <SelectItem key={p.id} value={String(p.id)}>{p.nama}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                          <FormField
                             control={form.control}
                             name="paket_id"
@@ -378,12 +442,13 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
                                     <Select 
                                         onValueChange={field.onChange} 
                                         value={field.value ? String(field.value) : undefined}
+                                        disabled={!programId}
                                     >
                                         <FormControl>
-                                            <SelectTrigger><SelectValue placeholder="Pilih Paket" /></SelectTrigger>
+                                            <SelectTrigger><SelectValue placeholder={!programId ? "Pilih program dulu" : "Pilih Paket"} /></SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {pakets.map(p => (
+                                            {filteredPakets.map(p => (
                                                 <SelectItem key={p.id} value={String(p.id)}>{p.nama}</SelectItem>
                                             ))}
                                         </SelectContent>
@@ -403,7 +468,7 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
                                             type="number" 
                                             min={1} 
                                             {...field} 
-                                            disabled={isReguler}
+                                            disabled={isReguler || !paketId}
                                         />
                                     </FormControl>
                                     <FormDescription>
