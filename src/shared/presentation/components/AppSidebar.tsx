@@ -10,6 +10,7 @@ import {
   UserCircle,
   CalendarDays,
   ChevronRight,
+  BookOpen
 } from "lucide-react";
 import {
   Collapsible,
@@ -231,6 +232,24 @@ export function AppSidebar() {
           <SidebarGroup className="py-1">
             <SidebarGroupLabel asChild className="mb-0 h-7 px-2">
               <CollapsibleTrigger className="flex w-full items-center justify-between hover:text-sidebar-foreground transition-colors">
+                ACADEMIC
+                <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+              </CollapsibleTrigger>
+            </SidebarGroupLabel>
+            <CollapsibleContent>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarCatalogToggle can={(k) => authStore.hasPermission(k)} />
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </CollapsibleContent>
+          </SidebarGroup>
+        </Collapsible>
+
+        <Collapsible defaultOpen className="group/collapsible">
+          <SidebarGroup className="py-1">
+            <SidebarGroupLabel asChild className="mb-0 h-7 px-2">
+              <CollapsibleTrigger className="flex w-full items-center justify-between hover:text-sidebar-foreground transition-colors">
                 IDENTITY
                 <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
               </CollapsibleTrigger>
@@ -306,6 +325,94 @@ export function AppSidebar() {
         )}
       </SidebarContent>
     </Sidebar>
+  );
+}
+
+export function SidebarCatalogToggle({ can }: { can: (key: string) => boolean }) {
+  const pathname = usePathname();
+
+  const canJenjang = can("catalog.jenjang.view");
+  const canProgram = can("catalog.program.view");
+  const canPaket = can("catalog.paket.view");
+  const canHarga = can("catalog.harga.view");
+
+  if (!canJenjang && !canProgram && !canPaket && !canHarga) return null;
+
+  const active = pathname.startsWith("/dashboard/catalog");
+  const jenjangActive = pathname.startsWith("/dashboard/catalog/jenjang");
+  const programActive = pathname.startsWith("/dashboard/catalog/program");
+  const paketActive = pathname.startsWith("/dashboard/catalog/paket");
+  const hargaActive = pathname.startsWith("/dashboard/catalog/harga");
+  const lookupActive = pathname.startsWith("/dashboard/catalog/lookup");
+
+  return (
+    <Collapsible defaultOpen={active} className="group/collapsible">
+      <SidebarMenuItem>
+        <CollapsibleTrigger asChild>
+          <SidebarMenuButton isActive={active} className="py-1">
+            <BookOpen className="size-4 shrink-0" />
+            <span>Katalog</span>
+            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+          </SidebarMenuButton>
+        </CollapsibleTrigger>
+
+        <CollapsibleContent>
+          <SidebarMenuSub>
+            {canJenjang && (
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton asChild isActive={jenjangActive}>
+                  <Link href="/dashboard/catalog/jenjang">
+                    <span>Jenjang</span>
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            )}
+            
+            {canProgram && (
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton asChild isActive={programActive}>
+                  <Link href="/dashboard/catalog/program">
+                    <span>Program</span>
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            )}
+
+            {canPaket && (
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton asChild isActive={paketActive}>
+                  <Link href="/dashboard/catalog/paket">
+                    <span>Paket</span>
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            )}
+
+            {canHarga && (
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton asChild isActive={hargaActive}>
+                  <Link href="/dashboard/catalog/harga">
+                    <span>Harga Paket</span>
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            )}
+            
+             {/* Optional Lookup */}
+            {canHarga && (
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton asChild isActive={lookupActive}>
+                  <Link href="/dashboard/catalog/lookup">
+                    <span>Cek Harga</span>
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            )}
+
+          </SidebarMenuSub>
+        </CollapsibleContent>
+      </SidebarMenuItem>
+    </Collapsible>
   );
 }
 

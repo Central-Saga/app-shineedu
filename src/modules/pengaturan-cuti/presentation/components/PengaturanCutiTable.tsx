@@ -21,16 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash, Eye } from "lucide-react";
 import type { PengaturanCuti } from "../../domain/entities";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDeleteDialog } from "@/shared/presentation/components/ConfirmDeleteDialog";
 
 interface PengaturanCutiTableProps {
   items: PengaturanCuti[];
@@ -157,28 +148,16 @@ export function PengaturanCutiTable({
         </div>
       </div>
 
-      <AlertDialog open={!!deleteData} onOpenChange={(open) => !open && setDeleteData(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Aturan Cuti?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Aturan ini akan dihapus permanen dan tidak berlaku lagi untuk perhitungan cuti.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive hover:bg-destructive/90"
-              onClick={() => {
-                if (deleteData) onDelete(deleteData);
-                setDeleteData(null);
-              }}
-            >
-              Hapus
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteDialog
+        isOpen={!!deleteData}
+        onOpenChange={(open) => !open && setDeleteData(null)}
+        onConfirm={() => {
+          if (deleteData) onDelete(deleteData);
+          setDeleteData(null);
+        }}
+        title="Hapus Aturan Cuti?"
+        description="Apakah Anda yakin ingin menghapus aturan cuti ini? Aturan ini akan dihapus permanen dan tidak berlaku lagi untuk perhitungan cuti."
+      />
     </>
   );
 }

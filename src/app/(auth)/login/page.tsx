@@ -85,7 +85,7 @@ export default function LoginPage() {
                alt="Shine Education Logo" 
                width={160} 
                height={60} 
-               className="h-auto w-auto brightness-95 opacity-90"
+               className="h-auto brightness-95 opacity-90"
                priority
              />
           </div>
