@@ -40,8 +40,19 @@ export function KelasTableWrapper({ data }: KelasTableWrapperProps) {
         }
     };
 
+    const handleStatusChange = async (item: Kelas, newStatus: string) => {
+        try {
+            await academicApi.updateKelas(item.id, { status: newStatus as any });
+            toast.success(`Status kelas ${item.nama_kelas} diperbarui`);
+            router.refresh();
+        } catch (e: any) {
+            toast.error(e.message || "Gagal memperbarui status");
+        }
+    };
+
     const columns = getColumns({
         onDelete: (id) => setDeleteId(id),
+        onStatusChange: handleStatusChange,
     });
 
     return (

@@ -62,10 +62,14 @@ export const createEnrollmentSchema = z.object({
 export type CreateEnrollmentFormValues = z.infer<typeof createEnrollmentSchema>;
 
 export const updateEnrollmentSchema = z.object({
+  mode_murid: z.enum(["existing", "new"]).optional(),
   tanggal_mulai: z.string().optional(),
   tanggal_selesai: z.string().optional(),
   status: z.enum(['Aktif', 'Pause', 'Selesai', 'Cancel']).optional(),
   catatan: z.string().optional(),
+  biaya_pendaftaran_amount: z.coerce.number().min(0).optional(),
+  biaya_pendaftaran_status: z.enum(['UNPAID', 'PAID', 'WAIVED']).optional(),
+  biaya_pendaftaran_due_date: z.string().optional().nullable(),
 });
 
 export type UpdateEnrollmentFormValues = z.infer<typeof updateEnrollmentSchema>;

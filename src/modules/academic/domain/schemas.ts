@@ -6,7 +6,7 @@ export const createKelasSchema = z.object({
   program_id: z.coerce.number().min(1, "Program wajib dipilih"),
   jenjang_id: z.coerce.number().min(1, "Jenjang wajib dipilih"),
   tipe_kelas: z.enum(["REGULER", "PRIVATE"], {
-    errorMap: () => ({ message: "Tipe kelas wajib dipilih" }),
+    message: "Tipe kelas wajib dipilih",
   }),
   mode_private: z.enum(["INDIVIDU", "GROUP"]).optional().nullable(),
   kapasitas: z.coerce.number().min(1, "Kapasitas minimal 1").optional().nullable(),

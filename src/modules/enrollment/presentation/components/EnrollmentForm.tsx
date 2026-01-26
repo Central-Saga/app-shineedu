@@ -81,6 +81,9 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
        tanggal_selesai: initialData.tanggal_selesai ?? undefined,
        status: initialData.status as any,
        catatan: initialData.catatan ?? "",
+       biaya_pendaftaran_amount: initialData.biaya_pendaftaran_amount ?? 0,
+       biaya_pendaftaran_status: initialData.biaya_pendaftaran_status ?? "WAIVED",
+       biaya_pendaftaran_due_date: initialData.biaya_pendaftaran_due_date ?? undefined,
     } : {
       mode_murid: "existing",
       jumlah_siswa: 1,

@@ -19,7 +19,7 @@ export const academicApi = {
     return post<Kelas>(`kelas`, data);
   },
 
-  updateKelas: async (id: number | string, data: CreateKelasValues) => {
+  updateKelas: async (id: number | string, data: Partial<CreateKelasValues>) => {
     return put<Kelas>(`kelas/${id}`, data);
   },
 
