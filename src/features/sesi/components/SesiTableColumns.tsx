@@ -55,8 +55,8 @@ export const getSesiColumns = (kelasId: number): ColumnDef<Sesi>[] => [
         const pengajar = row.original.guru_pengajar;
         
         const guruName = pengganti 
-            ? `${pengganti.name} (Pengganti)` 
-            : pengajar?.name;
+            ? `${pengganti.user?.name} (Pengganti)` 
+            : pengajar?.user?.name;
         
         return <span className="text-sm">{guruName || "-"}</span>;
     },

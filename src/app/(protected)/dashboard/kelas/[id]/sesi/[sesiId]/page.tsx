@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGuard";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { Sesi, AbsensiItem, LogbookSesi, LogbookMuridItem } from "@/features/ses
 import { AbsensiEditor } from "@/features/sesi/components/AbsensiEditor";
 import { LogbookSesiForm } from "@/features/sesi/components/LogbookSesiForm";
 import { LogbookMuridEditor } from "@/features/sesi/components/LogbookMuridEditor";
+import { EditSesiDialog } from "@/features/sesi/components/EditSesiDialog";
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
 
 export default function SesiDetailPage({ 
@@ -42,44 +43,40 @@ export default function SesiDetailPage({
   const canManageAbsensi = authStore.hasPermission("session.attendance.manage");
   const canManageLogbook = authStore.hasPermission("session.logbook.manage");
 
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [sesiRes, absensiRes, logbookRes, logbookMuridRes] = await Promise.all([
+           sesiApi.getSesiDetail(sesiId),
+           sesiApi.getAbsensi(sesiId),
+           sesiApi.getLogbook(sesiId),
+           sesiApi.getLogbookMurid(sesiId)
+      ]);
+
+      setSesi(sesiRes);
+      setAbsensi(absensiRes);
+      if (logbookRes) setLogbook(logbookRes);
+      setLogbookMurid(logbookMuridRes);
+
+    } catch (e: any) {
+      toast.error("Gagal memuat detail sesi: " + (e.message || "Unknown error"));
+      router.replace(`/dashboard/kelas/${kelasId}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [sesiId, kelasId, router]);
+
   useEffect(() => {
     if (!allowed) return;
-    
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const [sesiRes, absensiRes, logbookRes, logbookMuridRes] = await Promise.all([
-             sesiApi.getSesiDetail(sesiId),
-             sesiApi.getAbsensi(sesiId),
-             sesiApi.getLogbook(sesiId),
-             sesiApi.getLogbookMurid(sesiId)
-        ]);
-
-        setSesi(sesiRes);
-        setAbsensi(absensiRes);
-        if (logbookRes) setLogbook(logbookRes);
-        setLogbookMurid(logbookMuridRes);
-
-      } catch (e: any) {
-        toast.error("Gagal memuat detail sesi: " + (e.message || "Unknown error"));
-        router.replace(`/dashboard/kelas/${kelasId}`);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
-  }, [allowed, sesiId, kelasId, router]);
+  }, [allowed, fetchData]);
 
   const handleSyncAnggota = async () => {
     try {
         toast.loading("Menyelaraskan anggota...");
         await sesiApi.syncAnggota(sesiId);
-        // Refresh absensi info
-        const absensiRes = await sesiApi.getAbsensi(sesiId);
-        setAbsensi(absensiRes);
-        // Refresh logbook murid
-        const logbookMuridRes = await sesiApi.getLogbookMurid(sesiId);
-        setLogbookMurid(logbookMuridRes);
+        // Refresh data
+        await fetchData();
         toast.dismiss();
         toast.success("Data anggota berhasil diselaraskan");
     } catch (e: any) {
@@ -89,7 +86,7 @@ export default function SesiDetailPage({
   };
 
   if (!allowed) return null;
-  if (loading) return <div className="p-8"><Skeleton className="h-64 w-full" /></div>;
+  if (loading && !sesi) return <div className="p-8"><Skeleton className="h-64 w-full" /></div>;
   if (!sesi) return null;
 
   const isPrivate = sesi.kelas?.tipe_kelas === "PRIVATE";
@@ -115,11 +112,14 @@ export default function SesiDetailPage({
                  <Badge variant={sesi.status_sesi === "BERJALAN" ? "default" : "outline"}>
                      {sesi.status_sesi}
                  </Badge>
+                  {canUpdate && (
+                      <EditSesiDialog sesi={sesi} onSuccess={() => fetchData()} />
+                  )}
                   {canManageAbsensi && (
                      <Button variant="outline" size="sm" onClick={handleSyncAnggota}>
                          <RefreshCw className="mr-2 h-3.5 w-3.5" /> Sync Anggota
                      </Button>
-                 )}
+                  )}
              </div>
         </div>
 
@@ -144,9 +144,9 @@ export default function SesiDetailPage({
                                  <p className="text-xs font-medium text-muted-foreground">Guru Pengajar</p>
                                  <p className="text-sm font-medium">
                                      {sesi.guru_pengganti ? (
-                                         <span className="text-amber-600">{sesi.guru_pengganti.name} (Pengganti)</span>
+                                         <span className="text-amber-600">{sesi.guru_pengganti.user?.name} (Pengganti)</span>
                                      ) : (
-                                         <span>{sesi.guru_pengajar?.name || "-"}</span>
+                                         <span>{sesi.guru_pengajar?.user?.name || "-"}</span>
                                      )}
                                  </p>
                                  <p className="text-xs text-muted-foreground mt-0.5">Kehadiran: {sesi.status_kehadiran_guru}</p>
@@ -190,6 +190,7 @@ export default function SesiDetailPage({
                                      sesi={sesi} 
                                      absensi={absensi} 
                                      canEdit={canManageAbsensi} 
+                                     onSuccess={() => fetchData()}
                                  />
                              </CardContent>
                          </Card>

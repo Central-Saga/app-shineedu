@@ -11,6 +11,7 @@ export const generateSesiSchema = z.object({
 });
 
 export const updateSesiSchema = z.object({
+  tanggal: z.string().optional().nullable(),
   status_sesi: z.enum(['TERJADWAL', 'BERJALAN', 'SELESAI', 'BATAL', 'LIBUR']),
   status_kehadiran_guru: z.enum(['HADIR', 'IZIN', 'SAKIT', 'ALPHA', 'DIGANTI']),
   jam_mulai_aktual: z.string().optional().nullable(),
@@ -46,6 +47,7 @@ export const bulkAbsensiItemSchema = z.object({
     enrollment_id: z.number(),
     status: z.enum(['HADIR', 'IZIN', 'SAKIT', 'ALPHA', 'BATAL']),
     catatan: z.string().optional().nullable(),
+    target_session_id: z.coerce.number().optional().nullable(),
 });
 
 export const bulkAbsensiSchema = z.object({

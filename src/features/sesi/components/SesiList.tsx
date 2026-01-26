@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { sesiApi } from "../api/sesi.api";
 import { Sesi } from "../types";
@@ -38,27 +38,28 @@ export function SesiList({ kelasId }: SesiListProps) {
   const statusSesi = searchParams.get("status_sesi");
   const page = searchParams.get("page") || "1";
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const res = await sesiApi.getSesiByKelas(kelasId, {
-            from,
-            to,
-            status_sesi: statusSesi,
-            page,
-            per_page: 20
-        });
-        setData(res.data);
-        setMeta(res.meta);
-      } catch (error) {
-        console.error("Failed to fetch sesi", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await sesiApi.getSesiByKelas(kelasId, {
+          from,
+          to,
+          status_sesi: statusSesi,
+          page,
+          per_page: 20
+      });
+      setData(res.data);
+      setMeta(res.meta);
+    } catch (error) {
+      console.error("Failed to fetch sesi", error);
+    } finally {
+      setLoading(false);
+    }
   }, [kelasId, from, to, statusSesi, page]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const columns = getSesiColumns(kelasId);
   const table = useReactTable({
@@ -71,7 +72,7 @@ export function SesiList({ kelasId }: SesiListProps) {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
          <h3 className="text-lg font-medium">Daftar Sesi</h3>
-         <GenerateSesiDialog kelasId={kelasId} />
+         <GenerateSesiDialog kelasId={kelasId} onSuccess={fetchData} />
       </div>
 
       <SesiListFilters />

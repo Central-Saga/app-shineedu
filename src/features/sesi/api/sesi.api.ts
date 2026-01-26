@@ -1,4 +1,4 @@
-import { get, post, put, getResponse } from "@/shared/infrastructure/api/httpClient";
+import { get, post, put, getResponse, postResponse } from "@/shared/infrastructure/api/httpClient";
 import { buildQuery } from "@/shared/lib/buildQuery";
 import { PaginatedMeta } from "@/shared/domain/types";
 import { 
@@ -16,7 +16,7 @@ const BASE_URL = "sesi"; // Adjust if needed relative to /api/v2
 
 export const sesiApi = {
     // List Sesi for a Class
-    getSesiByKelas: async (kelasId: number, params: any): Promise<{ data: Sesi[]; meta: PaginatedMeta }> => {
+    getSesiByKelas: async (kelasId: number, params: Record<string, any>): Promise<{ data: Sesi[]; meta: PaginatedMeta }> => {
         const qs = buildQuery(params);
         // Endpoint structure: /api/v2/kelas/{kelas_id}/sesi
         // Or /api/v2/sesi?kelas_id={id}
@@ -31,7 +31,7 @@ export const sesiApi = {
     },
 
     generateSesi: async (kelasId: number, payload: GenerateSesiRequest) => {
-        return await post(`kelas/${kelasId}/sesi/generate`, payload);
+        return await postResponse<{ count: number }>(`kelas/${kelasId}/sesi/generate`, payload);
     },
 
     updateSesi: async (id: number, payload: UpdateSesiRequest) => {
@@ -50,6 +50,13 @@ export const sesiApi = {
 
     updateAbsensiBulk: async (sesiId: number, payload: BulkAbsensiRequest) => {
         return await put(`${BASE_URL}/${sesiId}/absensi/bulk`, payload);
+    },
+
+    moveAttendance: async (sesiId: number, enrollmentId: number, targetSessionId: number) => {
+        return await post(`${BASE_URL}/${sesiId}/absensi/move`, { 
+            enrollment_id: enrollmentId, 
+            target_session_id: targetSessionId 
+        });
     },
 
     // Logbook Sesi

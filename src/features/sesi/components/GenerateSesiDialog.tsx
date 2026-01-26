@@ -35,9 +35,10 @@ import { format } from "date-fns";
 
 interface GenerateSesiDialogProps {
   kelasId: number;
+  onSuccess?: () => void;
 }
 
-export function GenerateSesiDialog({ kelasId }: GenerateSesiDialogProps) {
+export function GenerateSesiDialog({ kelasId, onSuccess }: GenerateSesiDialogProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   
@@ -55,16 +56,17 @@ export function GenerateSesiDialog({ kelasId }: GenerateSesiDialogProps) {
 
   async function onSubmit(values: z.infer<typeof generateSesiSchema>) {
     try {
-      const res = await sesiApi.generateSesi(kelasId, values) as any;
-      const count = res.count ?? 0;
+      const res = await sesiApi.generateSesi(kelasId, values);
+      const count = res.data?.count ?? 0;
       
       if (count > 0) {
-        toast.success(`Berhasil generate ${count} sesi.`);
+        toast.success(res.message);
       } else {
-        toast.warning("Tidak ada sesi yang digenerate. Pastikan jadwal kelas (Master Jadwal) sudah diatur dengan benar untuk rentang tanggal ini.");
+        toast.warning(res.message);
       }
       
       setOpen(false);
+      if (onSuccess) onSuccess();
       router.refresh();
     } catch (error: any) {
       toast.error(error.message || "Gagal generate sesi");

@@ -12,8 +12,8 @@ export interface Sesi {
   jam_selesai_plan: string; // HH:mm:ss
   jam_mulai_aktual?: string | null;
   jam_selesai_aktual?: string | null;
-  guru_pengajar?: { id: number; name: string }; // Changed from id to object based on resource
-  guru_pengganti?: { id: number; name: string };
+  guru_pengajar?: { id: number; user?: { name: string } };
+  guru_pengganti?: { id: number; user?: { name: string } };
   ruangan_kelas?: string | null;
   alasan_batal?: string | null;
   is_hangus: boolean; // Note: Resource doesn't show this, check if needed
@@ -80,6 +80,7 @@ export interface GenerateSesiRequest {
 }
 
 export interface UpdateSesiRequest {
+    tanggal?: string;
     status_sesi?: string;
     status_kehadiran_guru?: string;
     jam_mulai_aktual?: string;
@@ -93,7 +94,7 @@ export interface BulkAbsensiRequest {
     items: {
         enrollment_id: number;
         status: string;
-        catatan?: string;
+        catatan?: string | null;
     }[];
 }
 

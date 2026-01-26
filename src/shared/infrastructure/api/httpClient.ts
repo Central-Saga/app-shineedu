@@ -302,6 +302,33 @@ export async function post<T>(path: string, body: unknown): Promise<T> {
   return request<T>("POST", path, body);
 }
 
+export async function postResponse<T>(path: string, body: unknown): Promise<ApiResponse<T>> {
+  const url = `${BASE.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    ...getAuthHeaders(),
+  };
+  const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+  const text = await res.text();
+  let json: ApiResponse<T> | null = null;
+  if (text) {
+    try {
+      json = JSON.parse(text) as ApiResponse<T>;
+    } catch {
+      // ignore
+    }
+  }
+  
+  // Reuse response handling logic if possible, or just build the object
+  if (res.ok) {
+     return json as ApiResponse<T>;
+  }
+  
+  // Re-use logic from handleResponse for errors
+  return handleResponse<T>(res) as any;
+}
+
 export async function put<T>(path: string, body: unknown): Promise<T> {
   return request<T>("PUT", path, body);
 }
