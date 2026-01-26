@@ -65,6 +65,9 @@ export interface UpdateEnrollmentRequest {
   tanggal_selesai?: string;
   status?: string;
   catatan?: string;
+  biaya_pendaftaran_amount?: number;
+  biaya_pendaftaran_status?: string;
+  biaya_pendaftaran_due_date?: string;
 }
 
 export interface PricePreviewRequest {

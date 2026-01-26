@@ -94,6 +94,23 @@ export function EnrollmentListClient({ data, meta, stats }: EnrollmentListClient
     setSearchValue(val);
   };
 
+  const handleStatusChange = async (id: number, status: string) => {
+    try {
+        const payload: any = { status };
+        if (status === "Selesai") {
+            payload.tanggal_selesai = new Date().toISOString().split("T")[0];
+        } else if (status === "Aktif") {
+            payload.tanggal_selesai = null;
+        }
+
+        await enrollmentRepository.updateEnrollment(id, payload);
+        toast.success(`Enrollment ${status === 'Aktif' ? 'diaktifkan' : 'diselesaikan'}`);
+        router.refresh();
+    } catch (e: any) {
+        toast.error(e.message || "Gagal memperbarui status");
+    }
+  };
+
   const handleDelete = async (id: number) => {
     try {
         await enrollmentRepository.deleteEnrollment(id);
@@ -206,6 +223,7 @@ export function EnrollmentListClient({ data, meta, stats }: EnrollmentListClient
              data={data}
              loading={false}
              onDelete={handleDelete}
+             onStatusChange={handleStatusChange}
              onEdit={(item: Enrollment) => router.push(`/dashboard/enrollment/${item.id}/edit`)}
              onView={(item: Enrollment) => router.push(`/dashboard/enrollment/${item.id}`)}
              canDelete={canDelete}
