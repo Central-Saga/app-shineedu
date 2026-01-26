@@ -25,6 +25,7 @@ import {
   Info,
   Infinity as InfinityIcon
 } from "lucide-react";
+import { UpdateFeeDialog } from "./UpdateFeeDialog";
 
 function DetailItem({ icon: Icon, label, value, badge }: { icon: React.ElementType, label: string, value: React.ReactNode, badge?: boolean }) {
   return (
@@ -188,6 +189,31 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
                  <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mb-1">Total Biaya</p>
                  <p className="text-2xl font-bold text-primary">{formatCurrency(enrollment.harga_final)}</p>
               </div>
+
+               {/* Registration Fee Info */}
+              {(enrollment.biaya_pendaftaran_amount > 0 || enrollment.biaya_pendaftaran_status === 'WAIVED') && (
+                  <div className="bg-muted/30 rounded-lg p-4 mb-4 border">
+                     <div className="flex justify-between items-start mb-2">
+                        <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Biaya Pendaftaran</p>
+                         <Badge variant={enrollment.biaya_pendaftaran_status === 'PAID' ? 'default' : enrollment.biaya_pendaftaran_status === 'UNPAID' ? 'destructive' : 'secondary'} className="text-[10px] px-1 h-5">
+                            {enrollment.biaya_pendaftaran_status}
+                         </Badge>
+                     </div>
+                     <p className="text-lg font-bold">{formatCurrency(enrollment.biaya_pendaftaran_amount)}</p>
+                     {enrollment.biaya_pendaftaran_due_date && (
+                        <p className="text-xs text-muted-foreground mt-1">Jatuh Tempo: {formatDate(enrollment.biaya_pendaftaran_due_date)}</p>
+                     )}
+                     
+                     <div className="mt-3">
+                         {canUpdate && (
+                             <UpdateFeeDialog 
+                                enrollmentId={enrollment.id} 
+                                currentStatus={enrollment.biaya_pendaftaran_status} 
+                             />
+                         )}
+                     </div>
+                  </div>
+              )}
 
               <div className="space-y-1">
                  <DetailItem icon={Users} label="Kapasitas" value={`${enrollment.jumlah_siswa} Siswa`} />

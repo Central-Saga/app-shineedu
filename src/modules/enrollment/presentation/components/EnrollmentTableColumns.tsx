@@ -50,6 +50,26 @@ export const getColumns = ({ onDelete }: EnrollmentTableColumnsProps): ColumnDef
     cell: ({ row }) => formatCurrency(Number(row.getValue("harga_final"))),
   },
   {
+    accessorKey: "biaya_pendaftaran_amount",
+    header: "Biaya Pendaftaran",
+    cell: ({ row }) => {
+      const amount = Number(row.original.biaya_pendaftaran_amount || 0);
+      const status = row.original.biaya_pendaftaran_status;
+      
+      let variant: "default" | "secondary" | "destructive" | "outline" = "outline";
+      if (status === "PAID") variant = "default";
+      if (status === "UNPAID") variant = "destructive";
+      if (status === "WAIVED") variant = "secondary";
+
+      return (
+        <div className="flex items-center gap-2">
+           <span className="text-sm">{amount > 0 ? formatCurrency(amount) : "-"}</span>
+           <Badge variant={variant} className="text-[10px] px-1 h-5">{status}</Badge>
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
