@@ -53,5 +53,15 @@ export const academicApi = {
 
   getJenjangs: async () => {
       return getResponse<{id: number, nama: string}[]>(`catalog/jenjang`);
+  },
+
+  getAvailableSchedules: async (params: Record<string, any> = {}) => {
+      const queryString = buildQuery({ ...params, kelas_id: 'null' });
+      return getResponse<any[]>(`jadwal-kerja?${queryString}`);
+  },
+
+  linkScheduleToKelas: async (jadwalId: number, kelasId: number) => {
+      // We update the schedule to have this kelas_id
+      return put(`jadwal-kerja/${jadwalId}`, { kelas_id: kelasId });
   }
 };

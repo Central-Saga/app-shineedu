@@ -18,7 +18,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2, User, Clock, MapPin } from "lucide-react";
 
 interface JadwalKerjaTableProps {
   items: JadwalKerja[];
@@ -48,12 +48,12 @@ export function JadwalKerjaTable({
       <Table className="min-w-[1000px]">
         <TableHeader>
           <TableRow>
-            <TableHead>Mata Pelajaran</TableHead>
+            <TableHead className="pl-6">Mata Pelajaran</TableHead>
             <TableHead>Hari / Sesi</TableHead>
             <TableHead>Waktu</TableHead>
             <TableHead>Pengajar</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead className="w-[120px]">Aksi</TableHead>
+            <TableHead className="w-[120px] text-right pr-6">Aksi</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -77,15 +77,40 @@ export function JadwalKerjaTable({
           ) : (
             items.map((item) => (
               <TableRow key={item.id}>
-                <TableCell className="font-medium">{item.mata_pelajaran}</TableCell>
-                <TableCell>
-                  {item.hari} / Sesi {item.nomor_sesi}
+                <TableCell className="pl-6">
+                  <div className="flex flex-col">
+                    <span className="font-bold text-sm">{item.mata_pelajaran}</span>
+                    {item.ruangan_kelas && (
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                        <MapPin className="size-3" /> {item.ruangan_kelas}
+                      </span>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>
-                  {item.jam_mulai} - {item.jam_selesai}
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{item.hari}</span>
+                    <span className="text-[10px] text-muted-foreground">Sesi {item.nomor_sesi || "-"}</span>
+                  </div>
                 </TableCell>
                 <TableCell>
-                  {item.guru_pengajar?.user?.name ?? "-"}
+                  <div className="flex items-center gap-1.5 text-sm font-mono text-slate-600">
+                    <Clock className="size-3.5 text-slate-400" />
+                    <span>{item.jam_mulai}</span>
+                    <span className="text-slate-300">-</span>
+                    <span>{item.jam_selesai}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <div className="size-8 rounded-full bg-slate-50 border flex items-center justify-center text-slate-400 shrink-0">
+                        <User className="size-4" />
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="font-semibold text-sm">{item.guru_pengajar?.user?.name || "-"}</span>
+                        <span className="text-[10px] text-muted-foreground">{item.guru_pengajar?.kode_karyawan || 'No ID'}</span>
+                    </div>
+                  </div>
                 </TableCell>
                 <TableCell>
                   <Badge
@@ -99,15 +124,19 @@ export function JadwalKerjaTable({
                     {item.status}
                   </Badge>
                 </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1">
+                <TableCell className="text-right pr-6">
+                  <div className="flex items-center justify-end gap-1">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => onView(item)}
-                          className="text-slate-500 hover:text-rose-600 hover:bg-rose-50"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            onView(item);
+                          }}
+                          className="text-slate-500 hover:text-rose-600 hover:bg-rose-50 relative z-10 cursor-pointer"
                         >
                           <Eye className="size-4" />
                         </Button>

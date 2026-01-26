@@ -43,6 +43,7 @@ export interface Enrollment {
     id: number;
     name: string;
   };
+  kelas?: import("@/modules/academic/domain/types").Kelas[];
 }
 
 export interface CreateEnrollmentRequest {

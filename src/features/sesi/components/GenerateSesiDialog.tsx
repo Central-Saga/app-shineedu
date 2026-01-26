@@ -55,8 +55,15 @@ export function GenerateSesiDialog({ kelasId }: GenerateSesiDialogProps) {
 
   async function onSubmit(values: z.infer<typeof generateSesiSchema>) {
     try {
-      await sesiApi.generateSesi(kelasId, values);
-      toast.success("Sesi berhasil digenerate");
+      const res = await sesiApi.generateSesi(kelasId, values) as any;
+      const count = res.count ?? 0;
+      
+      if (count > 0) {
+        toast.success(`Berhasil generate ${count} sesi.`);
+      } else {
+        toast.warning("Tidak ada sesi yang digenerate. Pastikan jadwal kelas (Master Jadwal) sudah diatur dengan benar untuk rentang tanggal ini.");
+      }
+      
       setOpen(false);
       router.refresh();
     } catch (error: any) {
@@ -109,6 +116,16 @@ export function GenerateSesiDialog({ kelasId }: GenerateSesiDialogProps) {
                                         date={field.value ? new Date(field.value) : undefined}
                                         setDate={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
                                         placeholder="Pilih tanggal"
+                                        disabledDates={(date: Date) => {
+                                            const fromDate = form.getValues("from");
+                                            if (!fromDate) return false;
+                                            // Reset time for comparison
+                                            const d = new Date(date);
+                                            d.setHours(0,0,0,0);
+                                            const f = new Date(fromDate);
+                                            f.setHours(0,0,0,0);
+                                            return d < f;
+                                        }}
                                     />
                                 </FormControl>
                                 <FormMessage />

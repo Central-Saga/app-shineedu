@@ -257,6 +257,80 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
                    </div>
                 </CardContent>
             </Card>
+
+            {/* Class & Schedule Information */}
+            <Card>
+                <CardHeader className="py-4 border-b">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                        <Calendar className="size-4" /> Informasi Kelas & Jadwal
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4">
+                    {enrollment.kelas && enrollment.kelas.length > 0 ? (
+                        <div className="space-y-6">
+                            {enrollment.kelas.map((kls) => (
+                                <div key={kls.id} className="space-y-4 pb-4 last:pb-0 border-b last:border-0 border-dashed">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 rounded-lg bg-rose-50 text-rose-600 border border-rose-100">
+                                                <Users className="size-4" />
+                                            </div>
+                                            <div>
+                                                <Link href={`/dashboard/kelas/${kls.id}`} className="text-sm font-bold hover:underline">
+                                                    {kls.nama_kelas}
+                                                </Link>
+                                                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{kls.kode_kelas}</p>
+                                            </div>
+                                        </div>
+                                        <Badge variant="outline" className="text-[10px] uppercase">{kls.tipe_kelas}</Badge>
+                                    </div>
+
+                                    <div className="pl-11 space-y-3">
+                                        <p className="text-xs font-semibold text-muted-foreground">Jadwal Pertemuan:</p>
+                                        {kls.schedules && kls.schedules.length > 0 ? (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                {kls.schedules.map((sch) => (
+                                                    <div key={sch.id} className="p-3 rounded-lg border bg-slate-50/50 flex flex-col gap-1.5">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-xs font-bold">{sch.hari}</span>
+                                                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-white border border-slate-200 uppercase">{sch.mata_pelajaran}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 text-[11px] text-slate-600">
+                                                            <div className="flex items-center gap-1 font-mono">
+                                                                <Info className="size-3" />
+                                                                {sch.jam_mulai} - {sch.jam_selesai}
+                                                            </div>
+                                                            <span className="text-slate-300">|</span>
+                                                            <div className="flex items-center gap-1 truncate">
+                                                                <User className="size-3 shrink-0" />
+                                                                <span className="truncate">{sch.guru_pengajar?.user?.name || '-'}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs text-muted-foreground italic bg-slate-50 p-3 rounded-lg border border-dashed">
+                                                Belum ada jadwal yang diatur untuk kelas ini.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="py-8 text-center border-2 border-dashed rounded-lg bg-muted/20">
+                            <Info className="size-8 text-muted-foreground/30 mx-auto mb-3" />
+                            <p className="text-sm text-muted-foreground font-medium">Siswa belum dimasukkan ke kelas manapun.</p>
+                            <Button asChild variant="link" size="sm" className="mt-2 text-rose-600 h-auto p-0 font-bold">
+                                <Link href="/dashboard/kelas">
+                                    Kelola Kelas
+                                </Link>
+                            </Button>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
         </div>
       </div>
     </div>

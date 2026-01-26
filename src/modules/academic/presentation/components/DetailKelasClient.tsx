@@ -9,6 +9,7 @@ import { AnggotaTable } from "./AnggotaTable";
 import { AddAnggotaSheet } from "./AddAnggotaSheet";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import { SesiList } from "@/features/sesi/components/SesiList";
 import { JadwalKelasTab } from "./JadwalKelasTab";
 
@@ -51,12 +52,14 @@ export function DetailKelasClient({ kelas }: DetailKelasClientProps) {
         router.refresh(); 
     };
 
+    const canViewSesi = authStore.hasPermission("session.view");
+
     return (
         <Tabs defaultValue="anggota" className="w-full">
             <TabsList className="mb-4">
                 <TabsTrigger value="anggota">Daftar Anggota</TabsTrigger>
                 <TabsTrigger value="jadwal">Jadwal</TabsTrigger>
-                <TabsTrigger value="sesi">Sesi Pertemuan</TabsTrigger>
+                {canViewSesi && <TabsTrigger value="sesi">Sesi Pertemuan</TabsTrigger>}
             </TabsList>
 
             <TabsContent value="anggota">
@@ -86,16 +89,18 @@ export function DetailKelasClient({ kelas }: DetailKelasClientProps) {
             </TabsContent>
 
             <TabsContent value="jadwal">
-                <JadwalKelasTab kelasId={kelas.id} />
+                <JadwalKelasTab kelasId={kelas.id} kelas={kelas} />
             </TabsContent>
             
-            <TabsContent value="sesi">
-                <Card>
-                    <CardContent className="pt-6">
-                        <SesiList kelasId={kelas.id} />
-                    </CardContent>
-                </Card>
-            </TabsContent>
+            {canViewSesi && (
+                <TabsContent value="sesi">
+                    <Card>
+                        <CardContent className="pt-6">
+                            <SesiList kelasId={kelas.id} />
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            )}
         </Tabs>
     );
 }

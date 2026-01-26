@@ -1,3 +1,4 @@
+import { JadwalKerja } from "@/modules/jadwal-kerja/domain/entities";
 
 export interface Kelas {
   id: number;
@@ -21,6 +22,7 @@ export interface Kelas {
   jenjang?: { id: number; nama: string };
   enrollments_count?: number;
   enrollments?: KelasEnrollment[];
+  schedules?: JadwalKerja[];
 }
 
 export interface KelasEnrollment {
