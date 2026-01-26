@@ -1,63 +1,49 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { authStore, useAuthStore } from "@/modules/auth/infrastructure/auth.store";
+import { setOnUnauthorized } from "@/shared/infrastructure/api/httpClient";
+import { toast } from "sonner";
 
-const TIMEOUT_IN_MS = 3600 * 1000; // 1 hour
+// For testing: 1 minute (60,000 ms). Change back to 3600*1000 later.
+const TIMEOUT_IN_MS = 60 * 1000; 
 
 export default function SessionTimeout() {
   const token = useAuthStore((state) => state.token);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const resetTimer = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    
-    if (token) {
-      timeoutRef.current = setTimeout(() => {
-        console.log("Session inactive for 1 hour. Logging out...");
-        authStore.logout();
-      }, TIMEOUT_IN_MS);
-    }
-  }, [token]);
+  const router = useRouter();
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Only set up listeners if user is logged in
-    if (!token) {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      return;
-    }
-
-    const events = [
-      "mousedown",
-      "mousemove",
-      "keypress",
-      "scroll",
-      "touchstart",
-    ];
-
-    const handleActivity = () => {
-      resetTimer();
-    };
-
-    // Initialize timer
-    resetTimer();
-
-    // Add listeners
-    events.forEach((event) => {
-      window.addEventListener(event, handleActivity);
+    // 1. Setup the global 401 interceptor
+    setOnUnauthorized(() => {
+      // Prevent duplicate toasts/actions if multiple requests fail at once
+      if (useAuthStore.getState().token) {
+        toast.error("Sesi telah berakhir. Silakan login kembali.");
+        authStore.logout();
+        router.push("/auth/login");
+      }
     });
 
+    // 2. Setup active timer (Absolute expiration for testing)
+    if (token) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      
+      timerRef.current = setTimeout(() => {
+        if (useAuthStore.getState().token) {
+           toast.error("Waktu sesi habis (1 menit). Otomatis logout.");
+           authStore.logout();
+           router.push("/auth/login");
+        }
+      }, TIMEOUT_IN_MS);
+    }
+
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      events.forEach((event) => {
-        window.removeEventListener(event, handleActivity);
-      });
+      if (timerRef.current) clearTimeout(timerRef.current);
+      // We don't unset setOnUnauthorized usually, but could if needed
     };
-  }, [token, resetTimer]);
+  }, [token, router]);
 
   return null;
 }
+
