@@ -8,6 +8,9 @@ import { Kelas, KelasEnrollment } from "@/modules/academic/domain/types";
 import { AnggotaTable } from "./AnggotaTable";
 import { AddAnggotaSheet } from "./AddAnggotaSheet";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SesiList } from "@/features/sesi/components/SesiList";
+import { JadwalKelasTab } from "./JadwalKelasTab";
 
 interface DetailKelasClientProps {
     kelas: Kelas;
@@ -20,7 +23,6 @@ export function DetailKelasClient({ kelas }: DetailKelasClientProps) {
     useEffect(() => {
         setEnrollments(kelas.enrollments || []);
     }, [kelas.enrollments]);
-
 
     const refreshData = async () => {
         try {
@@ -50,28 +52,50 @@ export function DetailKelasClient({ kelas }: DetailKelasClientProps) {
     };
 
     return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between border-b py-4">
-                <div>
-                     <CardTitle className="text-lg font-bold">Daftar Anggota</CardTitle>
-                     <p className="text-sm text-muted-foreground mt-0.5">Siswa aktif yang terdaftar di kelas</p>
-                </div>
-                 <div className="flex gap-2">
-                    <AddAnggotaSheet 
-                        kelasId={kelas.id}
-                        programId={kelas.program_id}
-                        jenjangId={kelas.jenjang_id}
-                        periodeMulai={kelas.periode_mulai}
-                        onSuccess={handleSuccessAdd}
-                    />
-                 </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-                <AnggotaTable 
-                    enrollments={enrollments} 
-                    onRemove={handleRemoveMember} 
-                />
-            </CardContent>
-        </Card>
+        <Tabs defaultValue="anggota" className="w-full">
+            <TabsList className="mb-4">
+                <TabsTrigger value="anggota">Daftar Anggota</TabsTrigger>
+                <TabsTrigger value="jadwal">Jadwal</TabsTrigger>
+                <TabsTrigger value="sesi">Sesi Pertemuan</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="anggota">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between border-b py-4">
+                        <div>
+                            <CardTitle className="text-lg font-bold">Daftar Anggota</CardTitle>
+                            <p className="text-sm text-muted-foreground mt-0.5">Siswa aktif yang terdaftar di kelas</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <AddAnggotaSheet 
+                                kelasId={kelas.id}
+                                programId={kelas.program_id}
+                                jenjangId={kelas.jenjang_id}
+                                periodeMulai={kelas.periode_mulai}
+                                onSuccess={handleSuccessAdd}
+                            />
+                        </div>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        <AnggotaTable 
+                            enrollments={enrollments} 
+                            onRemove={handleRemoveMember} 
+                        />
+                    </CardContent>
+                </Card>
+            </TabsContent>
+
+            <TabsContent value="jadwal">
+                <JadwalKelasTab kelasId={kelas.id} />
+            </TabsContent>
+            
+            <TabsContent value="sesi">
+                <Card>
+                    <CardContent className="pt-6">
+                        <SesiList kelasId={kelas.id} />
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        </Tabs>
     );
 }

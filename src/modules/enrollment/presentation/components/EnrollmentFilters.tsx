@@ -97,6 +97,23 @@ export function EnrollmentFilter() {
           <SelectItem value="Cancel">Cancel</SelectItem>
         </SelectContent>
       </Select>
+      <Select 
+        value={searchParams.get("biaya_pendaftaran_status") || "ALL"} 
+        onValueChange={(val) => {
+           const value = val === "ALL" ? "" : val;
+           router.push(`${pathname}?${createQueryString("biaya_pendaftaran_status", value)}`);
+        }}
+      >
+        <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectValue placeholder="Status Pembayaran" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="ALL">Semua Pembayaran</SelectItem>
+          <SelectItem value="UNPAID">Belum Lunas</SelectItem>
+          <SelectItem value="PAID">Lunas</SelectItem>
+          <SelectItem value="WAIVED">Waived</SelectItem>
+        </SelectContent>
+      </Select>
       {/* Reset Button */}
       {(searchParams.get("q") || searchParams.get("status")) && (
         <Button 

@@ -39,6 +39,14 @@ export const academicApi = {
     return del<ApiResponse<null>>(`kelas/${id}/anggota/${enrollmentId}`);
   },
 
+  getKelasSchedules: async (id: number | string) => {
+    return getResponse<any[]>(`kelas/${id}/jadwal`);
+  },
+
+  addKelasSchedule: async (id: number | string, data: any) => {
+    return post<any>(`kelas/${id}/jadwal`, data);
+  },
+
   getPrograms: async () => {
       return getResponse<{id: number, nama: string}[]>(`catalog/program`);
   },
