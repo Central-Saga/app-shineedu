@@ -6,8 +6,8 @@ import { authStore, useAuthStore } from "@/modules/auth/infrastructure/auth.stor
 import { setOnUnauthorized } from "@/shared/infrastructure/api/httpClient";
 import { toast } from "sonner";
 
-// For testing: 1 minute (60,000 ms). Change back to 3600*1000 later.
-const TIMEOUT_IN_MS = 60 * 1000; 
+// 15 minutes (15 * 60,000 ms)
+const TIMEOUT_IN_MS = 15 * 60 * 1000; 
 
 export default function SessionTimeout() {
   const token = useAuthStore((state) => state.token);
@@ -21,19 +21,19 @@ export default function SessionTimeout() {
       if (useAuthStore.getState().token) {
         toast.error("Sesi telah berakhir. Silakan login kembali.");
         authStore.logout();
-        router.push("/auth/login");
+        router.push("/login");
       }
     });
 
-    // 2. Setup active timer (Absolute expiration for testing)
+    // 2. Setup active timer (Absolute expiration)
     if (token) {
       if (timerRef.current) clearTimeout(timerRef.current);
       
       timerRef.current = setTimeout(() => {
         if (useAuthStore.getState().token) {
-           toast.error("Waktu sesi habis (1 menit). Otomatis logout.");
+           toast.error("Waktu sesi habis (15 menit). Otomatis logout.");
            authStore.logout();
-           router.push("/auth/login");
+           router.push("/login");
         }
       }, TIMEOUT_IN_MS);
     }
