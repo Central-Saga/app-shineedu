@@ -14,8 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
-import { formatCurrency } from "@/lib/utils"; // Assuming helper exists, or I use Intl
-import { usePermission } from "@/hooks/use-permission"; // Assuming hook exists
+import { formatCurrency } from "@/lib/utils"; 
 
 interface EnrollmentTableColumnsProps {
   onDelete: (id: number) => void;

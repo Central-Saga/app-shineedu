@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const createEnrollmentSchema = z.object({
   // Mode selection (UI only, filtered out before submit if needed, or handled in transform)
-  mode_murid: z.enum(["existing", "new"]).default("existing"),
+  mode_murid: z.enum(["existing", "new"]).optional().default("existing"),
   
   murid_id: z.coerce.number().optional(),
   

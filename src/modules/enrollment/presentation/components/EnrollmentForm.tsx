@@ -75,7 +75,7 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
   }, [muridSearch]);
 
   const form = useForm<CreateEnrollmentFormValues | UpdateEnrollmentFormValues>({
-    resolver: zodResolver(isEdit ? updateEnrollmentSchema : createEnrollmentSchema),
+    resolver: zodResolver(isEdit ? updateEnrollmentSchema : createEnrollmentSchema) as any,
     defaultValues: initialData ? {
        tanggal_mulai: initialData.tanggal_mulai ?? undefined,
        tanggal_selesai: initialData.tanggal_selesai ?? undefined,
