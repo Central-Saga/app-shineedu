@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const createEnrollmentSchema = z.object({
   // Mode selection (UI only, filtered out before submit if needed, or handled in transform)
-  mode_murid: z.enum(["existing", "new"]).default("existing"),
+  mode_murid: z.enum(["existing", "new"]).optional().default("existing"),
   
   murid_id: z.coerce.number().optional(),
   
@@ -28,6 +28,11 @@ export const createEnrollmentSchema = z.object({
   tanggal_selesai: z.string().optional(),
   
   catatan: z.string().optional(),
+
+  // Registration Fee
+  biaya_pendaftaran_amount: z.coerce.number().min(0).default(0),
+  biaya_pendaftaran_status: z.enum(['UNPAID', 'PAID', 'WAIVED']).optional(), // Computed usually, but allow override if needed
+  biaya_pendaftaran_due_date: z.string().optional().nullable(),
 }).superRefine((data, ctx) => {
   if (data.mode_murid === "existing" && !data.murid_id) {
     ctx.addIssue({
@@ -57,10 +62,14 @@ export const createEnrollmentSchema = z.object({
 export type CreateEnrollmentFormValues = z.infer<typeof createEnrollmentSchema>;
 
 export const updateEnrollmentSchema = z.object({
+  mode_murid: z.enum(["existing", "new"]).optional(),
   tanggal_mulai: z.string().optional(),
   tanggal_selesai: z.string().optional(),
   status: z.enum(['Aktif', 'Pause', 'Selesai', 'Cancel']).optional(),
   catatan: z.string().optional(),
+  biaya_pendaftaran_amount: z.coerce.number().min(0).optional(),
+  biaya_pendaftaran_status: z.enum(['UNPAID', 'PAID', 'WAIVED']).optional(),
+  biaya_pendaftaran_due_date: z.string().optional().nullable(),
 });
 
 export type UpdateEnrollmentFormValues = z.infer<typeof updateEnrollmentSchema>;

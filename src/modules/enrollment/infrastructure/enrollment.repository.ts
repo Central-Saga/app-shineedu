@@ -59,4 +59,11 @@ export const enrollmentRepository = {
     const data = await get<{ harga: number; id: number }>(`catalog/harga/lookup?${query}`);
     return { data };
   },
+
+  updateRegistrationFeeStatus: async (id: number | string, payload: { status: string; due_date?: string }) => {
+    // Note: Endpoint expects 'status' (mapped from 'biaya_pendaftaran_status' in backend? No, Backend controller expects 'status' based on my previous edit)
+    // Backend Code: $enrollment->biaya_pendaftaran_status = $request->status;
+    const res = await put(`${BASE_URL}/${id}/registration-fee-status`, payload);
+    return res;
+  },
 };
