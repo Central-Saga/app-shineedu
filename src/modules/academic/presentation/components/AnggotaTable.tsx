@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash, Users, User, ArrowUpRight } from "lucide-react";
+import { Trash, Users, User } from "lucide-react";
 import { KelasEnrollment } from "@/modules/academic/domain/types";
 import {
     AlertDialog,
@@ -103,7 +103,7 @@ export function AnggotaTable({ enrollments, onRemove }: AnggotaTableProps) {
                                 <AlertDialogHeader>
                                 <AlertDialogTitle>Keluarkan Anggota?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    Apakah Anda yakin ingin mengeluarkan <span className="font-semibold text-slate-900">{enr.murid?.nama_lengkap}</span> dari kelas ini?
+                                    Apakah Anda yakin ingin mengeluarkan <span className="font-semibold text-foreground">{enr.murid?.nama_lengkap}</span> dari kelas ini?
                                 </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>

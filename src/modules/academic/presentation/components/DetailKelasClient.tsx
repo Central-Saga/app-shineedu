@@ -61,6 +61,7 @@ export function DetailKelasClient({ kelas }: DetailKelasClientProps) {
                         kelasId={kelas.id}
                         programId={kelas.program_id}
                         jenjangId={kelas.jenjang_id}
+                        periodeMulai={kelas.periode_mulai}
                         onSuccess={handleSuccessAdd}
                     />
                  </div>

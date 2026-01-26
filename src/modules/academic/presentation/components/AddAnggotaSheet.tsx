@@ -34,10 +34,11 @@ interface AddAnggotaSheetProps {
   kelasId: number;
   programId: number;
   jenjangId: number;
+  periodeMulai?: string;
   onSuccess: () => void;
 }
 
-export function AddAnggotaSheet({ kelasId, programId, jenjangId, onSuccess }: AddAnggotaSheetProps) {
+export function AddAnggotaSheet({ kelasId, programId, jenjangId, periodeMulai, onSuccess }: AddAnggotaSheetProps) {
   const [open, setOpen] = useState(false);
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [filteredEnrollments, setFilteredEnrollments] = useState<any[]>([]);
@@ -45,11 +46,22 @@ export function AddAnggotaSheet({ kelasId, programId, jenjangId, onSuccess }: Ad
   const [search, setSearch] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const getTodayLocal = () => format(new Date(), "yyyy-MM-dd");
+  const parseLocalDate = (dateStr: string) => {
+    if (!dateStr) return undefined;
+    if (dateStr.includes('T')) dateStr = dateStr.split('T')[0];
+    const [y, m, d] = dateStr.split('-').map(Number);
+    if (isNaN(y) || isNaN(m) || isNaN(d)) return undefined;
+    return new Date(y, m - 1, d);
+  };
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       enrollment_ids: [],
-      tanggal_masuk: new Date().toISOString().split('T')[0],
+      tanggal_masuk: periodeMulai 
+        ? (periodeMulai.includes('T') ? periodeMulai.split('T')[0] : periodeMulai) 
+        : getTodayLocal(),
     },
   });
 
@@ -200,10 +212,15 @@ export function AddAnggotaSheet({ kelasId, programId, jenjangId, onSuccess }: Ad
              <div className="space-y-2">
                 <Label htmlFor="tgl_masuk">Tanggal Masuk Kelas</Label>
                 <DatePicker
-                    date={form.watch("tanggal_masuk") ? new Date(form.watch("tanggal_masuk")!) : undefined}
+                    date={parseLocalDate(form.watch("tanggal_masuk") || "")}
                     setDate={(date) => form.setValue("tanggal_masuk", date ? format(date, "yyyy-MM-dd") : undefined)}
                     placeholder="Pilih Tanggal Masuk"
                 />
+                {periodeMulai && form.watch("tanggal_masuk") && form.watch("tanggal_masuk")! < periodeMulai && (
+                    <p className="text-[10px] text-destructive font-medium">
+                        Tanggal masuk tidak boleh sebelum kelas dibuka ({format(new Date(periodeMulai), "dd MMM yyyy")})
+                    </p>
+                )}
              </div>
         </div>
 
@@ -214,7 +231,7 @@ export function AddAnggotaSheet({ kelasId, programId, jenjangId, onSuccess }: Ad
                 </p>
                 <Button 
                     onClick={form.handleSubmit(onSubmit)} 
-                    disabled={isSubmitting || selectedCount === 0}
+                    disabled={isSubmitting || selectedCount === 0 || (!!periodeMulai && !!form.watch("tanggal_masuk") && form.watch("tanggal_masuk")! < periodeMulai)}
                 >
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Simpan Anggota"}
                 </Button>
