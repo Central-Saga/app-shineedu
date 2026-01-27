@@ -21,6 +21,7 @@ import { StatsCard } from "@/shared/presentation/components/StatsCard";
 import { DataTableToolbar } from "@/shared/presentation/components/table/DataTableToolbar";
 import { DataTablePagination, DataTablePaginationMeta } from "@/shared/presentation/components/table/DataTablePagination";
 import { useDebouncedValue } from "@/shared/presentation/hooks/useDebouncedValue";
+import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -149,6 +150,19 @@ export function KelasListClient({
         }
     };
 
+    const handleExport = async (format: string) => {
+        const params: any = {};
+        searchParams.forEach((val, key) => {
+            params[key] = val;
+        });
+        try {
+            await academicApi.exportKelas(format, params);
+            toast.success(`Export ${format.toUpperCase()} berhasil dimulai`);
+        } catch (e: any) {
+            toast.error(e.message || "Gagal melakukan export");
+        }
+    };
+
     const columns = getColumns({
         onDelete: (id) => setDeleteId(id),
         onStatusChange: handleStatusChange
@@ -160,12 +174,15 @@ export function KelasListClient({
                 title="Kelas"
                 description="Manajemen kelas akademik"
                 actions={
-                    <Button asChild>
-                        <Link href="/dashboard/kelas/create">
-                             <Plus className="mr-2 h-4 w-4" />
-                             Buat Kelas
-                        </Link>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <ExportDropdown onExport={handleExport} />
+                        <Button asChild>
+                            <Link href="/dashboard/kelas/create">
+                                <Plus className="mr-2 h-4 w-4" />
+                                Buat Kelas
+                            </Link>
+                        </Button>
+                    </div>
                 }
              />
 

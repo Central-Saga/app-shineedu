@@ -1,4 +1,4 @@
-import { get, post, put, getResponse, postResponse } from "@/shared/infrastructure/api/httpClient";
+import { get, post, put, getResponse, postResponse, download } from "@/shared/infrastructure/api/httpClient";
 import { buildQuery } from "@/shared/lib/buildQuery";
 import { PaginatedMeta } from "@/shared/domain/types";
 import { 
@@ -92,4 +92,12 @@ export const sesiApi = {
         const res = await getResponse<LogbookSesi[]>(`kelas/${kelasId}/logbook`);
         return res.data || [];
     },
+
+    exportSesi: async (kelasId: number, format: string, params: Record<string, unknown>) => {
+        return await download(`kelas/${kelasId}/sesi/export`, { ...params, export: format });
+    },
+
+    exportAllSesi: async (format: string, params: Record<string, unknown>) => {
+        return await download(`${BASE_URL}/export`, { ...params, export: format });
+    }
 };

@@ -4,6 +4,7 @@ import {
   post,
   put,
   del,
+  download,
   DEFAULT_META,
 } from "@/shared/infrastructure/api/httpClient";
 import { buildQuery } from "@/shared/lib/buildQuery";
@@ -150,7 +151,23 @@ export async function lookupPrice(params: LookupPriceParams): Promise<PricingLoo
   // Based on backend implementation we probably get a PaketHarga resource
   // Let's assume backend returns PaketHargaResource
   return {
-    harga: (res as any).harga,
-    rule: res as any,
+    harga: res.harga,
+    rule: res as unknown as PricingLookupResult["rule"],
   };
+}
+
+export async function exportJenjang(format: string, params?: ListParams): Promise<void> {
+  return download("catalog/jenjang/export", { ...params, export: format });
+}
+
+export async function exportProgram(format: string, params?: ListParams): Promise<void> {
+  return download("catalog/program/export", { ...params, export: format });
+}
+
+export async function exportPaket(format: string, params?: ListParams): Promise<void> {
+  return download("catalog/paket/export", { ...params, export: format });
+}
+
+export async function exportPaketHarga(format: string, params?: ListPaketHargaParams): Promise<void> {
+  return download("catalog/harga/export", { ...params, export: format });
 }

@@ -21,6 +21,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PaginatedMeta } from "@/shared/domain/types";
 import { startOfMonth, endOfMonth, format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
+import { toast } from "sonner";
 
 interface SesiListProps {
   kelasId: number;
@@ -44,7 +46,7 @@ export function SesiList({ kelasId }: SesiListProps) {
       const res = await sesiApi.getSesiByKelas(kelasId, {
           from,
           to,
-          status_sesi: statusSesi,
+          status_sesi: statusSesi || undefined,
           page,
           per_page: 20
       });
@@ -61,6 +63,19 @@ export function SesiList({ kelasId }: SesiListProps) {
     fetchData();
   }, [fetchData]);
 
+  const handleExport = async (format: string) => {
+    try {
+      const params: Record<string, unknown> = {
+        from,
+        to,
+        status_sesi: statusSesi || undefined,
+      };
+      await sesiApi.exportSesi(kelasId, format, params);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Gagal melakukan export");
+    }
+  };
+
   const columns = getSesiColumns(kelasId);
   const table = useReactTable({
     data,
@@ -71,9 +86,14 @@ export function SesiList({ kelasId }: SesiListProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between border-b py-4">
-        <div>
-            <CardTitle className="text-lg font-bold">Daftar Sesi</CardTitle>
-            <p className="text-sm text-muted-foreground mt-0.5">Realisasi pertemuan dan absensi kelas ini</p>
+        <div className="flex items-center gap-2">
+            <div className="text-left">
+                <CardTitle className="text-lg font-bold">Daftar Sesi</CardTitle>
+                <p className="text-sm text-muted-foreground mt-0.5">Realisasi pertemuan dan absensi kelas ini</p>
+            </div>
+            <div className="ml-auto">
+                <ExportDropdown onExport={handleExport} />
+            </div>
         </div>
       </CardHeader>
       

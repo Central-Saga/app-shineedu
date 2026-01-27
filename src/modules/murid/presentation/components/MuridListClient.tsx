@@ -21,8 +21,9 @@ import {
 import { Plus, Users, UserCheck, UserX } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { deleteMurid, updateMurid } from "@/modules/murid/infrastructure/murid.repository";
+import { deleteMurid, updateMurid, exportMurids } from "@/modules/murid/infrastructure/murid.repository";
 import { toast } from "sonner";
+import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -129,20 +130,36 @@ export function MuridListClient({ data, meta, stats }: MuridListClientProps) {
     }
   };
 
+  const handleExport = async (format: string) => {
+    const params: any = {};
+    searchParams.forEach((val, key) => {
+      params[key] = val;
+    });
+    try {
+      await exportMurids(format, params);
+      toast.success(`Export ${format.toUpperCase()} berhasil dimulai`);
+    } catch (e: any) {
+      toast.error(e.message || "Gagal melakukan export");
+    }
+  };
+
   return (
     <div>
       <PageHeader
         title="Murid"
         description="Daftar murid terdaftar"
         actions={
-          canCreate && (
-             <Button asChild>
-                <Link href="/dashboard/murid/create">
-                   <Plus className="mr-2 size-4" />
-                   Tambah Murid
-                </Link>
-             </Button>
-          )
+          <div className="flex items-center gap-2">
+            <ExportDropdown onExport={handleExport} />
+            {canCreate && (
+               <Button asChild>
+                  <Link href="/dashboard/murid/create">
+                     <Plus className="mr-2 size-4" />
+                     Tambah Murid
+                  </Link>
+               </Button>
+            )}
+          </div>
         }
       />
 

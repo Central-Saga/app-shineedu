@@ -1,7 +1,7 @@
 import { ApiResponse } from "@/shared/domain/types";
 import { CreateKelasValues } from "../domain/schemas";
 import { Kelas } from "../domain/types";
-import { getResponse, del, post, put } from "@/shared/infrastructure/api/httpClient";
+import { getResponse, del, post, put, download } from "@/shared/infrastructure/api/httpClient";
 import { buildQuery } from "@/shared/lib/buildQuery";
 
 export const academicApi = {
@@ -63,5 +63,10 @@ export const academicApi = {
   linkScheduleToKelas: async (jadwalId: number, kelasId: number) => {
       // We update the schedule to have this kelas_id
       return put(`jadwal-kerja/${jadwalId}`, { kelas_id: kelasId });
+  },
+
+  exportKelas: async (format: string, params: Record<string, any> = {}) => {
+      return download(`kelas/export`, { ...params, export: format });
   }
 };
+

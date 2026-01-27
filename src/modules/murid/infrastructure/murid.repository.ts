@@ -4,6 +4,8 @@ import {
   post,
   put,
   del,
+  download,
+  upload,
   DEFAULT_META as SHARED_DEFAULT_META,
 } from "@/shared/infrastructure/api/httpClient";
 import { buildQuery } from "@/shared/lib/buildQuery";
@@ -17,7 +19,7 @@ export interface ListMuridParams {
   per_page?: number;
   q?: string;
   status?: string;
-  jenjang_id?: number;
+  jenjang_id?: number | string;
   sort_by?: string;
   sort_dir?: "asc" | "desc";
 }
@@ -51,3 +53,12 @@ export async function updateMurid(
 export async function deleteMurid(id: number): Promise<void> {
   await del(`murid/${id}`);
 }
+
+export async function exportMurids(format: string, params?: ListMuridParams): Promise<void> {
+  return download("murid/export", { ...params, export: format });
+}
+
+export async function importMurids(file: File, updateExisting: boolean = false): Promise<void> {
+  return upload("murid/import", file, { update_existing: updateExisting ? 1 : 0 });
+}
+

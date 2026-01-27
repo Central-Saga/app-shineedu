@@ -25,6 +25,7 @@ import { Enrollment } from "@/modules/enrollment/domain/entities";
 import { toast } from "sonner";
 import { EnrollmentTable } from "./EnrollmentTable";
 import { DataTablePagination } from "@/shared/presentation/components/table/DataTablePagination";
+import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
 
 const SORT_OPTIONS = [
   { label: "Kode", value: "kode_enrollment" },
@@ -121,20 +122,35 @@ export function EnrollmentListClient({ data, meta, stats }: EnrollmentListClient
     }
   };
 
+  const handleExport = async (format: string) => {
+    try {
+      const params: Record<string, any> = {};
+      searchParams.forEach((val, key) => {
+        params[key] = val;
+      });
+      await enrollmentRepository.exportEnrollments(format, params);
+    } catch (error: any) {
+      toast.error(error.message || "Gagal melakukan export");
+    }
+  };
+
   return (
     <div>
       <PageHeader
         title="Enrollment"
         description="Manajemen pendaftaran siswa"
         actions={
-          canCreate && (
-             <Button asChild>
+          <div className="flex items-center gap-2">
+            <ExportDropdown onExport={handleExport} />
+            {canCreate && (
+              <Button asChild>
                 <Link href="/dashboard/enrollment/create">
-                   <Plus className="mr-2 size-4" />
-                   Tambah Enrollment
+                  <Plus className="mr-2 size-4" />
+                  Tambah Enrollment
                 </Link>
-             </Button>
-          )
+              </Button>
+            )}
+          </div>
         }
       />
 

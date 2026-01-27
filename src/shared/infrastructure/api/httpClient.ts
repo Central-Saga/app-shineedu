@@ -357,14 +357,24 @@ export async function download(path: string, params?: object, filename?: string)
   a.href = downloadUrl;
   
   if (!filename) {
-    const disposition = res.headers.get("Content-Disposition");
+    const disposition = res.headers.get("Content-Disposition") || res.headers.get("content-disposition");
     if (disposition) {
-      const match = disposition.match(/filename="?([^"]+)"?/);
-      if (match && match[1]) filename = match[1];
+      const match = disposition.match(/filename="?([^" ;]+)"?/);
+      if (match && match[1]) {
+        filename = match[1];
+      }
     }
   }
 
-  if (filename) a.download = filename;
+  // Fallback filename if still not found
+  if (!filename) {
+    const format = (params as any)?.export || (params as any)?.format || "download";
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    const pathPart = path.split("/").pop() || "file";
+    filename = `${pathPart}_${timestamp}.${format}`;
+  }
+
+  a.download = filename;
   
   document.body.appendChild(a);
   a.click();
@@ -372,10 +382,16 @@ export async function download(path: string, params?: object, filename?: string)
   window.URL.revokeObjectURL(downloadUrl);
 }
 
-export async function upload<T>(path: string, file: File): Promise<T> {
+export async function upload<T>(path: string, file: File, data?: Record<string, any>): Promise<T> {
   const url = `${BASE.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
   const formData = new FormData();
   formData.append("file", file);
+
+  if (data) {
+    Object.keys(data).forEach((key) => {
+      formData.append(key, data[key]);
+    });
+  }
 
   const headers: Record<string, string> = {
     ...getAuthHeaders(),
@@ -389,3 +405,4 @@ export async function upload<T>(path: string, file: File): Promise<T> {
 
   return handleResponse<T>(res);
 }
+

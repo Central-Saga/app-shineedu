@@ -4,6 +4,7 @@ import {
   post,
   put,
   del,
+  download,
   DEFAULT_META as SHARED_DEFAULT_META,
 } from "@/shared/infrastructure/api/httpClient";
 import { buildQuery } from "@/shared/lib/buildQuery"; // Helper for query building
@@ -15,7 +16,7 @@ export const DEFAULT_META = SHARED_DEFAULT_META;
 const BASE_URL = "enrollments"; // Assuming prefix is handled or I should check. Murid repo uses "murid". So "enrollments" seems correct relative to base.
 
 export const enrollmentRepository = {
-  getEnrollments: async (params: Record<string, any>): Promise<{ data: Enrollment[]; meta: PaginatedMeta }> => {
+  getEnrollments: async (params: Record<string, unknown>): Promise<{ data: Enrollment[]; meta: PaginatedMeta }> => {
     // buildQuery usually handles object -> string
     const qs = buildQuery(params);
     const res = await getResponse<Enrollment[]>(qs ? `${BASE_URL}?${qs}` : BASE_URL);
@@ -66,4 +67,8 @@ export const enrollmentRepository = {
     const res = await put(`${BASE_URL}/${id}/registration-fee-status`, payload);
     return res;
   },
+
+  exportEnrollments: async (format: string, params: Record<string, unknown>) => {
+    return await download(`${BASE_URL}/export`, { ...params, export: format });
+  }
 };

@@ -44,7 +44,7 @@ function DetailItem({ icon: Icon, label, value, colorClass }: { icon: React.Elem
   // Standard implementation matches other pages:
   return (
     <div className="flex items-start gap-3 py-3 border-b border-slate-200">
-      <div className="mt-0.5 p-2 rounded-lg bg-secondary text-secondary-foreground shrink-0 text-slate-500">
+      <div className="mt-0.5 p-2 rounded-lg bg-secondary text-secondary-foreground shrink-0">
         <Icon className="size-4" />
       </div>
       <div className="min-w-0 flex-1">

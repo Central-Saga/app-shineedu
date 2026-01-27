@@ -9,8 +9,9 @@ import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGua
 import { DataTableToolbar } from "@/shared/presentation/components/table/DataTableToolbar";
 import { DataTablePagination } from "@/shared/presentation/components/table/DataTablePagination";
 import { useAuthStore } from "@/modules/auth/infrastructure/auth.store";
-import { listPaket, deletePaket } from "@/modules/catalog/infrastructure/catalog.repository";
+import { listPaket, deletePaket, exportPaket } from "@/modules/catalog/infrastructure/catalog.repository";
 import { PaketTable } from "@/modules/catalog/presentation/components/PaketTable";
+import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
 import { StatsCard } from "@/shared/presentation/components/StatsCard";
 import { ConfirmDeleteDialog } from "@/shared/presentation/components/ConfirmDeleteDialog";
 import type { Paket } from "@/modules/catalog/domain/entities";
@@ -146,6 +147,19 @@ export default function PaketPage() {
     }
   };
 
+  const handleExport = async (format: string) => {
+    try {
+      await exportPaket(format, {
+        q: debouncedQ,
+        status: status === "all" ? undefined : (status as any),
+        sort_by: sortBy,
+        sort_dir: sortDir,
+      });
+    } catch (error: any) {
+      toast.error(error.message || "Gagal melakukan export");
+    }
+  };
+
   if (!allowed) return null;
 
   return (
@@ -154,14 +168,17 @@ export default function PaketPage() {
         title="Paket Bimbingan"
         description="Kelola paket bimbingan (Reguler 4x, Private, dll)"
         actions={
-          canCreate && (
-            <Button asChild>
-              <Link href="/dashboard/catalog/paket/create">
-                <Plus className="mr-2 size-4" />
-                Tambah Paket
-              </Link>
-            </Button>
-          )
+          <div className="flex items-center gap-2">
+            <ExportDropdown onExport={handleExport} />
+            {canCreate && (
+              <Button asChild>
+                <Link href="/dashboard/catalog/paket/create">
+                  <Plus className="mr-2 size-4" />
+                  Tambah Paket
+                </Link>
+              </Button>
+            )}
+          </div>
         }
       />
 
