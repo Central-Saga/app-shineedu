@@ -30,12 +30,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+import { Switch } from "@/components/ui/switch";
+
 interface EnrollmentTableProps {
   data: Enrollment[];
   loading?: boolean;
   onView: (item: Enrollment) => void;
   onEdit: (item: Enrollment) => void;
   onDelete: (id: number) => void;
+  onStatusChange?: (id: number, status: string) => void;
   canUpdate?: boolean;
   canDelete?: boolean;
 }
@@ -46,6 +49,7 @@ export function EnrollmentTable({
   onView,
   onEdit,
   onDelete,
+  onStatusChange,
   canUpdate = true,
   canDelete = true,
 }: EnrollmentTableProps) {
@@ -130,6 +134,16 @@ export function EnrollmentTable({
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
+                      {canUpdate && onStatusChange && (
+                        <Switch 
+                            checked={item.status === "Aktif"}
+                            onCheckedChange={(checked) => {
+                                onStatusChange(item.id, checked ? "Aktif" : "Selesai");
+                            }}
+                            className="scale-75 shrink-0 mr-1"
+                        />
+                      )}
+                      
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button

@@ -11,6 +11,7 @@ export function AuthStoreHydration() {
   // Hydrate token from localStorage before children (e.g. useAuthGuard) run
   if (typeof window !== "undefined") {
     authStore.hydrate();
+    setTokenGetter(() => authStore.getState().token);
   }
 
   useEffect(() => {

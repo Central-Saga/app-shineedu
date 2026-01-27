@@ -75,12 +75,15 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
   }, [muridSearch]);
 
   const form = useForm<CreateEnrollmentFormValues | UpdateEnrollmentFormValues>({
-    resolver: zodResolver(isEdit ? updateEnrollmentSchema : createEnrollmentSchema),
+    resolver: zodResolver(isEdit ? updateEnrollmentSchema : createEnrollmentSchema) as any,
     defaultValues: initialData ? {
-       tanggal_mulai: initialData.tanggal_mulai ?? undefined,
-       tanggal_selesai: initialData.tanggal_selesai ?? undefined,
+       tanggal_mulai: initialData.tanggal_mulai ? initialData.tanggal_mulai.split(/[ T]/)[0] : undefined,
+       tanggal_selesai: initialData.tanggal_selesai ? initialData.tanggal_selesai.split(/[ T]/)[0] : undefined,
        status: initialData.status as any,
        catatan: initialData.catatan ?? "",
+       biaya_pendaftaran_amount: Number(initialData.biaya_pendaftaran_amount ?? 0),
+       biaya_pendaftaran_status: initialData.biaya_pendaftaran_status ?? "WAIVED",
+       biaya_pendaftaran_due_date: initialData.biaya_pendaftaran_due_date ? initialData.biaya_pendaftaran_due_date.split(/[ T]/)[0] : undefined,
     } : {
       mode_murid: "existing",
       jumlah_siswa: 1,
@@ -502,16 +505,16 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
                         render={({ field }) => (
                             <FormItem className="flex flex-col mt-[7px]">
                                 <FormLabel className="mb-[6px]">Tanggal Mulai</FormLabel>
-                                <FormControl>
-                                    <DatePicker
-                                        date={field.value && isValid(parse(field.value, "yyyy-MM-dd", new Date())) ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
-                                        setDate={(date) => {
-                                            const formatted = date ? format(date, "yyyy-MM-dd") : null;
-                                            field.onChange(formatted);
-                                        }}
-                                        placeholder="Pilih tanggal mulai"
-                                    />
-                                </FormControl>
+                                    <FormControl>
+                                        <DatePicker
+                                            date={field.value ? (isValid(new Date(field.value)) ? new Date(field.value) : null) : null}
+                                            setDate={(date) => {
+                                                const formatted = date ? format(date, "yyyy-MM-dd") : null;
+                                                field.onChange(formatted);
+                                            }}
+                                            placeholder="Pilih tanggal mulai"
+                                        />
+                                    </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -522,16 +525,16 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
                         render={({ field }) => (
                             <FormItem className="flex flex-col mt-[7px]">
                                 <FormLabel className="mb-[6px]">Tanggal Selesai</FormLabel>
-                                <FormControl>
-                                    <DatePicker
-                                        date={field.value && isValid(parse(field.value, "yyyy-MM-dd", new Date())) ? parse(field.value, "yyyy-MM-dd", new Date()) : null}
-                                        setDate={(date) => {
-                                            const formatted = date ? format(date, "yyyy-MM-dd") : null;
-                                            field.onChange(formatted);
-                                        }}
-                                        placeholder="Pilih tanggal selesai"
-                                    />
-                                </FormControl>
+                                    <FormControl>
+                                        <DatePicker
+                                            date={field.value ? (isValid(new Date(field.value)) ? new Date(field.value) : null) : null}
+                                            setDate={(date) => {
+                                                const formatted = date ? format(date, "yyyy-MM-dd") : null;
+                                                field.onChange(formatted);
+                                            }}
+                                            placeholder="Pilih tanggal selesai"
+                                        />
+                                    </FormControl>
                                 <FormDescription>Kosongkan jika aktif berkelanjutan</FormDescription>
                                 <FormMessage />
                             </FormItem>
@@ -597,6 +600,87 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
               </AccordionItem>
             )}
 
+             {/* Biaya Pendaftaran Section */}
+             <AccordionItem value="data-biaya-pendaftaran">
+                <AccordionTrigger>Biaya Pendaftaran</AccordionTrigger>
+                <AccordionContent className="pt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                      <FormField
+                          control={form.control}
+                          name="biaya_pendaftaran_amount"
+                          render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel>Nominal Biaya Pendaftaran</FormLabel>
+                                  <FormControl>
+                                      <Input 
+                                        type="number" 
+                                        min={0} 
+                                        {...field}
+                                        onChange={e => {
+                                          field.onChange(e);
+                                          // Auto-set status logic
+                                          const val = Number(e.target.value);
+                                          if (val > 0) form.setValue("biaya_pendaftaran_status", "UNPAID");
+                                          else form.setValue("biaya_pendaftaran_status", "WAIVED");
+                                        }}
+                                      />
+                                  </FormControl>
+                                  <FormMessage />
+                              </FormItem>
+                          )}
+                      />
+
+                     <FormField
+                        control={form.control}
+                        name="biaya_pendaftaran_status"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Status Pembayaran</FormLabel>
+                                <Select 
+                                    onValueChange={field.onChange} 
+                                    value={field.value}
+                                    disabled={Number(form.watch("biaya_pendaftaran_amount")) === 0}
+                                >
+                                    <FormControl>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="UNPAID">Unpaid</SelectItem>
+                                        <SelectItem value="PAID">Paid</SelectItem>
+                                        <SelectItem value="WAIVED">Waived</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormDescription>{Number(form.watch("biaya_pendaftaran_amount")) === 0 ? "Otomatis WAIVED jika 0" : ""}</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    {Number(form.watch("biaya_pendaftaran_amount")) > 0 && form.watch("biaya_pendaftaran_status") !== 'WAIVED' && (
+                        <FormField
+                            control={form.control}
+                            name="biaya_pendaftaran_due_date"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col mt-[7px]">
+                                    <FormLabel className="mb-[6px]">Jatuh Tempo</FormLabel>
+                                    <FormControl>
+                                        <DatePicker
+                                            date={field.value ? (isValid(new Date(field.value)) ? new Date(field.value) : null) : null}
+                                            setDate={(date) => {
+                                                const formatted = date ? format(date, "yyyy-MM-dd") : null;
+                                                field.onChange(formatted);
+                                            }}
+                                            placeholder="Pilih tanggal jatuh tempo"
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    )}
+                  </div>
+                </AccordionContent>
+             </AccordionItem>
           </Accordion>
 
           <div className="flex items-center gap-3 pt-6">

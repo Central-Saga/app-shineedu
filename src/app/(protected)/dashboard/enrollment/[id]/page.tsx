@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
 import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGuard";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { enrollmentRepository } from "@/modules/enrollment/infrastructure/enrollment.repository";
@@ -16,44 +16,30 @@ import { toast } from "sonner";
 import { 
   User, 
   BookOpen, 
-  Phone, 
   Calendar, 
   Pencil, 
   ArrowLeft,
   GraduationCap,
   Package,
   Users,
-  Briefcase,
-  FileText,
-  DollarSign,
   Info,
-  History
+  Infinity as InfinityIcon
 } from "lucide-react";
+import { RegistrationFeeCard } from "@/modules/enrollment/presentation/components/RegistrationFeeCard";
 
-function DetailItem({ icon: Icon, label, value, badge, variant = "rose" }: { icon: React.ElementType, label: string, value: string | null | undefined, badge?: boolean, variant?: "rose" | "blue" | "amber" | "emerald" | "indigo" | "slate" }) {
-  const variantClasses = {
-    rose: "bg-rose-50 text-rose-500",
-    blue: "bg-blue-50 text-blue-500",
-    amber: "bg-amber-50 text-amber-500",
-    emerald: "bg-emerald-50 text-emerald-500",
-    indigo: "bg-indigo-50 text-indigo-500",
-    slate: "bg-slate-50 text-slate-500"
-  };
-
+function DetailItem({ icon: Icon, label, value, badge }: { icon: React.ElementType, label: string, value: React.ReactNode, badge?: boolean }) {
   return (
-    <div className="flex items-start gap-3 py-2.5 border-b last:border-0 border-slate-50/80">
-      <div className={`mt-0.5 p-1.5 rounded-md shrink-0 ${variantClasses[variant]}`}>
-        <Icon className="size-3.5" />
+    <div className="flex items-start gap-3 py-3 border-b last:border-0">
+      <div className="mt-0.5 p-2 rounded-lg bg-secondary text-secondary-foreground shrink-0">
+        <Icon className="size-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">{label}</p>
+        <p className="text-xs text-muted-foreground font-medium mb-0.5">{label}</p>
         <div className="">
           {badge && value ? (
-            <Badge variant="secondary" className={`${variantClasses[variant].replace('text-', 'bg-').replace('500', '50/50')} ${variantClasses[variant]} border-none h-5 px-2 text-[10px] font-bold`}>
-              {value}
-            </Badge>
+            <Badge variant="outline" className="font-semibold">{value}</Badge>
           ) : (
-            <p className="text-slate-700 font-semibold text-sm leading-tight whitespace-pre-wrap">{value || "-"}</p>
+            <div className="text-sm font-semibold text-foreground">{value || "-"}</div>
           )}
         </div>
       </div>
@@ -112,7 +98,7 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="w-full space-y-6 animate-pulse">
         <div className="flex items-center gap-4 mb-8">
             <Skeleton className="h-9 w-9 rounded-full" />
             <div className="space-y-2">
@@ -120,9 +106,11 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
                 <Skeleton className="h-4 w-32" />
             </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Skeleton className="h-64 rounded-2xl" />
-          <Skeleton className="h-64 md:col-span-2 rounded-2xl" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Skeleton className="h-64 rounded-lg" />
+          <div className="lg:col-span-2 space-y-6">
+             <Skeleton className="h-64 rounded-lg" />
+          </div>
         </div>
       </div>
     );
@@ -145,28 +133,29 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
   };
 
   return (
-    <div className="w-full pb-10">
-      <div className="flex items-center gap-4 mb-8">
-        <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full h-9 w-9 text-slate-400 hover:text-rose-600">
-          <ArrowLeft className="size-4" />
-        </Button>
-        <div className="flex flex-col">
-          <h1 className="text-xl font-bold tracking-tight text-slate-800 leading-tight">
-            Pendaftaran: {enrollment.kode_enrollment || `#${enrollment.id}`}
-          </h1>
-          <div className="flex items-center gap-2 text-sm text-slate-400 mt-0.5">
-            <span className="font-medium text-rose-600 font-mono text-xs uppercase tracking-wider">{enrollment.kode_enrollment}</span> 
-            <span className="text-slate-200">|</span>
-            <Badge variant="outline" className={enrollment.status === "Aktif" ? "border-emerald-200 bg-emerald-50/30 text-emerald-600 h-4 px-1.5 text-[10px]" : "border-rose-100 bg-rose-50/30 text-rose-600 h-4 px-1.5 text-[10px]"}>
-              {enrollment.status}
-            </Badge>
+    <div className="w-full pb-10 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="icon" onClick={() => router.back()} className="h-9 w-9">
+            <ArrowLeft className="size-4" />
+          </Button>
+          <div className="flex flex-col">
+            <h1 className="text-2xl font-bold tracking-tight">Detail Enrollment</h1>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant="secondary" className="font-mono text-[10px] px-2 py-0 border">
+                 {enrollment.kode_enrollment || "N/A"}
+              </Badge>
+              <Badge variant={enrollment.status === "Aktif" ? "outline" : "secondary"} className={enrollment.status === "Aktif" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : ""}>
+                {enrollment.status}
+              </Badge>
+            </div>
           </div>
         </div>
-        <div className="ml-auto">
+        <div className="flex items-center gap-2">
           {canUpdate && (
-            <Button asChild className="rounded-full px-5 h-9 bg-rose-700 hover:bg-rose-800 shadow-sm shadow-rose-200">
+            <Button asChild>
               <Link href={`/dashboard/enrollment/${enrollment.id}/edit`}>
-                <Pencil className="mr-2 size-3.5" />
+                <Pencil className="mr-2 size-4" />
                 Edit Pendaftaran
               </Link>
             </Button>
@@ -174,59 +163,40 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* Left Column: Premium Profile Info */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column: Student & Cost Info */}
         <div className="lg:col-span-1 space-y-6">
-          <Card className="rounded-3xl border-none shadow-premium overflow-hidden ring-1 ring-slate-100 p-0">
-            <div className="h-24 bg-linear-to-br from-rose-700 via-rose-600 to-rose-500" />
-            <div className="px-6 pb-8 -mt-10 text-center relative z-10">
-              <div className="inline-flex p-1 bg-white rounded-2xl shadow-md mb-3 ring-4 ring-white/50">
-                <div className="size-16 bg-slate-50 rounded-xl flex items-center justify-center text-slate-300">
-                  <User className="size-8" />
-                </div>
-              </div>
-              <h2 className="text-xl font-bold text-slate-800 leading-tight mb-1">
-                {enrollment.murid?.nama_lengkap || "-"}
-              </h2>
-              <p className="text-xs text-slate-400 font-bold tracking-widest uppercase mb-6">
-                 {enrollment.murid?.kode_murid || "BELUM ADA KODE"}
-              </p>
-              
-              <div className="flex justify-center gap-1.5 mb-6">
-                <Badge variant="secondary" className="bg-rose-50 text-rose-700 h-6 px-3 text-[10px] rounded-full font-bold uppercase tracking-wider">
-                  {enrollment.status}
-                </Badge>
-                <Badge variant="secondary" className="bg-blue-50 text-blue-700 h-6 px-3 text-[10px] rounded-full font-bold uppercase tracking-wider">
-                  {enrollment.jenjang?.nama}
-                </Badge>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center text-center pb-6 border-b mb-4">
+                 <div className="size-16 bg-slate-50 rounded-xl flex items-center justify-center text-slate-300 mb-4 border">
+                    <User className="size-8" />
+                 </div>
+                 <h2 className="text-xl font-bold">{enrollment.murid?.nama_lengkap || "-"}</h2>
+                 <p className="text-sm text-muted-foreground mt-1 font-medium">
+                    {enrollment.murid?.kode_murid || "BELUM ADA KODE"}
+                 </p>
+                 <div className="flex gap-2 mt-4">
+                    <Button asChild variant="outline" size="sm" className="h-8 text-xs">
+                        <Link href={`/dashboard/murid/${enrollment.murid?.id || enrollment.murid_id}`}>
+                           Lihat Profil
+                        </Link>
+                    </Button>
+                 </div>
               </div>
 
-              <Button asChild variant="outline" size="sm" className="w-full text-[10px] h-9 rounded-xl border-slate-200 text-slate-600 font-bold uppercase tracking-wider hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200">
-                <Link href={`/dashboard/murid/${enrollment.murid?.id || enrollment.murid_id}`}>
-                   <User className="mr-2 size-3" />
-                   Lihat Profil Lengkap Siswa
-                </Link>
-              </Button>
-            </div>
-          </Card>
-
-          <Card className="rounded-2xl border-none shadow-premium ring-1 ring-slate-100 overflow-hidden py-0">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2.5 mb-5 px-1">
-                <div className="p-2 bg-emerald-50 rounded-xl">
-                   <DollarSign className="size-4 text-emerald-600" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest">Informasi Biaya</h3>
-                </div>
+              <div className="bg-primary/5 rounded-lg p-4 mb-4 border border-primary/10">
+                 <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mb-1">Total Biaya</p>
+                 <p className="text-2xl font-bold text-primary">{formatCurrency(enrollment.harga_final)}</p>
               </div>
-              <div className="space-y-1 px-1">
-                <div className="py-4 px-4 bg-emerald-500 rounded-2xl mb-4 text-white shadow-lg shadow-emerald-100">
-                   <p className="text-[10px] text-emerald-100 font-bold uppercase tracking-widest mb-1.5 opacity-80">Biaya Per Bulan</p>
-                   <p className="text-2xl font-black">{formatCurrency(enrollment.harga_final)}</p>
-                </div>
-                <DetailItem icon={Users} label="Kapasitas" value={`${enrollment.jumlah_siswa} Siswa`} variant="emerald" />
-                <DetailItem icon={Package} label="Tipe Paket" value={enrollment.paket?.nama} variant="emerald" />
+
+               {/* Registration Fee Info */}
+               <RegistrationFeeCard enrollment={enrollment} canUpdate={canUpdate} />
+
+
+              <div className="space-y-1">
+                 <DetailItem icon={Users} label="Kapasitas" value={`${enrollment.jumlah_siswa} Siswa`} />
+                 <DetailItem icon={Package} label="Tipe Paket" value={enrollment.paket?.nama} />
               </div>
             </CardContent>
           </Card>
@@ -234,63 +204,133 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
 
         {/* Right Column: Enrollment Info */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="rounded-2xl border-none shadow-premium ring-1 ring-slate-100 overflow-hidden py-0">
-                <CardContent className="p-6">
-                    <div className="flex items-center gap-2.5 mb-5 px-1">
-                        <div className="p-2 bg-blue-50 rounded-xl">
-                            <GraduationCap className="size-4 text-blue-600" />
-                        </div>
-                        <div>
-                          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest">Katalog Layanan</h3>
-                          <p className="text-[10px] text-slate-400 mt-0.5">Rincian materi dan tingkatan</p>
-                        </div>
-                    </div>
-                    <div className="space-y-0.5 px-1">
-                        <DetailItem icon={GraduationCap} label="Jenjang (Level)" value={enrollment.jenjang?.nama} variant="blue" />
-                        <DetailItem icon={BookOpen} label="Mata Pelajaran (Program)" value={enrollment.program?.nama} variant="blue" />
-                        <DetailItem icon={Package} label="Paket Belajar" value={enrollment.paket?.nama} variant="blue" />
+            <Card>
+                <CardHeader className="py-4 border-b">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                        <GraduationCap className="size-4" /> Katalog & Layanan
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4">
+                    <div className="space-y-1">
+                        <DetailItem icon={GraduationCap} label="Jenjang (Level)" value={enrollment.jenjang?.nama} />
+                        <DetailItem icon={BookOpen} label="Mata Pelajaran (Program)" value={enrollment.program?.nama} />
+                        <DetailItem 
+                            icon={Calendar} 
+                            label="Periode" 
+                            value={
+                                <div className="flex items-center gap-1.5">
+                                    <span>{enrollment.tanggal_mulai ? formatDate(enrollment.tanggal_mulai) : '-'}</span>
+                                    <span className="text-muted-foreground font-normal">s/d</span>
+                                    {enrollment.tanggal_selesai ? (
+                                        <span>{formatDate(enrollment.tanggal_selesai)}</span>
+                                    ) : (
+                                        <InfinityIcon className="size-3.5 text-muted-foreground" />
+                                    )}
+                                </div>
+                            } 
+                        />
                     </div>
                 </CardContent>
             </Card>
 
-            <Card className="rounded-2xl border-none shadow-premium ring-1 ring-slate-100 overflow-hidden py-0">
-                <CardContent className="p-6">
-                    <div className="flex items-center gap-2.5 mb-5 px-1">
-                        <div className="p-2 bg-amber-50 rounded-xl">
-                            <Calendar className="size-4 text-amber-600" />
-                        </div>
-                        <div>
-                          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest">Periode Belajar</h3>
-                          <p className="text-[10px] text-slate-400 mt-0.5">Timeline pelaksanaan bimbingan</p>
-                        </div>
-                    </div>
-                    <div className="space-y-0.5 px-1">
-                        <DetailItem icon={Calendar} label="Tanggal Mulai" value={formatDate(enrollment.tanggal_mulai)} variant="amber" />
-                        <DetailItem icon={History} label="Tanggal Selesai" value={formatDate(enrollment.tanggal_selesai)} variant="amber" />
-                        <DetailItem icon={Briefcase} label="Status Sekarang" value={enrollment.status} variant="amber" badge />
-                    </div>
+            <Card>
+                <CardHeader className="py-4 border-b">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                        <Info className="size-4" /> Metadata & Catatan
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-4">
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                         <DetailItem icon={User} label="Dibuat Oleh" value={enrollment.creator?.name || "Sistem"} />
+                         <DetailItem icon={Calendar} label="Waktu Pendaftaran" value={formatDate(enrollment.created_at)} />
+                      </div>
+                      <div className="space-y-1">
+                         <DetailItem icon={Calendar} label="Terakhir Diperbarui" value={formatDate(enrollment.updated_at)} />
+                      </div>
+                   </div>
+                   <div className="mt-4">
+                      <p className="text-xs text-muted-foreground font-medium mb-1.5">Catatan Tambahan</p>
+                      <div className="p-3 bg-slate-50 rounded-lg text-sm text-muted-foreground leading-relaxed italic border border-slate-100">
+                         {enrollment.catatan || "Tidak ada catatan tambahan untuk pendaftaran ini."}
+                      </div>
+                   </div>
                 </CardContent>
             </Card>
-          </div>
 
-          <Card className="rounded-2xl border-none shadow-premium ring-1 ring-slate-100 overflow-hidden py-0">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2.5 mb-5 px-1">
-                <div className="p-2 bg-slate-50 rounded-xl">
-                   <Info className="size-4 text-slate-600" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest">Catatan Tambahan</h3>
-                </div>
-              </div>
-              <div className="px-1 min-h-[60px]">
-                <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 italic text-slate-500 text-sm leading-relaxed">
-                   {enrollment.catatan || "Tidak ada catatan tambahan untuk pendaftaran ini."}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            {/* Class & Schedule Information */}
+            <Card>
+                <CardHeader className="py-4 border-b">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                        <Calendar className="size-4" /> Informasi Kelas & Jadwal
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4">
+                    {enrollment.kelas && enrollment.kelas.length > 0 ? (
+                        <div className="space-y-6">
+                            {enrollment.kelas.map((kls) => (
+                                <div key={kls.id} className="space-y-4 pb-4 last:pb-0 border-b last:border-0 border-dashed">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 rounded-lg bg-rose-50 text-rose-600 border border-rose-100">
+                                                <Users className="size-4" />
+                                            </div>
+                                            <div>
+                                                <Link href={`/dashboard/kelas/${kls.id}`} className="text-sm font-bold hover:underline">
+                                                    {kls.nama_kelas}
+                                                </Link>
+                                                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{kls.kode_kelas}</p>
+                                            </div>
+                                        </div>
+                                        <Badge variant="outline" className="text-[10px] uppercase">{kls.tipe_kelas}</Badge>
+                                    </div>
+
+                                    <div className="pl-11 space-y-3">
+                                        <p className="text-xs font-semibold text-muted-foreground">Jadwal Pertemuan:</p>
+                                        {kls.schedules && kls.schedules.length > 0 ? (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                {kls.schedules.map((sch) => (
+                                                    <div key={sch.id} className="p-3 rounded-lg border bg-slate-50/50 flex flex-col gap-1.5">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-xs font-bold">{sch.hari}</span>
+                                                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-white border border-slate-200 uppercase">{sch.mata_pelajaran}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 text-[11px] text-slate-600">
+                                                            <div className="flex items-center gap-1 font-mono">
+                                                                <Info className="size-3" />
+                                                                {sch.jam_mulai} - {sch.jam_selesai}
+                                                            </div>
+                                                            <span className="text-slate-300">|</span>
+                                                            <div className="flex items-center gap-1 truncate">
+                                                                <User className="size-3 shrink-0" />
+                                                                <span className="truncate">{sch.guru_pengajar?.user?.name || '-'}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs text-muted-foreground italic bg-slate-50 p-3 rounded-lg border border-dashed">
+                                                Belum ada jadwal yang diatur untuk kelas ini.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="py-8 text-center border-2 border-dashed rounded-lg bg-muted/20">
+                            <Info className="size-8 text-muted-foreground/30 mx-auto mb-3" />
+                            <p className="text-sm text-muted-foreground font-medium">Siswa belum dimasukkan ke kelas manapun.</p>
+                            <Button asChild variant="link" size="sm" className="mt-2 text-rose-600 h-auto p-0 font-bold">
+                                <Link href="/dashboard/kelas">
+                                    Kelola Kelas
+                                </Link>
+                            </Button>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
         </div>
       </div>
     </div>

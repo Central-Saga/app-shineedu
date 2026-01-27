@@ -4,6 +4,7 @@ import {
   post,
   put,
   del,
+  download,
   DEFAULT_META as SHARED_DEFAULT_META,
 } from "@/shared/infrastructure/api/httpClient";
 import { buildQuery } from "@/shared/lib/buildQuery"; // Helper for query building
@@ -15,7 +16,7 @@ export const DEFAULT_META = SHARED_DEFAULT_META;
 const BASE_URL = "enrollments"; // Assuming prefix is handled or I should check. Murid repo uses "murid". So "enrollments" seems correct relative to base.
 
 export const enrollmentRepository = {
-  getEnrollments: async (params: Record<string, any>): Promise<{ data: Enrollment[]; meta: PaginatedMeta }> => {
+  getEnrollments: async (params: Record<string, unknown>): Promise<{ data: Enrollment[]; meta: PaginatedMeta }> => {
     // buildQuery usually handles object -> string
     const qs = buildQuery(params);
     const res = await getResponse<Enrollment[]>(qs ? `${BASE_URL}?${qs}` : BASE_URL);
@@ -59,4 +60,15 @@ export const enrollmentRepository = {
     const data = await get<{ harga: number; id: number }>(`catalog/harga/lookup?${query}`);
     return { data };
   },
+
+  updateRegistrationFeeStatus: async (id: number | string, payload: { status: string; due_date?: string }) => {
+    // Note: Endpoint expects 'status' (mapped from 'biaya_pendaftaran_status' in backend? No, Backend controller expects 'status' based on my previous edit)
+    // Backend Code: $enrollment->biaya_pendaftaran_status = $request->status;
+    const res = await put(`${BASE_URL}/${id}/registration-fee-status`, payload);
+    return res;
+  },
+
+  exportEnrollments: async (format: string, params: Record<string, unknown>) => {
+    return await download(`${BASE_URL}/export`, { ...params, export: format });
+  }
 };

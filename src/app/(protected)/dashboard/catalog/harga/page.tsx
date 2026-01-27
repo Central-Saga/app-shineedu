@@ -14,9 +14,11 @@ import {
     deletePaketHarga,
     listProgram,
     listJenjang,
-    listPaket
+    listPaket,
+    exportPaketHarga
 } from "@/modules/catalog/infrastructure/catalog.repository";
 import { PaketHargaTable } from "@/modules/catalog/presentation/components/PaketHargaTable";
+import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
 import { StatsCard } from "@/shared/presentation/components/StatsCard";
 import { ConfirmDeleteDialog } from "@/shared/presentation/components/ConfirmDeleteDialog";
 import type { PaketHarga } from "@/modules/catalog/domain/entities";
@@ -174,6 +176,22 @@ export default function PaketHargaPage() {
     }
   };
 
+  const handleExport = async (format: string) => {
+    try {
+      await exportPaketHarga(format, {
+        q: debouncedQ,
+        status: status === "all" ? undefined : (status as any),
+        program_id: programId !== "all" ? Number(programId) : undefined,
+        jenjang_id: jenjangId !== "all" ? Number(jenjangId) : undefined,
+        paket_id: paketId !== "all" ? Number(paketId) : undefined,
+        sort_by: sortBy,
+        sort_dir: sortDir,
+      });
+    } catch (error: any) {
+      toast.error(error.message || "Gagal melakukan export");
+    }
+  };
+
   if (!allowed) return null;
 
   return (
@@ -182,14 +200,17 @@ export default function PaketHargaPage() {
         title="Daftar Harga Paket"
         description="Kelola harga paket berdasarkan program dan jenjang"
         actions={
-          canCreate && (
-            <Button asChild>
-              <Link href="/dashboard/catalog/harga/create">
-                <Plus className="mr-2 size-4" />
-                Tambah Harga
-              </Link>
-            </Button>
-          )
+          <div className="flex items-center gap-2">
+            <ExportDropdown onExport={handleExport} />
+            {canCreate && (
+              <Button asChild>
+                <Link href="/dashboard/catalog/harga/create">
+                  <Plus className="mr-2 size-4" />
+                  Tambah Harga
+                </Link>
+              </Button>
+            )}
+          </div>
         }
       />
 

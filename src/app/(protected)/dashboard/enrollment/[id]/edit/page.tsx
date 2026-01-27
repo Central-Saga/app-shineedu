@@ -27,9 +27,9 @@ export default function EditEnrollmentPage({ params }: { params: Promise<{ id: s
     setItems([
       { label: "Dashboard", href: "/dashboard" },
       { label: "Enrollment", href: "/dashboard/enrollment" },
-      { label: `Edit #${id}` },
+      { label: "Edit Pendaftaran" },
     ]);
-  }, [setItems, id]);
+  }, [setItems]);
 
   useEffect(() => {
     if (allowed && id) {

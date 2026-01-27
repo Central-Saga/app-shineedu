@@ -41,7 +41,7 @@ const schema = z.object({
   guru_pengajar_id: z.union([z.string(), z.number()]),
 });
 
-type FormValues = z.infer<typeof schema>;
+export type FormValues = z.infer<typeof schema>;
 
 interface JadwalKerjaFormProps {
   initialData?: JadwalKerja;
@@ -49,6 +49,8 @@ interface JadwalKerjaFormProps {
   onSubmit: (values: CreateJadwalKerjaPayload) => Promise<void>;
   onCancel: () => void;
   isSubmitting?: boolean;
+  prefilledValues?: Partial<FormValues>;
+  simplified?: boolean;
 }
 
 const HARI_OPTIONS = [
@@ -61,6 +63,8 @@ export function JadwalKerjaForm({
   onSubmit,
   onCancel,
   isSubmitting,
+  prefilledValues,
+  simplified = false,
 }: JadwalKerjaFormProps) {
   const {
     register,
@@ -86,6 +90,9 @@ export function JadwalKerjaForm({
       status: "Aktif",
       hari: "Senin",
       nomor_sesi: "1",
+      mata_pelajaran: prefilledValues?.mata_pelajaran || "",
+      ruangan_kelas: prefilledValues?.ruangan_kelas || "",
+      ...prefilledValues
     },
   });
 
@@ -101,6 +108,98 @@ export function JadwalKerjaForm({
       guru_pengajar_id: Number(data.guru_pengajar_id),
     });
   };
+
+  if (simplified) {
+      return (
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 {/* Left Column: Time & Day */}
+                 <div className="space-y-4">
+                     <div className="space-y-2">
+                        <Label>Hari</Label>
+                        <Select
+                          value={currentHari}
+                          onValueChange={(v) => setValue("hari", v)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {HARI_OPTIONS.map(h => (
+                              <SelectItem key={h} value={h}>{h}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.hari && <p className="text-destructive text-sm">{errors.hari.message}</p>}
+                     </div>
+
+                     <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Jam Mulai</Label>
+                            <Input type="time" {...register("jam_mulai")} />
+                            {errors.jam_mulai && <p className="text-destructive text-sm">{errors.jam_mulai.message}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Jam Selesai</Label>
+                            <Input type="time" {...register("jam_selesai")} />
+                            {errors.jam_selesai && <p className="text-destructive text-sm">{errors.jam_selesai.message}</p>}
+                        </div>
+                     </div>
+                 </div>
+
+                 {/* Right Column: Teacher, Room, Subject */}
+                 <div className="space-y-4">
+                     <div className="space-y-2">
+                        <Label>Guru Pengajar</Label>
+                        <Select
+                          value={String(currentGuru || "")}
+                          onValueChange={(v) => setValue("guru_pengajar_id", Number(v))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih pengajar" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {employees.map(e => (
+                              <SelectItem key={e.id} value={String(e.id)}>{e.user?.name || e.kode_karyawan}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.guru_pengajar_id && <p className="text-destructive text-sm">{errors.guru_pengajar_id.message}</p>}
+                     </div>
+
+                     <div className="space-y-2">
+                        <Label>Ruangan</Label>
+                        <Input {...register("ruangan_kelas")} placeholder="Contoh: Room A" />
+                         {errors.ruangan_kelas && <p className="text-destructive text-sm">{errors.ruangan_kelas.message}</p>}
+                     </div>
+                 </div>
+            </div>
+
+             {/* Footer with Subject Context */}
+             <div className="pt-4 border-t flex flex-col gap-2">
+                 <div className="text-xs text-muted-foreground">
+                    <span className="font-semibold">Mata Pelajaran:</span> {watch("mata_pelajaran") || "-"} &middot; <span className="font-semibold">Kategori:</span> {watch("kategori")} &middot; <span className="font-semibold">Tarif Default:</span> {watch("tarif") || 0}
+                 </div>
+                 {/* Hidden Fields for Validity */}
+                 <input type="hidden" {...register("kategori")} />
+                 <input type="hidden" {...register("mata_pelajaran")} />
+                 <input type="hidden" {...register("status")} />
+                 <input type="hidden" {...register("tarif")} />
+                 <input type="hidden" {...register("nomor_sesi")} />
+             </div>
+
+
+            <div className="flex justify-end gap-3">
+                <Button type="button" variant="ghost" onClick={onCancel}>
+                  Batal
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Menyimpan..." : "Simpan Jadwal"}
+                </Button>
+            </div>
+        </form>
+      );
+  }
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">

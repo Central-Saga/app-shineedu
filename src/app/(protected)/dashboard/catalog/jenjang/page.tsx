@@ -9,9 +9,10 @@ import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGua
 import { DataTableToolbar } from "@/shared/presentation/components/table/DataTableToolbar";
 import { DataTablePagination } from "@/shared/presentation/components/table/DataTablePagination";
 import { useAuthStore } from "@/modules/auth/infrastructure/auth.store";
-import { listJenjang } from "@/modules/catalog/infrastructure/catalog.repository";
+import { listJenjang, exportJenjang } from "@/modules/catalog/infrastructure/catalog.repository";
 import { deleteJenjang } from "@/modules/catalog/infrastructure/catalog.repository";
 import { JenjangTable } from "@/modules/catalog/presentation/components/JenjangTable";
+import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
 import { StatsCard } from "@/shared/presentation/components/StatsCard";
 import { ConfirmDeleteDialog } from "@/shared/presentation/components/ConfirmDeleteDialog";
 import type { Jenjang } from "@/modules/catalog/domain/entities";
@@ -149,6 +150,19 @@ export default function JenjangPage() {
     }
   };
 
+  const handleExport = async (format: string) => {
+    try {
+      await exportJenjang(format, {
+        q: debouncedQ,
+        status: status === "all" ? undefined : (status as any),
+        sort_by: sortBy,
+        sort_dir: sortDir,
+      });
+    } catch (error: any) {
+      toast.error(error.message || "Gagal melakukan export");
+    }
+  };
+
   if (!allowed) return null;
 
   return (
@@ -157,14 +171,17 @@ export default function JenjangPage() {
         title="Jenjang Pendidikan"
         description="Kelola data jenjang pendidikan (SD, SMP, SMA, dll)"
         actions={
-          canCreate && (
-            <Button asChild>
-              <Link href="/dashboard/catalog/jenjang/create">
-                <Plus className="mr-2 size-4" />
-                Tambah Jenjang
-              </Link>
-            </Button>
-          )
+          <div className="flex items-center gap-2">
+            <ExportDropdown onExport={handleExport} />
+            {canCreate && (
+              <Button asChild>
+                <Link href="/dashboard/catalog/jenjang/create">
+                  <Plus className="mr-2 size-4" />
+                  Tambah Jenjang
+                </Link>
+              </Button>
+            )}
+          </div>
         }
       />
 

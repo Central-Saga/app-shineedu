@@ -11,7 +11,8 @@ import {
   CalendarDays,
   ChevronRight,
   BookOpen,
-  ListChecks
+  ListChecks,
+  School,
 } from "lucide-react";
 import {
   Collapsible,
@@ -256,6 +257,16 @@ export function AppSidebar() {
                         <Link href="/dashboard/enrollment" className="py-1">
                           <ListChecks className="size-4 shrink-0" />
                           <span>Enrollment</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    )}
+                  {authStore.hasPermission("kelas.view") && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={pathname.startsWith("/dashboard/kelas")}>
+                        <Link href="/dashboard/kelas" className="py-1">
+                          <School className="size-4 shrink-0" />
+                          <span>Kelas</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>

@@ -14,6 +14,12 @@ export interface Enrollment {
   created_at: string;
   updated_at: string;
   
+  // Registration Fee
+  biaya_pendaftaran_amount: number;
+  biaya_pendaftaran_status: 'UNPAID' | 'PAID' | 'WAIVED';
+  biaya_pendaftaran_due_date: string | null;
+  registration_fee_transaction_id: number | null;
+  
   // Relations (optional/loaded)
   murid?: {
     id: number;
@@ -37,6 +43,7 @@ export interface Enrollment {
     id: number;
     name: string;
   };
+  kelas?: import("@/modules/academic/domain/types").Kelas[];
 }
 
 export interface CreateEnrollmentRequest {
@@ -58,6 +65,9 @@ export interface CreateEnrollmentRequest {
   jumlah_siswa: number;
   tanggal_mulai?: string;
   catatan?: string;
+  biaya_pendaftaran_amount?: number;
+  biaya_pendaftaran_status?: string;
+  biaya_pendaftaran_due_date?: string;
 }
 
 export interface UpdateEnrollmentRequest {
@@ -65,6 +75,9 @@ export interface UpdateEnrollmentRequest {
   tanggal_selesai?: string;
   status?: string;
   catatan?: string;
+  biaya_pendaftaran_amount?: number;
+  biaya_pendaftaran_status?: string;
+  biaya_pendaftaran_due_date?: string;
 }
 
 export interface PricePreviewRequest {
