@@ -53,6 +53,7 @@ export interface LogbookSesi {
   materi?: string | null;
   homework?: string | null;
   catatan_pengajar?: string | null;
+  session?: Sesi;
 }
 
 export interface LogbookMuridItem {
@@ -66,6 +67,7 @@ export interface LogbookMuridItem {
   nilai_opsional?: number | null;
   
   enrollment?: Enrollment;
+  session?: Sesi;
   murid?: {
     id: number;
     nama_lengkap: string;

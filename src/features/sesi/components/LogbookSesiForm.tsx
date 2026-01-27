@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -17,7 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { logbookSesiSchema } from "@/features/sesi/schemas";
 import { sesiApi } from "@/features/sesi/api/sesi.api";
 import { LogbookSesi, Sesi } from "@/features/sesi/types";
@@ -26,9 +26,10 @@ interface LogbookSesiFormProps {
   sesi: Sesi;
   logbook: LogbookSesi;
   canEdit: boolean;
+  onSuccess?: () => void;
 }
 
-export function LogbookSesiForm({ sesi, logbook, canEdit }: LogbookSesiFormProps) {
+export function LogbookSesiForm({ sesi, logbook, canEdit, onSuccess }: LogbookSesiFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -42,15 +43,30 @@ export function LogbookSesiForm({ sesi, logbook, canEdit }: LogbookSesiFormProps
     },
   });
 
+  // Reset form when logbook data from API changes
+  useEffect(() => {
+    form.reset({
+      ringkasan: logbook.ringkasan || "",
+      materi: logbook.materi || "",
+      homework: logbook.homework || "",
+      catatan_pengajar: logbook.catatan_pengajar || "",
+    } as Parameters<typeof form.reset>[0]);
+  }, [logbook, form]);
+
   async function onSubmit(values: z.infer<typeof logbookSesiSchema>) {
     if (!canEdit) return;
     try {
       setIsSubmitting(true);
-      await sesiApi.updateLogbook(sesi.id, values);
+      await sesiApi.updateLogbook(sesi.id, { ...values, sesi_id: sesi.id });
       toast.success("Logbook berhasil disimpan");
-      router.refresh();
-    } catch (error: any) {
-      toast.error(error.message || "Gagal menyimpan logbook");
+      if (onSuccess) {
+          onSuccess();
+      } else {
+          router.refresh();
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Gagal menyimpan logbook";
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -59,83 +75,88 @@ export function LogbookSesiForm({ sesi, logbook, canEdit }: LogbookSesiFormProps
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-                control={form.control}
-                name="ringkasan"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Ringkasan Kegiatan</FormLabel>
-                        <FormControl>
-                            <Textarea 
-                                {...field} 
-                                value={field.value || ""} 
-                                disabled={!canEdit} 
-                                className="min-h-[120px]"
-                                placeholder="Jelaskan ringkasan kegiatan belajar mengajar..." 
-                            />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-             <FormField
-                control={form.control}
-                name="materi"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Materi yang Disampaikan</FormLabel>
-                        <FormControl>
-                            <Textarea 
-                                {...field} 
-                                value={field.value || ""} 
-                                disabled={!canEdit} 
-                                className="min-h-[120px]"
-                                placeholder="Detail materi..." 
-                            />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-             <FormField
-                control={form.control}
-                name="homework"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Pekerjaan Rumah (PR)</FormLabel>
-                        <FormControl>
-                            <Textarea 
-                                {...field} 
-                                value={field.value || ""} 
-                                disabled={!canEdit} 
-                                className="min-h-[100px]"
-                                placeholder="Daftar PR..." 
-                            />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-             <FormField
-                control={form.control}
-                name="catatan_pengajar"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Catatan Pengajar (Internal)</FormLabel>
-                        <FormControl>
-                            <Textarea 
-                                {...field} 
-                                value={field.value || ""} 
-                                disabled={!canEdit} 
-                                className="min-h-[100px]"
-                                placeholder="Catatan internal pengajar..." 
-                            />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
+        <div className="grid grid-cols-1 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-2">
+                <FormField
+                    control={form.control}
+                    name="ringkasan"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                            <FormLabel className="text-sm font-bold text-slate-700">Ringkasan Kegiatan</FormLabel>
+                            <FormControl>
+                                <RichTextEditor 
+                                    value={field.value || ""} 
+                                    onChange={field.onChange}
+                                    placeholder="Jelaskan ringkasan kegiatan belajar mengajar..." 
+                                    disabled={!canEdit}
+                                    className="min-h-[180px]"
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="materi"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                            <FormLabel className="text-sm font-bold text-slate-700">Materi yang Disampaikan</FormLabel>
+                            <FormControl>
+                                <RichTextEditor 
+                                    value={field.value || ""} 
+                                    onChange={field.onChange}
+                                    placeholder="Detail materi yang diajarkan hari ini..." 
+                                    disabled={!canEdit}
+                                    className="min-h-[180px]"
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <FormField
+                    control={form.control}
+                    name="homework"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                            <FormLabel className="text-sm font-bold text-slate-700">Pekerjaan Rumah (PR)</FormLabel>
+                            <FormControl>
+                                <RichTextEditor 
+                                    value={field.value || ""} 
+                                    onChange={field.onChange}
+                                    placeholder="Daftar PR untuk murid..." 
+                                    disabled={!canEdit}
+                                    className="min-h-[180px]"
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="catatan_pengajar"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                            <FormLabel className="text-sm font-bold text-slate-700">Catatan Pengajar (Internal)</FormLabel>
+                            <FormControl>
+                                <RichTextEditor 
+                                    value={field.value || ""} 
+                                    onChange={field.onChange}
+                                    placeholder="Catatan rahasia atau internal untuk evaluasi..." 
+                                    disabled={!canEdit}
+                                    className="min-h-[180px]"
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
         </div>
 
         {canEdit && (

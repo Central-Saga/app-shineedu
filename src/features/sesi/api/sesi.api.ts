@@ -16,7 +16,7 @@ const BASE_URL = "sesi"; // Adjust if needed relative to /api/v2
 
 export const sesiApi = {
     // List Sesi for a Class
-    getSesiByKelas: async (kelasId: number, params: Record<string, any>): Promise<{ data: Sesi[]; meta: PaginatedMeta }> => {
+    getSesiByKelas: async (kelasId: number, params: Record<string, string | number | boolean | undefined>): Promise<{ data: Sesi[]; meta: PaginatedMeta }> => {
         const qs = buildQuery(params);
         // Endpoint structure: /api/v2/kelas/{kelas_id}/sesi
         // Or /api/v2/sesi?kelas_id={id}
@@ -63,7 +63,7 @@ export const sesiApi = {
     getLogbook: async (sesiId: number): Promise<LogbookSesi> => {
        try {
            return await get<LogbookSesi>(`${BASE_URL}/${sesiId}/logbook`);
-       } catch (e) {
+       } catch {
            // If 404/null, return empty object
            return { sesi_id: sesiId }; 
        }
@@ -81,5 +81,15 @@ export const sesiApi = {
 
     updateLogbookMuridBulk: async (sesiId: number, payload: BulkLogbookMuridRequest) => {
         return await put(`${BASE_URL}/${sesiId}/logbook-murid/bulk`, payload);
+    },
+
+    getLogbooksByMurid: async (muridId: number): Promise<LogbookMuridItem[]> => {
+        const res = await getResponse<LogbookMuridItem[]>(`murid/${muridId}/logbook`);
+        return res.data || [];
+    },
+
+    getLogbooksByKelas: async (kelasId: number): Promise<LogbookSesi[]> => {
+        const res = await getResponse<LogbookSesi[]>(`kelas/${kelasId}/logbook`);
+        return res.data || [];
     },
 };

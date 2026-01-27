@@ -16,25 +16,42 @@ interface AccordionContextValue {
 
 const AccordionContext = React.createContext<AccordionContextValue>({});
 
+interface AccordionItemContextValue {
+  isOpen: boolean;
+  value: string;
+}
+
+const AccordionItemContext = React.createContext<AccordionItemContextValue>({
+  isOpen: false,
+  value: "",
+});
+
 export function Accordion({
   children,
   className,
   defaultValue,
   value,
   onValueChange,
+  type = "single",
+  collapsible = false,
 }: {
   children: React.ReactNode;
   className?: string;
   defaultValue?: string;
   value?: string;
   onValueChange?: (value: string) => void;
+  type?: "single" | "multiple";
+  collapsible?: boolean;
 }) {
   const [internalValue, setInternalValue] = React.useState(defaultValue || "");
   
   const currentValue = value !== undefined ? value : internalValue;
   const handleChange = (val: string) => {
-    if (onValueChange) onValueChange(val);
-    setInternalValue(val);
+    // Basic single/collapsible logic
+    const newValue = collapsible && currentValue === val ? "" : val;
+    
+    if (onValueChange) onValueChange(newValue);
+    setInternalValue(newValue);
   };
 
   return (
@@ -43,6 +60,7 @@ export function Accordion({
     </AccordionContext.Provider>
   );
 }
+
 
 export function AccordionItem({
   value,
@@ -57,30 +75,27 @@ export function AccordionItem({
   const isOpen = context.value === value;
 
   return (
-    <div
-      className={cn(
-        "rounded-2xl border bg-card text-card-foreground shadow-sm transition-all",
-        isOpen ? "ring-1 ring-blue-500/20" : "hover:bg-slate-50/50",
-        className
-      )}
-    >
-      {React.Children.map(children, (child) => {
-        if (React.isValidElement(child)) {
-          // Pass isOpen and value to children
-          return React.cloneElement(child as React.ReactElement<any>, { isOpen, value });
-        }
-        return child;
-      })}
-    </div>
+    <AccordionItemContext.Provider value={{ isOpen, value }}>
+      <div
+        className={cn(
+          "rounded-2xl border bg-card text-card-foreground shadow-sm transition-all",
+          isOpen ? "ring-1 ring-blue-500/20" : "hover:bg-slate-50/50",
+          className
+        )}
+      >
+        {children}
+      </div>
+    </AccordionItemContext.Provider>
   );
 }
 
 export function AccordionTrigger({
   children,
   className,
-  isOpen,
-  value,
   description,
+  // These are kept for backward compatibility if any, but now use Context
+  isOpen: propsIsOpen,
+  value: propsValue,
 }: {
   children: React.ReactNode;
   className?: string;
@@ -89,13 +104,17 @@ export function AccordionTrigger({
   description?: string;
 }) {
   const context = React.useContext(AccordionContext);
+  const itemContext = React.useContext(AccordionItemContext);
+  
+  const value = propsValue || itemContext.value;
+  const isOpen = propsIsOpen !== undefined ? propsIsOpen : itemContext.isOpen;
 
   return (
     <button
       type="button"
       onClick={() => context.onValueChange?.(context.value === value ? "" : (value || ""))}
       className={cn(
-        "flex w-full items-center justify-between px-6 py-4 text-left font-medium transition-all",
+        "flex w-full items-center justify-between px-6 py-4 text-left font-medium transition-all focus:outline-none",
         className
       )}
     >
@@ -116,12 +135,15 @@ export function AccordionTrigger({
 export function AccordionContent({
   children,
   className,
-  isOpen,
+  isOpen: propsIsOpen,
 }: {
   children: React.ReactNode;
   className?: string;
   isOpen?: boolean;
 }) {
+  const itemContext = React.useContext(AccordionItemContext);
+  const isOpen = propsIsOpen !== undefined ? propsIsOpen : itemContext.isOpen;
+
   if (!isOpen) return null;
 
   return (
@@ -130,3 +152,4 @@ export function AccordionContent({
     </div>
   );
 }
+

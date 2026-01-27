@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import { SesiList } from "@/features/sesi/components/SesiList";
+import { SesiLogbookSummaryList } from "@/features/sesi/components/SesiLogbookSummaryList";
 import { JadwalKelasTab } from "./JadwalKelasTab";
 
 interface DetailKelasClientProps {
@@ -60,6 +61,7 @@ export function DetailKelasClient({ kelas }: DetailKelasClientProps) {
                 <TabsTrigger value="anggota">Daftar Anggota</TabsTrigger>
                 <TabsTrigger value="jadwal">Jadwal</TabsTrigger>
                 {canViewSesi && <TabsTrigger value="sesi">Sesi Pertemuan</TabsTrigger>}
+                {canViewSesi && <TabsTrigger value="logbook">Logbook Summary</TabsTrigger>}
             </TabsList>
 
             <TabsContent value="anggota">
@@ -94,11 +96,13 @@ export function DetailKelasClient({ kelas }: DetailKelasClientProps) {
             
             {canViewSesi && (
                 <TabsContent value="sesi">
-                    <Card>
-                        <CardContent className="pt-6">
-                            <SesiList kelasId={kelas.id} />
-                        </CardContent>
-                    </Card>
+                    <SesiList kelasId={kelas.id} />
+                </TabsContent>
+            )}
+
+            {canViewSesi && (
+                <TabsContent value="logbook">
+                    <SesiLogbookSummaryList kelasId={kelas.id} />
                 </TabsContent>
             )}
         </Tabs>

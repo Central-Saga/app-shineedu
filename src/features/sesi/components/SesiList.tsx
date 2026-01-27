@@ -6,7 +6,7 @@ import { sesiApi } from "../api/sesi.api";
 import { Sesi } from "../types";
 import { getSesiColumns } from "./SesiTableColumns";
 import { SesiListFilters } from "./SesiListFilters";
-import { GenerateSesiDialog } from "./GenerateSesiDialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // import { DataTable } from "@/components/ui/data-table"; // Check if this exists, or use manual table
 import { 
   Table, 
@@ -69,106 +69,101 @@ export function SesiList({ kelasId }: SesiListProps) {
   });
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-         <h3 className="text-lg font-medium">Daftar Sesi</h3>
-         <GenerateSesiDialog kelasId={kelasId} onSuccess={fetchData} />
-      </div>
-
-      <SesiListFilters />
-
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-                 <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center">
-                        <Skeleton className="h-full w-full" />
-                    </TableCell>
-                </TableRow>
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  Tidak ada sesi ditemukan.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {meta && (
-        <div className="flex items-center justify-end space-x-2 py-4">
-             <div className="space-x-2">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                        const params = new URLSearchParams(searchParams.toString());
-                        params.set("page", String((meta.current_page || 1) - 1));
-                        // router.push not available directly here? use Link or window or parent
-                        // Better use Link for pagination or router from hook
-                    }}
-                    disabled={(meta.current_page || 1) <= 1}
-                    asChild
-                >
-                     <a href={`?${new URLSearchParams({...Object.fromEntries(searchParams.entries()), page: String((meta.current_page || 1) - 1) }).toString()}`}>
-                        Previous
-                     </a>
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                        // same
-                    }}
-                    disabled={(meta.current_page || 1) >= (meta.last_page || 1)}
-                    asChild
-                >
-                    <a href={`?${new URLSearchParams({...Object.fromEntries(searchParams.entries()), page: String((meta.current_page || 1) + 1) }).toString()}`}>
-                        Next
-                    </a>
-                </Button>
-             </div>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between border-b py-4">
+        <div>
+            <CardTitle className="text-lg font-bold">Daftar Sesi</CardTitle>
+            <p className="text-sm text-muted-foreground mt-0.5">Realisasi pertemuan dan absensi kelas ini</p>
         </div>
-      )}
-    </div>
+      </CardHeader>
+      
+      <CardContent className="pt-6 space-y-4">
+        <SesiListFilters />
+
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                  <TableRow>
+                      <TableCell colSpan={columns.length} className="h-24 text-center">
+                          <Skeleton className="h-full w-full" />
+                      </TableCell>
+                  </TableRow>
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    Tidak ada sesi ditemukan.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {meta && (
+          <div className="flex items-center justify-end space-x-2 py-4">
+               <div className="space-x-2">
+                  <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={(meta.current_page || 1) <= 1}
+                      asChild
+                  >
+                       <a href={`?${new URLSearchParams({...Object.fromEntries(searchParams.entries()), page: String((meta.current_page || 1) - 1) }).toString()}`}>
+                          Previous
+                       </a>
+                  </Button>
+                  <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={(meta.current_page || 1) >= (meta.last_page || 1)}
+                      asChild
+                  >
+                      <a href={`?${new URLSearchParams({...Object.fromEntries(searchParams.entries()), page: String((meta.current_page || 1) + 1) }).toString()}`}>
+                          Next
+                      </a>
+                  </Button>
+               </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Loader2, Save, Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 
@@ -23,12 +24,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { bulkAbsensiSchema } from "@/features/sesi/schemas";
 import { sesiApi } from "@/features/sesi/api/sesi.api";
 import { AbsensiItem, Sesi } from "@/features/sesi/types";
+import { SearchEnrollmentDialog } from "./SearchEnrollmentDialog";
+import { Enrollment } from "@/modules/enrollment/domain/entities";
+import { cn } from "@/lib/utils";
 
 interface AbsensiEditorProps {
   sesi: Sesi;
@@ -39,28 +43,52 @@ interface AbsensiEditorProps {
 
 type BulkAbsensiFormValues = z.infer<typeof bulkAbsensiSchema>;
 
-export function AbsensiEditor({ sesi, absensi, canEdit, onSuccess }: AbsensiEditorProps) {
+export function AbsensiEditor({ 
+  sesi, 
+  absensi = [], 
+  canEdit, 
+  onSuccess 
+}: AbsensiEditorProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [futureSessions, setFutureSessions] = useState<Sesi[]>([]);
+  // Local state to keep track of students added manually
+  const [manualParticipants, setManualParticipants] = useState<AbsensiItem[]>([]);
 
-  const form = useForm<BulkAbsensiFormValues>({
-    resolver: zodResolver(bulkAbsensiSchema),
-    defaultValues: {
-      items: absensi.map(a => ({
+  const getFormItems = useCallback(() => {
+    return [
+      ...(absensi || []).map(a => ({
           enrollment_id: a.enrollment_id,
-          status: a.status,
+          status: a.status as any,
+          catatan: a.catatan || "",
+          target_session_id: undefined
+      })),
+      ...(manualParticipants || []).map(a => ({
+          enrollment_id: a.enrollment_id,
+          status: a.status as any,
           catatan: a.catatan || "",
           target_session_id: undefined
       }))
+    ];
+  }, [absensi, manualParticipants]);
+
+  const form = useForm<BulkAbsensiFormValues>({
+    resolver: zodResolver(bulkAbsensiSchema) as any,
+    defaultValues: {
+      items: getFormItems()
     },
+  });
+
+  const { fields } = useFieldArray({
+    control: form.control,
+    name: "items",
   });
 
   // Load future sessions for "Ganti Jadwal" lookup
   useEffect(() => {
     const loadFutureSessions = async () => {
         try {
-            const res = await sesiApi.getSesiByKelas(sesi.kelas_id, {
+            const res = await sesiApi.getSesiByKelas(sesi.id, { // sesi.id is actually Realisasi ID
                 from: format(new Date(), "yyyy-MM-dd"),
                 per_page: 50
             });
@@ -70,25 +98,37 @@ export function AbsensiEditor({ sesi, absensi, canEdit, onSuccess }: AbsensiEdit
             console.error("Gagal memuat jadwal masa depan", error);
         }
     };
-    if (canEdit) loadFutureSessions();
-  }, [sesi.id, sesi.kelas_id, canEdit]);
+    if (canEdit && sesi.id) loadFutureSessions();
+  }, [sesi.id, canEdit]);
 
-  // Watch for changes in absensi prop and reset form
+  // Watch for changes and reset form
   useEffect(() => {
     form.reset({
-      items: absensi.map(a => ({
-          enrollment_id: a.enrollment_id,
-          status: a.status,
-          catatan: a.catatan || "",
-          target_session_id: undefined
-      }))
+      items: getFormItems()
     });
-  }, [absensi, form]);
+  }, [getFormItems, form]);
 
-  const { fields } = useFieldArray({
-    control: form.control,
-    name: "items",
-  });
+  const handleAddManualStudent = (enrollment: Enrollment) => {
+    // Prevent duplicates
+    if (form.getValues("items").some(item => item.enrollment_id === enrollment.id)) {
+        toast.error("Murid sudah ada dalam daftar");
+        return;
+    }
+
+    const newItem: AbsensiItem = {
+        sesi_id: sesi.id, 
+        enrollment_id: enrollment.id,
+        status: "HADIR",
+        catatan: "[Murid Pindahan]",
+        enrollment: {
+            ...enrollment as any,
+            murid: enrollment.murid
+        }
+    };
+
+    setManualParticipants(prev => [...prev, newItem]);
+    toast.success(`${enrollment.murid?.nama_lengkap} ditambahkan`);
+  };
 
   async function onSubmit(values: BulkAbsensiFormValues) {
     if (!canEdit) return;
@@ -96,6 +136,7 @@ export function AbsensiEditor({ sesi, absensi, canEdit, onSuccess }: AbsensiEdit
       setIsSubmitting(true);
       await sesiApi.updateAbsensiBulk(sesi.id, values);
       toast.success("Absensi berhasil disimpan");
+      setManualParticipants([]); // Reset local state
       if (onSuccess) {
           onSuccess();
       } else {
@@ -111,12 +152,21 @@ export function AbsensiEditor({ sesi, absensi, canEdit, onSuccess }: AbsensiEdit
   return (
     <div className="space-y-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h3 className="text-lg font-semibold tracking-tight">Daftar Kehadiran Murid</h3>
+            <div className="flex flex-col">
+                <h3 className="text-lg font-semibold tracking-tight">Daftar Kehadiran Murid</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Total: {fields.length} Murid</p>
+            </div>
             {canEdit && (
-                <Button onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting} size="sm">
-                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Simpan Absensi
-                </Button>
+                <div className="flex items-center gap-2">
+                    <SearchEnrollmentDialog 
+                        onSelect={handleAddManualStudent} 
+                        excludeIds={fields.map(f => f.enrollment_id)}
+                    />
+                    <Button onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting} size="sm">
+                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        Simpan Absensi
+                    </Button>
+                </div>
             )}
         </div>
 
@@ -124,7 +174,7 @@ export function AbsensiEditor({ sesi, absensi, canEdit, onSuccess }: AbsensiEdit
             <Form {...form}>
                 <Table>
                     <TableHeader className="bg-muted/50">
-                        <TableRow>
+                        <TableRow className="hover:bg-transparent">
                             <TableHead className="py-3 px-4 font-bold text-foreground">Nama Murid</TableHead>
                             <TableHead className="w-[180px] font-bold text-foreground">Status Kehadiran</TableHead>
                             <TableHead className="font-bold text-foreground">Catatan / Pindah Jadwal</TableHead>
@@ -132,7 +182,8 @@ export function AbsensiEditor({ sesi, absensi, canEdit, onSuccess }: AbsensiEdit
                     </TableHeader>
                     <TableBody>
                         {fields.map((field, index) => {
-                             const originalItem = absensi.find(a => a.enrollment_id === field.enrollment_id);
+                             const allParticipants = [...(absensi || []), ...(manualParticipants || [])];
+                             const originalItem = allParticipants.find(a => a.enrollment_id === field.enrollment_id);
                              const memberName = originalItem?.murid?.nama_lengkap || originalItem?.enrollment?.murid?.nama_lengkap || `Murid #${field.enrollment_id}`;
                              const currentStatus = form.watch(`items.${index}.status`);
                              
@@ -145,34 +196,48 @@ export function AbsensiEditor({ sesi, absensi, canEdit, onSuccess }: AbsensiEdit
                                         <FormField
                                             control={form.control}
                                             name={`items.${index}.status`}
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!canEdit}>
+                                            render={({ field: statusField }) => {
+                                                const isPindahan = originalItem?.catatan?.includes("[Murid Pindahan]") || originalItem?.catatan?.includes("[Make-up]");
+
+                                                if (isPindahan) {
+                                                    return (
+                                                        <div className="flex items-center gap-2">
+                                                            <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-50">Hadir</Badge>
+                                                        </div>
+                                                    );
+                                                }
+
+                                                const isChecked = statusField.value === "HADIR";
+
+                                                return (
+                                                    <FormItem className="flex items-center gap-3 space-y-0">
                                                         <FormControl>
-                                                            <SelectTrigger className="h-9 focus:ring-1 focus:ring-primary">
-                                                                <SelectValue />
-                                                            </SelectTrigger>
+                                                            <Switch 
+                                                                checked={isChecked} 
+                                                                onCheckedChange={(checked) => {
+                                                                    statusField.onChange(checked ? "HADIR" : "BATAL");
+                                                                }} 
+                                                                disabled={!canEdit}
+                                                            />
                                                         </FormControl>
-                                                        <SelectContent>
-                                                            <SelectItem value="HADIR">Hadir</SelectItem>
-                                                            <SelectItem value="BATAL">Tidak Hadir</SelectItem>
-                                                            <SelectItem value="IZIN">Izin</SelectItem>
-                                                            <SelectItem value="SAKIT">Sakit</SelectItem>
-                                                            <SelectItem value="ALPHA">Alpha</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </FormItem>
-                                            )}
+                                                        <span className={cn(
+                                                            "text-sm font-medium transition-colors",
+                                                            isChecked ? "text-emerald-600" : "text-muted-foreground"
+                                                        )}>
+                                                            {isChecked ? "Hadir" : "Tidak Hadir"}
+                                                        </span>
+                                                    </FormItem>
+                                                );
+                                            }}
                                         />
                                     </TableCell>
                                     <TableCell className="px-4">
                                         {currentStatus === "BATAL" ? (
                                              <div className="space-y-2 min-w-[280px] animate-in fade-in duration-300">
-                                                 {/* Tampilkan keterangan jika sudah pernah dipindahkan sebelumnya */}
-                                                 {field.catatan?.includes("[Pindah ke") && !form.watch(`items.${index}.target_session_id`) && (
+                                                 {originalItem?.catatan?.includes("[Pindah ke") && !form.watch(`items.${index}.target_session_id`) && (
                                                      <div className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-100 rounded-md text-blue-700 text-xs font-medium mb-1">
                                                          <Clock className="h-3 w-3" />
-                                                         <span>Terjadwal: {field.catatan.replace(/[\[\]]/g, "")}</span>
+                                                         <span>Terjadwal: {originalItem.catatan.replace(/[\[\]]/g, "")}</span>
                                                      </div>
                                                  )}
 
@@ -181,55 +246,56 @@ export function AbsensiEditor({ sesi, absensi, canEdit, onSuccess }: AbsensiEdit
                                                     name={`items.${index}.target_session_id`}
                                                     render={({ field: sessionField }) => (
                                                         <FormItem>
-                                                            <Select 
-                                                                onValueChange={(val) => sessionField.onChange(val ? Number(val) : undefined)} 
-                                                                value={sessionField.value ? String(sessionField.value) : undefined} 
-                                                                disabled={!canEdit}
-                                                            >
-                                                                <FormControl>
-                                                                    <SelectTrigger className="w-full bg-white border-dashed border-blue-300 text-muted-foreground h-9">
-                                                                        <SelectValue placeholder={field.catatan?.includes("[Pindah ke") ? "Ubah Jadwal Pengganti..." : "Pilih Jadwal Pengganti..."} />
-                                                                    </SelectTrigger>
-                                                                </FormControl>
-                                                                <SelectContent className="max-h-[300px]">
-                                                                    {futureSessions.map((s) => (
-                                                                        <SelectItem key={s.id} value={String(s.id)}>
-                                                                            <div className="flex flex-col text-left py-0.5 pointer-events-none">
-                                                                                <span className="font-bold text-xs">
-                                                                                    {format(new Date(s.tanggal), "eeee, dd/MM/yy")}
-                                                                                </span>
-                                                                                <span className="text-[10px] text-muted-foreground leading-none mt-1">
-                                                                                    {s.jam_mulai_plan.slice(0,5)} - {s.jam_selesai_plan.slice(0,5)} • {s.guru_pengajar?.user?.name || "Guru"}
-                                                                                </span>
+                                                            <div className="flex flex-col gap-1.5">
+                                                                <span className="text-[10px] font-bold text-blue-700 uppercase tracking-tight">Pindah ke Sesi Lain:</span>
+                                                                <Select 
+                                                                    onValueChange={(val) => sessionField.onChange(val ? Number(val) : undefined)} 
+                                                                    value={sessionField.value ? String(sessionField.value) : undefined} 
+                                                                    disabled={!canEdit}
+                                                                >
+                                                                    <FormControl>
+                                                                        <SelectTrigger className="w-full bg-white border-dashed border-blue-300 text-muted-foreground h-9 shadow-none">
+                                                                            <SelectValue placeholder={originalItem?.catatan?.includes("[Pindah ke") ? "Ubah Jadwal Pengganti..." : "Pilih Jadwal Pengganti..."} />
+                                                                        </SelectTrigger>
+                                                                    </FormControl>
+                                                                    <SelectContent className="max-h-[300px]">
+                                                                        {futureSessions.map((s) => (
+                                                                            <SelectItem key={s.id} value={String(s.id)}>
+                                                                                <div className="flex flex-col text-left py-0.5 pointer-events-none">
+                                                                                    <span className="font-bold text-xs">
+                                                                                        {format(new Date(s.tanggal), "eeee, dd/MM/yy", { locale: idLocale })}
+                                                                                    </span>
+                                                                                    <span className="text-[10px] text-muted-foreground leading-none mt-1">
+                                                                                        {s.jam_mulai_plan.slice(0,5)} - {s.jam_selesai_plan.slice(0,5)} • {s.guru_pengajar?.user?.name || "Guru"}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                        {futureSessions.length === 0 && (
+                                                                            <div className="p-3 text-xs italic text-muted-foreground text-center">
+                                                                                Tidak ada jadwal masa depan yang tersedia.
                                                                             </div>
-                                                                        </SelectItem>
-                                                                    ))}
-                                                                    {futureSessions.length === 0 && (
-                                                                        <div className="p-3 text-xs italic text-muted-foreground text-center">
-                                                                            Tidak ada jadwal masa depan yang tersedia.
-                                                                        </div>
-                                                                    )}
-                                                                </SelectContent>
-                                                            </Select>
+                                                                        )}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                <p className="text-[10px] text-blue-600 font-medium pl-1 italic">
+                                                                    * Jadwal pengganti akan otomatis dibuat saat Simpan.
+                                                                </p>
+                                                            </div>
                                                         </FormItem>
                                                     )}
                                                 />
-                                                <p className="text-[10px] text-blue-600 font-medium pl-1">
-                                                    * Jadwal pengganti akan otomatis dibuat saat Anda klik Simpan.
-                                                </p>
                                              </div>
                                         ) : (
-                                            <FormField
-                                                control={form.control}
-                                                name={`items.${index}.catatan`}
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormControl>
-                                                            <Input {...field} value={field.value || ""} disabled={!canEdit} placeholder="Catatan (opsional)..." className="h-9" />
-                                                        </FormControl>
-                                                    </FormItem>
+                                            <div className="flex items-center h-9">
+                                                {originalItem?.catatan ? (
+                                                     <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200 font-normal">
+                                                        {originalItem.catatan}
+                                                     </Badge>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground italic">Tidak ada catatan</span>
                                                 )}
-                                            />
+                                            </div>
                                         )}
                                     </TableCell>
                                 </TableRow>

@@ -27,10 +27,14 @@ import {
   Users,
   School,
   IdCard,
-  Info
+  Info,
+  BookOpen
 } from "lucide-react";
 
-function DetailItem({ icon: Icon, label, value, badge, variant = "primary" }: { icon: React.ElementType, label: string, value: string | null | undefined, badge?: boolean, variant?: any }) {
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MuridLogbookList } from "@/features/sesi/components/MuridLogbookList";
+
+function DetailItem({ icon: Icon, label, value, badge }: { icon: React.ElementType, label: string, value: string | null | undefined, badge?: boolean }) {
   return (
     <div className="flex items-start gap-3 py-3 border-b last:border-0">
       <div className="mt-0.5 p-2 rounded-lg bg-secondary text-secondary-foreground shrink-0 text-slate-500">
@@ -59,6 +63,7 @@ export default function MuridDetailPage({ params }: { params: Promise<{ id: stri
   const [loading, setLoading] = useState(true);
 
   const canUpdate = authStore.hasPermission("student.update");
+  const canViewLogbook = authStore.hasPermission("session.logbook.manage") || authStore.hasPermission("session.view");
   const { setItems } = useBreadcrumbStore();
 
   useEffect(() => {
@@ -82,9 +87,10 @@ export default function MuridDetailPage({ params }: { params: Promise<{ id: stri
       try {
         const data = await getMurid(id);
         setMurid(data);
-      } catch (e: any) {
-        console.error("Error fetching murid:", e);
-        toast.error("Gagal memuat data murid: " + (e.message || "Terjadi kesalahan"));
+      } catch (e: unknown) {
+        const error = e as Error;
+        console.error("Error fetching murid:", error);
+        toast.error("Gagal memuat data murid: " + (error.message || "Terjadi kesalahan"));
         router.replace("/dashboard/murid");
       } finally {
         setLoading(false);
@@ -235,70 +241,92 @@ export default function MuridDetailPage({ params }: { params: Promise<{ id: stri
           </Card>
         </div>
 
-        {/* Right Column: Detailed Info */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-                <CardHeader className="py-4 border-b">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2">
-                        <GraduationCap className="size-4" /> Akademik
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                    <div className="space-y-1">
-                        <DetailItem icon={IdCard} label="Jenjang Terdaftar" value={murid.jenjang?.nama} />
-                        <DetailItem icon={School} label="Nama Sekolah Asal" value={murid.sekolah_asal} />
-                        <DetailItem icon={GraduationCap} label="Tingkatan / Kelas" value={murid.kelas_sekolah} />
-                        <DetailItem icon={Calendar} label="Tanggal Lahir" value={formatDate(murid.tanggal_lahir)} />
-                    </div>
-                </CardContent>
-            </Card>
+        {/* Right Column: Detailed Info with Tabs */}
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="profil" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="profil">Profil Lengkap</TabsTrigger>
+              {canViewLogbook && <TabsTrigger value="logbook">Riwayat Logbook</TabsTrigger>}
+            </TabsList>
 
-            <Card>
-                <CardHeader className="py-4 border-b">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2">
-                        <Users className="size-4" /> Wali Murid
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                    <div className="space-y-1">
-                        <DetailItem icon={User} label="Nama Lengkap Wali" value={murid.nama_wali} />
-                        <DetailItem icon={Phone} label="Nomor HP Wali" value={murid.no_hp_wali} />
-                        <DetailItem icon={Mail} label="Alamat Email Wali" value={murid.email_wali} />
-                        <DetailItem icon={Users} label="Hubungan Keluarga" value={murid.hubungan_wali} />
-                    </div>
-                </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader className="py-4 border-b">
-                <CardTitle className="text-sm font-bold flex items-center gap-2">
-                    <StickyNote className="size-4" /> Informasi Medis & Khusus
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
+            <TabsContent value="profil" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-rose-600 font-medium text-xs uppercase tracking-wider">
-                       <Heart className="size-3.5" /> Kebutuhan Khusus
-                    </div>
-                    <div className="p-3 bg-rose-50 rounded-lg text-sm text-muted-foreground leading-relaxed border border-rose-100">
-                       {murid.kebutuhan_khusus || "Tidak ada kebutuhan khusus yang dilaporkan."}
-                    </div>
-                 </div>
-                 
-                 <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-blue-600 font-medium text-xs uppercase tracking-wider">
-                       <Info className="size-3.5" /> Catatan Tambahan
-                    </div>
-                    <div className="p-3 bg-blue-50 rounded-lg text-sm text-muted-foreground leading-relaxed border border-blue-100">
-                       {murid.catatan_khusus || "Tidak ada catatan tambahan."}
-                    </div>
-                 </div>
+                <Card>
+                    <CardHeader className="py-4 border-b">
+                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                            <GraduationCap className="size-4" /> Akademik
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                        <div className="space-y-1">
+                            <DetailItem icon={IdCard} label="Jenjang Terdaftar" value={murid.jenjang?.nama} />
+                            <DetailItem icon={School} label="Nama Sekolah Asal" value={murid.sekolah_asal} />
+                            <DetailItem icon={GraduationCap} label="Tingkatan / Kelas" value={murid.kelas_sekolah} />
+                            <DetailItem icon={Calendar} label="Tanggal Lahir" value={formatDate(murid.tanggal_lahir)} />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader className="py-4 border-b">
+                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                            <Users className="size-4" /> Wali Murid
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                        <div className="space-y-1">
+                            <DetailItem icon={User} label="Nama Lengkap Wali" value={murid.nama_wali} />
+                            <DetailItem icon={Phone} label="Nomor HP Wali" value={murid.no_hp_wali} />
+                            <DetailItem icon={Mail} label="Alamat Email Wali" value={murid.email_wali} />
+                            <DetailItem icon={Users} label="Hubungan Keluarga" value={murid.hubungan_wali} />
+                        </div>
+                    </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
+
+              <Card>
+                <CardHeader className="py-4 border-b">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                        <StickyNote className="size-4" /> Informasi Medis & Khusus
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-rose-600 font-medium text-xs uppercase tracking-wider">
+                          <Heart className="size-3.5" /> Kebutuhan Khusus
+                        </div>
+                        <div className="p-3 bg-rose-50 rounded-lg text-sm text-muted-foreground leading-relaxed border border-rose-100">
+                          {murid.kebutuhan_khusus || "Tidak ada kebutuhan khusus yang dilaporkan."}
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-blue-600 font-medium text-xs uppercase tracking-wider">
+                          <Info className="size-3.5" /> Catatan Tambahan
+                        </div>
+                        <div className="p-3 bg-blue-50 rounded-lg text-sm text-muted-foreground leading-relaxed border border-blue-100">
+                          {murid.catatan_khusus || "Tidak ada catatan tambahan."}
+                        </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="logbook">
+              <Card>
+                <CardHeader className="py-4 border-b">
+                  <CardTitle className="text-sm font-bold flex items-center gap-2">
+                    <BookOpen className="size-4" /> Riwayat Perkembangan Belajar
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <MuridLogbookList muridId={murid.id} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
