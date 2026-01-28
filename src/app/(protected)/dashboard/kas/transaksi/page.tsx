@@ -45,16 +45,15 @@ export default function KasTransaksiPage() {
         sort_dir,
       });
 
-      // Fetch stats (total IN, total OUT)
-      const [inResult, outResult] = await Promise.all([
-        kasApi.list({ type: "IN", per_page: 1 }),
-        kasApi.list({ type: "OUT", per_page: 1 }),
+      // Fetch ALL transactions to calculate totals (without pagination)
+      const [allInResult, allOutResult] = await Promise.all([
+        kasApi.list({ type: "IN", per_page: 9999 }), // Get all IN transactions
+        kasApi.list({ type: "OUT", per_page: 9999 }), // Get all OUT transactions
       ]);
 
-      // Calculate totals from meta or fetch summary endpoint if available
-      // For now, we'll use simple calculation
-      const totalIn = inResult.meta.total || 0;
-      const totalOut = outResult.meta.total || 0;
+      // Calculate actual sum of amounts
+      const totalIn = allInResult.data.reduce((sum, trx) => sum + Number(trx.amount || 0), 0);
+      const totalOut = allOutResult.data.reduce((sum, trx) => sum + Number(trx.amount || 0), 0);
 
       setData(result.data);
       setMeta(result.meta);
@@ -63,8 +62,9 @@ export default function KasTransaksiPage() {
         total_out: totalOut,
         balance: totalIn - totalOut,
       });
-    } catch (error: any) {
-      toast.error(error.message || "Gagal memuat data transaksi");
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast.error(err.message || "Gagal memuat data transaksi");
     } finally {
       setLoading(false);
     }

@@ -18,6 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { authStore } from "@/modules/auth/infrastructure/auth.store";
 
 const formatCurrency = (val: number | string | null | undefined) => {
   if (val === null || val === undefined) return "Rp 0";
@@ -51,9 +52,46 @@ interface KasTransaksiTableProps {
 }
 
 export function KasTransaksiTable({ data, loading = false }: KasTransaksiTableProps) {
-  const handlePrint = (id: number) => {
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-    window.open(`${backendUrl}/kas/transaksi/${id}/print-thermal`, "_blank");
+  const handlePrint = async (id: number) => {
+    try {
+      // Get auth token from authStore (same as httpClient)
+      const token = authStore.getState().token;
+      
+      if (!token) {
+        alert('Session expired. Please login again.');
+        return;
+      }
+      
+      // Fetch with auth header
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/kas/transaksi/${id}/print-thermal`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'text/html',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Print error response:', errorText);
+        throw new Error(`Failed to load receipt: ${response.status}`);
+      }
+
+      // Get HTML content
+      const html = await response.text();
+      
+      // Open in new window with the HTML content
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+      }
+    } catch (error) {
+      console.error('Print error:', error);
+      alert('Gagal membuka kwitansi. Silakan coba lagi.');
+    }
   };
 
   const colCount = 9;

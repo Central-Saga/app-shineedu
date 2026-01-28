@@ -127,14 +127,6 @@ export function KasTransaksiListClient({ data, meta, stats }: KasTransaksiListCl
     }
   };
 
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(val);
-  };
-
   return (
     <div>
       <PageHeader
@@ -156,21 +148,21 @@ export function KasTransaksiListClient({ data, meta, stats }: KasTransaksiListCl
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatsCard
           label="Total Kas Masuk"
-          value={formatCurrency(stats.total_in)}
+          value={stats.total_in || 0}
           icon={TrendingUp}
           variant="success"
           description="Total pemasukan"
         />
         <StatsCard
           label="Total Kas Keluar"
-          value={formatCurrency(stats.total_out)}
+          value={stats.total_out || 0}
           icon={TrendingDown}
           variant="danger"
           description="Total pengeluaran"
         />
         <StatsCard
           label="Saldo"
-          value={formatCurrency(stats.balance)}
+          value={stats.balance || 0}
           icon={DollarSign}
           variant={stats.balance >= 0 ? "primary" : "danger"}
           description="Kas masuk - kas keluar"
