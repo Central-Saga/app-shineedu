@@ -38,6 +38,8 @@ export interface KasTransaksiListParams {
   tanggal_to?: string;
   page?: number;
   per_page?: number;
+  sort_by?: string;
+  sort_dir?: 'asc' | 'desc';
 }
 
 export interface CreateKasTransaksiPayload {
@@ -72,6 +74,8 @@ export const kasApi = {
       if (params.tanggal_to) queryParams.set('tanggal_to', params.tanggal_to);
       if (params.page) queryParams.set('page', String(params.page));
       if (params.per_page) queryParams.set('per_page', String(params.per_page));
+      if (params.sort_by) queryParams.set('sort_by', params.sort_by);
+      if (params.sort_dir) queryParams.set('sort_dir', params.sort_dir);
       
       const queryString = queryParams.toString();
       const url = `kas/transaksi${queryString ? `?${queryString}` : ''}`;

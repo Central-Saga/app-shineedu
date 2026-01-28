@@ -48,7 +48,7 @@ import { KAS_METODE_OPTIONS } from "@/lib/api/kas";
 import { listPaket, lookupPrice } from "@/modules/catalog/infrastructure/catalog.repository";
 import { Paket } from "@/modules/catalog/domain/entities";
 import { PaketMurid } from "@/lib/api/saldo-pertemuan";
-import { adjustSaldo } from "@/lib/api/saldo-pertemuan";
+import { adjustSaldo, createPaketMurid } from "@/lib/api/saldo-pertemuan";
 
 const formSchema = z.object({
   mode: z.enum(["new", "topup"]),
@@ -188,32 +188,15 @@ export function UniversalPaketDialog({
             return;
           }
 
-          const paket = pakets.find((p) => String(p.id) === values.paket_id);
-          if (!paket) {
-            toast.error("Paket tidak ditemukan");
-            return;
-          }
-
-          // Create paket_murid first
-          const createResponse = await fetch(`/api/v2/enrollments/${enrollmentId}/paket-murid`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              paket_id: Number(values.paket_id),
-              status: "AKTIF",
-              catatan: values.keterangan || "Paket gratis",
-            }),
+          // Create paket_murid first using API client
+          const createdPaket = await createPaketMurid(enrollmentId, {
+            paket_id: Number(values.paket_id),
+            catatan: values.keterangan || "Paket gratis",
           });
 
-          if (!createResponse.ok) {
-            throw new Error("Gagal membuat paket");
-          }
-
-          const created = await createResponse.json();
-          const newPaketMuridId = created.data.id;
-
           // Then adjust saldo
-          await adjustSaldo(newPaketMuridId, {
+          await adjustSaldo(createdPaket.id, {
+            type: "ADJUST",
             qty: values.jumlah_pertemuan,
             reason: values.keterangan || "Topup gratis",
           });
@@ -227,6 +210,7 @@ export function UniversalPaketDialog({
           }
 
           await adjustSaldo(Number(values.paket_murid_id), {
+            type: "ADJUST",
             qty: values.jumlah_pertemuan,
             reason: values.keterangan || "Topup gratis",
           });
@@ -240,37 +224,78 @@ export function UniversalPaketDialog({
           return;
         }
 
-        const payload: any = {
-          amount: values.amount,
-          metode: values.metode,
-          tanggal: values.tanggal ? format(values.tanggal, "yyyy-MM-dd HH:mm:ss") : undefined,
-          keterangan: values.keterangan || undefined,
-          external_ref: values.external_ref || undefined,
-          idempotency_key: idempotencyKey,
-        };
+        // Use FormData if file is present, otherwise use JSON
+        if (values.bukti_file) {
+          const formData = new FormData();
+          formData.append("amount", String(values.amount));
+          formData.append("metode", values.metode);
+          if (values.tanggal) {
+            formData.append("tanggal", format(values.tanggal, "yyyy-MM-dd HH:mm:ss"));
+          }
+          if (values.keterangan) {
+            formData.append("keterangan", values.keterangan);
+          }
+          if (values.external_ref) {
+            formData.append("external_ref", values.external_ref);
+          }
+          formData.append("idempotency_key", idempotencyKey);
+          formData.append("bukti_file", values.bukti_file);
 
-        if (values.mode === "new") {
-          payload.paket_id = Number(values.paket_id);
-          const paket = pakets.find((p) => String(p.id) === values.paket_id);
-          payload.topup_qty = values.jumlah_pertemuan;
+          if (values.mode === "new") {
+            formData.append("paket_id", String(values.paket_id));
+            formData.append("topup_qty", String(values.jumlah_pertemuan));
+          } else {
+            formData.append("paket_murid_id", String(values.paket_murid_id));
+            formData.append("topup_qty", String(values.jumlah_pertemuan));
+          }
+
+          // Use httpClient post which handles FormData properly
+          const result = await enrollmentPaymentsApi.payPackageTopup(enrollmentId, formData);
+          const transactionId = result.transaction?.id;
+          
+          toast.success(`Berhasil! Saldo: ${result.saldo_baru} pertemuan`, {
+            action: transactionId ? {
+              label: "Print Kwitansi",
+              onClick: () => {
+                const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+                window.open(`${backendUrl}/kas/transaksi/${transactionId}/print-thermal`, '_blank');
+              }
+            } : undefined,
+          });
         } else {
-          payload.paket_murid_id = Number(values.paket_murid_id);
-          payload.topup_qty = values.jumlah_pertemuan;
-        }
+          // No file, use regular JSON payload
+          const payload: Record<string, unknown> = {
+            amount: values.amount,
+            metode: values.metode,
+            tanggal: values.tanggal ? format(values.tanggal, "yyyy-MM-dd HH:mm:ss") : undefined,
+            keterangan: values.keterangan || undefined,
+            external_ref: values.external_ref || undefined,
+            idempotency_key: idempotencyKey,
+          };
 
-        const result = await enrollmentPaymentsApi.payPackageTopup(enrollmentId, payload);
-        toast.success(`Berhasil! Saldo: ${result.saldo_baru} pertemuan`);
+          if (values.mode === "new") {
+            payload.paket_id = Number(values.paket_id);
+            payload.topup_qty = values.jumlah_pertemuan;
+          } else {
+            payload.paket_murid_id = Number(values.paket_murid_id);
+            payload.topup_qty = values.jumlah_pertemuan;
+          }
+
+          const result = await enrollmentPaymentsApi.payPackageTopup(enrollmentId, payload as unknown as Parameters<typeof enrollmentPaymentsApi.payPackageTopup>[1]);
+          toast.success(`Berhasil! Saldo: ${result.saldo_baru} pertemuan`);
+        }
       }
 
       setOpen(false);
       form.reset();
       onSuccess();
-    } catch (error: any) {
-      if (error?.status === 403) {
+    } catch (error: unknown) {
+      const err = error as { status?: number; message?: string };
+      if (err?.status === 403) {
         toast.error("Anda tidak memiliki akses");
         return;
       }
-      toast.error(error.message || "Gagal memproses");
+      toast.error(err.message || "Gagal memproses");
     }
   };
 
@@ -530,6 +555,32 @@ export function UniversalPaketDialog({
                       <FormControl>
                         <Input placeholder="No. Kwitansi, dll" {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="bukti_file"
+                  render={({ field: { value, onChange, ...field } }) => (
+                    <FormItem>
+                      <FormLabel>Bukti Pembayaran</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="file"
+                          accept="image/*,.pdf"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) onChange(file);
+                          }}
+                          {...field}
+                          value={undefined}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Upload foto/scan bukti pembayaran (opsional, max 5MB)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

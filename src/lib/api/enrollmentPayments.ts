@@ -53,9 +53,25 @@ export const enrollmentPaymentsApi = {
 
   /**
    * Pay for package / topup meeting quota
+   * Supports both JSON payload and FormData (for file uploads)
    */
-  payPackageTopup: async (enrollmentId: number, payload: PayPackageTopupPayload): Promise<{ transaksi_id: number; paket_murid_id: number; saldo_baru: number; message: string }> => {
-    const res = await post<{ transaksi_id: number; paket_murid_id: number; saldo_baru: number; message: string }>(`enrollments/${enrollmentId}/pay-package-topup`, payload);
+  payPackageTopup: async (
+    enrollmentId: number, 
+    payload: PayPackageTopupPayload | FormData
+  ): Promise<{ 
+    transaksi_id?: number; 
+    transaction?: { id: number }; 
+    paket_murid_id: number; 
+    saldo_baru: number; 
+    message: string 
+  }> => {
+    const res = await post<{ 
+      transaksi_id?: number; 
+      transaction?: { id: number }; 
+      paket_murid_id: number; 
+      saldo_baru: number; 
+      message: string 
+    }>(`enrollments/${enrollmentId}/pay-package-topup`, payload);
     return res;
   },
 

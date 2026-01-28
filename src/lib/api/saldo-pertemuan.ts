@@ -61,8 +61,9 @@ export const saldoPertemuanApi = {
     }
   },
 
-  createPaketMurid: async (enrollmentId: number, payload: CreatePaketPayload): Promise<void> => {
-    await post(`enrollments/${enrollmentId}/paket-murid`, payload);
+  createPaketMurid: async (enrollmentId: number, payload: CreatePaketPayload): Promise<PaketMurid> => {
+    const result = await post<PaketMurid>(`enrollments/${enrollmentId}/paket-murid`, payload);
+    return result;
   },
 
   getLedger: async (paketMuridId: number, page: number = 1, enrollmentId?: number, paketId?: number): Promise<{ data: LedgerItem[]; meta: any }> => {
@@ -83,3 +84,6 @@ export const saldoPertemuanApi = {
     await post(`paket-murid/${paketMuridId}/adjust`, payload);
   }
 };
+
+// Export individual functions for convenience
+export const { getSaldoEnrollment, createPaketMurid, getLedger, adjustSaldo } = saldoPertemuanApi;
