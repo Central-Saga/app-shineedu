@@ -26,6 +26,7 @@ import {
   Infinity as InfinityIcon
 } from "lucide-react";
 import { RegistrationFeeCard } from "@/modules/enrollment/presentation/components/RegistrationFeeCard";
+import { SaldoPertemuanCard } from "@/modules/enrollment/presentation/components/SaldoPertemuanCard";
 
 function DetailItem({ icon: Icon, label, value, badge }: { icon: React.ElementType, label: string, value: React.ReactNode, badge?: boolean }) {
   return (
@@ -166,40 +167,49 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Student & Cost Info */}
         <div className="lg:col-span-1 space-y-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col items-center text-center pb-6 border-b mb-4">
-                 <div className="size-16 bg-slate-50 rounded-xl flex items-center justify-center text-slate-300 mb-4 border">
-                    <User className="size-8" />
-                 </div>
-                 <h2 className="text-xl font-bold">{enrollment.murid?.nama_lengkap || "-"}</h2>
-                 <p className="text-sm text-muted-foreground mt-1 font-medium">
-                    {enrollment.murid?.kode_murid || "BELUM ADA KODE"}
-                 </p>
-                 <div className="flex gap-2 mt-4">
-                    <Button asChild variant="outline" size="sm" className="h-8 text-xs">
-                        <Link href={`/dashboard/murid/${enrollment.murid?.id || enrollment.murid_id}`}>
-                           Lihat Profil
-                        </Link>
-                    </Button>
-                 </div>
-              </div>
+             <Card>
+                <CardContent className="pt-6">
+                  {/* Existing Content */}
+                  <div className="flex flex-col items-center text-center pb-6 border-b mb-4">
+                     <div className="size-16 bg-slate-50 rounded-xl flex items-center justify-center text-slate-300 mb-4 border">
+                        <User className="size-8" />
+                     </div>
+                     <h2 className="text-xl font-bold">{enrollment.murid?.nama_lengkap || "-"}</h2>
+                     <p className="text-sm text-muted-foreground mt-1 font-medium">
+                        {enrollment.murid?.kode_murid || "BELUM ADA KODE"}
+                     </p>
+                     <div className="flex gap-2 mt-4">
+                        <Button asChild variant="outline" size="sm" className="h-8 text-xs">
+                            <Link href={`/dashboard/murid/${enrollment.murid?.id || enrollment.murid_id}`}>
+                                Lihat Profil
+                            </Link>
+                        </Button>
+                     </div>
+                  </div>
 
-              <div className="bg-primary/5 rounded-lg p-4 mb-4 border border-primary/10">
-                 <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mb-1">Total Biaya</p>
-                 <p className="text-2xl font-bold text-primary">{formatCurrency(enrollment.harga_final)}</p>
-              </div>
+                  <div className="bg-primary/5 rounded-lg p-4 mb-4 border border-primary/10">
+                     <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mb-1">Total Biaya</p>
+                     <p className="text-2xl font-bold text-primary">{formatCurrency(enrollment.harga_final)}</p>
+                  </div>
 
-               {/* Registration Fee Info */}
-               <RegistrationFeeCard enrollment={enrollment} canUpdate={canUpdate} />
+                   {/* Registration Fee Info */}
+                   <RegistrationFeeCard enrollment={enrollment} canUpdate={canUpdate} />
 
+                  <div className="space-y-1">
+                     <DetailItem icon={Users} label="Kapasitas" value={`${enrollment.jumlah_siswa} Siswa`} />
+                     <DetailItem icon={Package} label="Tipe Paket" value={enrollment.paket?.nama} />
+                  </div>
+                </CardContent>
+             </Card>
 
-              <div className="space-y-1">
-                 <DetailItem icon={Users} label="Kapasitas" value={`${enrollment.jumlah_siswa} Siswa`} />
-                 <DetailItem icon={Package} label="Tipe Paket" value={enrollment.paket?.nama} />
-              </div>
-            </CardContent>
-          </Card>
+             {/* Saldo Pertemuan Card */}
+             <div className="mt-6">
+                <SaldoPertemuanCard 
+                  enrollmentId={enrollment.id}
+                  programId={enrollment.program_id}
+                  jenjangId={enrollment.jenjang_id}
+                />
+             </div>
         </div>
 
         {/* Right Column: Enrollment Info */}
