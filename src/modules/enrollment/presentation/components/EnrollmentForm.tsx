@@ -88,6 +88,9 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
       mode_murid: "existing",
       jumlah_siswa: 1,
       tanggal_mulai: new Date().toISOString().split("T")[0],
+      catatan: "",
+      biaya_pendaftaran_amount: 0,
+      biaya_pendaftaran_status: "WAIVED",
     },
   });
 
