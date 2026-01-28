@@ -23,7 +23,18 @@ export interface LedgerItem {
   type: 'TOPUP' | 'USE' | 'ADJUST' | 'EXPIRE';
   qty: number;
   reason: string;
-  created_by?: string;
+  created_by?: {
+    id: number;
+    name: string;
+  };
+  paket_murid?: {
+    id: number;
+    paket_id: number;
+    paket: {
+      id: number;
+      nama: string;
+    }
+  };
   created_at: string;
 }
 
@@ -54,9 +65,13 @@ export const saldoPertemuanApi = {
     await post(`enrollments/${enrollmentId}/paket-murid`, payload);
   },
 
-  getLedger: async (paketMuridId: number, page = 1, perPage = 15): Promise<{ data: LedgerItem[]; meta: any }> => {
+  getLedger: async (paketMuridId: number, page: number = 1, enrollmentId?: number, paketId?: number): Promise<{ data: LedgerItem[]; meta: any }> => {
     try {
-      const res = await getResponse<LedgerItem[]>(`paket-murid/${paketMuridId}/ledger?page=${page}&per_page=${perPage}`);
+      let url = `paket-murid/${paketMuridId}/ledger?page=${page}`;
+      if (enrollmentId && paketId) {
+          url = `paket-murid/ledger/all?page=${page}&enrollment_id=${enrollmentId}&paket_id=${paketId}`;
+      }
+      const res = await getResponse<LedgerItem[]>(url);
       return { data: res.data || [], meta: res.meta };
     } catch (error) {
       console.error("Error fetching ledger:", error);

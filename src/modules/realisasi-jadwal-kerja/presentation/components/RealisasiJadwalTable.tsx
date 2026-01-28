@@ -1,6 +1,6 @@
 "use client";
 
-import type { RealisasiJadwal } from "../../domain/entities";
+import type { RealisasiJadwal, RealisasiJadwalStatus } from "../../domain/entities";
 import {
   Table,
   TableBody,
@@ -12,12 +12,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 function formatDate(s: string | null | undefined): string {
   if (!s) return "-";
@@ -35,6 +43,8 @@ interface RealisasiJadwalTableProps {
   onView: (item: RealisasiJadwal) => void;
   onEdit: (item: RealisasiJadwal) => void;
   onDelete: (item: RealisasiJadwal) => void;
+  onStatusChange?: (item: RealisasiJadwal, newStatus: RealisasiJadwalStatus) => void;
+  updatingId?: number | null;
   canUpdate: boolean;
   canDelete: boolean;
 }
@@ -45,6 +55,8 @@ export function RealisasiJadwalTable({
   onView,
   onEdit,
   onDelete,
+  onStatusChange,
+  updatingId = null,
   canUpdate,
   canDelete,
 }: RealisasiJadwalTableProps) {
@@ -100,18 +112,48 @@ export function RealisasiJadwalTable({
                 </TableCell>
                 <TableCell>{item.sumber ?? "-"}</TableCell>
                 <TableCell>
-                  <Badge
-                    variant="outline"
-                    className={
-                      item.status === "disetujui"
-                        ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                        : item.status === "ditolak"
-                        ? "border-rose-200 bg-rose-50 text-rose-700"
-                        : "border-amber-200 bg-amber-50 text-amber-700"
-                    }
-                  >
-                    {item.status}
-                  </Badge>
+                  <div className="flex items-center gap-3">
+                    {onStatusChange && canUpdate ? (
+                      <div className="flex items-center gap-2">
+                         {updatingId === item.id ? (
+                           <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                         ) : (
+                            <Select 
+                                value={item.status} 
+                                onValueChange={(val) => onStatusChange(item, val as any)}
+                                disabled={updatingId !== null}
+                            >
+                                <SelectTrigger className={cn(
+                                    "h-8 w-[120px] text-[10px] font-bold uppercase tracking-wider transition-all",
+                                    item.status === "disetujui" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                                    item.status === "ditolak" ? "bg-rose-50 text-rose-700 border-rose-200" :
+                                    "bg-amber-50 text-amber-700 border-amber-200"
+                                )}>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="diajukan">DIAJUKAN</SelectItem>
+                                    <SelectItem value="disetujui">DISETUJUI</SelectItem>
+                                    <SelectItem value="ditolak">DITOLAK</SelectItem>
+                                </SelectContent>
+                            </Select>
+                         )}
+                      </div>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className={
+                          item.status === "disetujui"
+                            ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                            : item.status === "ditolak"
+                            ? "border-rose-200 bg-rose-50 text-rose-700"
+                            : "border-amber-200 bg-amber-50 text-amber-700"
+                        }
+                      >
+                        {item.status}
+                      </Badge>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1">

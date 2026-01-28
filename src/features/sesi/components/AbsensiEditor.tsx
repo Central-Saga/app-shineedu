@@ -207,25 +207,35 @@ export function AbsensiEditor({
                                                     );
                                                 }
 
-                                                const isChecked = statusField.value === "HADIR";
+                                                const currentStatusVal = statusField.value || "HADIR";
 
                                                 return (
-                                                    <FormItem className="flex items-center gap-3 space-y-0">
-                                                        <FormControl>
-                                                            <Switch 
-                                                                checked={isChecked} 
-                                                                onCheckedChange={(checked) => {
-                                                                    statusField.onChange(checked ? "HADIR" : "BATAL");
-                                                                }} 
-                                                                disabled={!canEdit}
-                                                            />
-                                                        </FormControl>
-                                                        <span className={cn(
-                                                            "text-sm font-medium transition-colors",
-                                                            isChecked ? "text-emerald-600" : "text-muted-foreground"
-                                                        )}>
-                                                            {isChecked ? "Hadir" : "Tidak Hadir"}
-                                                        </span>
+                                                    <FormItem className="space-y-0">
+                                                        <Select 
+                                                            onValueChange={(val) => statusField.onChange(val)} 
+                                                            defaultValue={currentStatusVal}
+                                                            value={currentStatusVal}
+                                                            disabled={!canEdit}
+                                                        >
+                                                            <FormControl>
+                                                                <SelectTrigger className={cn(
+                                                                    "h-9 w-[140px] font-medium transition-all",
+                                                                    currentStatusVal === "HADIR" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                                                                    currentStatusVal === "BATAL" ? "bg-blue-50 text-blue-700 border-blue-200" :
+                                                                    currentStatusVal === "ALPHA" ? "bg-rose-50 text-rose-700 border-rose-200" :
+                                                                    "bg-amber-50 text-amber-700 border-amber-200"
+                                                                )}>
+                                                                    <SelectValue />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                <SelectItem value="HADIR">Hadir</SelectItem>
+                                                                <SelectItem value="IZIN">Izin</SelectItem>
+                                                                <SelectItem value="SAKIT">Sakit</SelectItem>
+                                                                <SelectItem value="ALPHA">Alpha</SelectItem>
+                                                                <SelectItem value="BATAL">Pindah Jadwal</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
                                                     </FormItem>
                                                 );
                                             }}

@@ -52,8 +52,8 @@ const formSchema = z.object({
 
 interface TambahPaketDialogProps {
   enrollmentId: number;
-  programId: number;
-  jenjangId: number;
+  programId?: number;
+  jenjangId?: number;
   onSuccess: () => void;
 }
 
@@ -150,7 +150,7 @@ export function TambahPaketDialog({ enrollmentId, programId, jenjangId, onSucces
                     <SelectContent>
                       {pakets.map((paket) => (
                         <SelectItem key={paket.id} value={String(paket.id)}>
-                          {paket.nama} ({paket.jumlah_pertemuan} Pertemuan)
+                          {paket.nama} ({paket.pertemuan_per_bulan} Pertemuan)
                         </SelectItem>
                       ))}
                       {!loadingPaket && pakets.length === 0 && (

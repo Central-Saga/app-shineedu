@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { 
   CreditCard, 
   History, 
@@ -27,22 +28,18 @@ import {
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import { saldoPertemuanApi, PaketMurid } from "@/lib/api/saldo-pertemuan";
 import { TambahPaketDialog } from "./saldo/TambahPaketDialog";
-import { RiwayatLedgerSheet } from "./saldo/RiwayatLedgerSheet";
 import { AdjustSaldoDialog } from "./saldo/AdjustSaldoDialog";
 
 interface SaldoPertemuanCardProps {
   enrollmentId: number;
-  programId: number;
-  jenjangId: number;
+  programId?: number;
+  jenjangId?: number;
 }
 
 export function SaldoPertemuanCard({ enrollmentId, programId, jenjangId }: SaldoPertemuanCardProps) {
   const [data, setData] = useState<PaketMurid[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPaketId, setSelectedPaketId] = useState<number | null>(null);
-  
-  // Sheet/Dialog states
-  const [showHistory, setShowHistory] = useState(false);
+  // No local state for history sheet needed anymore since it's a new page
   
   // Adjust Dialog state managed by rendering conditionally or key
   // Since we map through items, we can put dialogs inside map or manage state
@@ -72,10 +69,7 @@ export function SaldoPertemuanCard({ enrollmentId, programId, jenjangId }: Saldo
 
   if (!canView) return null;
 
-  const handleOpenHistory = (id: number) => {
-    setSelectedPaketId(id);
-    setShowHistory(true);
-  };
+  // History is now a dedicated page via Link
 
   return (
     <Card className="h-full">
@@ -102,8 +96,25 @@ export function SaldoPertemuanCard({ enrollmentId, programId, jenjangId }: Saldo
             </div>
         ) : data.length > 0 ? (
             <div className="divide-y">
-                {data.map((item) => (
-                    <div key={item.id} className="py-4 flex items-center justify-between gap-4">
+                {Object.values(data.reduce((acc, item) => {
+                    const paketId = item.paket_id || item.paket?.id;
+                    const key = `${paketId}-${item.status}`;
+                    if (!acc[key]) {
+                        acc[key] = { 
+                            ...item, 
+                            saldo_current: 0, 
+                            paket_murid_ids: [] as number[],
+                            is_aggregated: false
+                        };
+                    }
+                    acc[key].saldo_current += Number(item.saldo_current);
+                    acc[key].paket_murid_ids.push(item.id);
+                    if (acc[key].paket_murid_ids.length > 1) {
+                        acc[key].is_aggregated = true;
+                    }
+                    return acc;
+                }, {} as Record<string, any>)).map((item) => (
+                    <div key={item.paket_id + item.status} className="py-4 flex items-center justify-between gap-4">
                         <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 mb-1">
                                 <h4 className="font-semibold text-sm truncate">
@@ -112,15 +123,27 @@ export function SaldoPertemuanCard({ enrollmentId, programId, jenjangId }: Saldo
                                 <Badge variant={item.status === 'AKTIF' ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0">
                                     {item.status}
                                 </Badge>
+                                {item.is_aggregated && (
+                                    <Badge variant="outline" className="text-[9px] px-1 py-0 border-blue-200 bg-blue-50 text-blue-600">
+                                        Gabungan
+                                    </Badge>
+                                )}
                             </div>
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <span>Sisa: <strong className={item.saldo_current > 0 ? "text-emerald-600" : "text-rose-600"}>{item.saldo_current}</strong> Pertemuan</span>
+                                <span>Sisa Total: <strong className={item.saldo_current > 0 ? "text-emerald-600" : "text-rose-600"}>{item.saldo_current}</strong> Pertemuan</span>
                             </div>
                         </div>
                         <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenHistory(item.id)} title="Riwayat">
-                                <History className="size-4 text-muted-foreground" />
-                            </Button>
+                            <Link href={`/dashboard/enrollment/${enrollmentId}/saldo/${item.id}/riwayat?all=true&paket_id=${item.paket_id}`}>
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8" 
+                                    title="Riwayat"
+                                >
+                                    <History className="size-4 text-muted-foreground" />
+                                </Button>
+                            </Link>
                             
                             {canAdjust && (
                                 <DropdownMenu>
@@ -145,18 +168,13 @@ export function SaldoPertemuanCard({ enrollmentId, programId, jenjangId }: Saldo
             <div className="py-8 text-center text-muted-foreground">
                 <p className="text-sm">Belum ada paket aktif.</p>
                 <div className="mt-2 text-xs text-muted-foreground/70">
-                    Klik "Tambah Paket" untuk menambahkan.
+                    Klik &quot;Tambah Paket&quot; untuk menambahkan.
                 </div>
             </div>
         )}
       </CardContent>
 
-      <RiwayatLedgerSheet 
-        paketMuridId={selectedPaketId}
-        open={showHistory}
-        onOpenChange={setShowHistory}
-      />
-
+      {/* Dialog for Adjusting Saldo */}
       {adjustPaket && (
         <AdjustSaldoDialog 
             open={!!adjustPaket}

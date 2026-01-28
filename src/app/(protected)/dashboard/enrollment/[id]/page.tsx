@@ -23,8 +23,16 @@ import {
   Package,
   Users,
   Info,
-  Infinity as InfinityIcon
+  Infinity as InfinityIcon,
+  Loader2
 } from "lucide-react";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 import { RegistrationFeeCard } from "@/modules/enrollment/presentation/components/RegistrationFeeCard";
 import { SaldoPertemuanCard } from "@/modules/enrollment/presentation/components/SaldoPertemuanCard";
 
@@ -65,6 +73,7 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
   const router = useRouter();
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [loading, setLoading] = useState(true);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const canUpdate = authStore.hasPermission("enrollment.update");
   const { setItems } = useBreadcrumbStore();
@@ -145,9 +154,48 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
               <Badge variant="secondary" className="font-mono text-[10px] px-2 py-0 border">
                  {enrollment.kode_enrollment || "N/A"}
               </Badge>
-              <Badge variant={enrollment.status === "Aktif" ? "outline" : "secondary"} className={enrollment.status === "Aktif" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : ""}>
-                {enrollment.status}
-              </Badge>
+              
+              {canUpdate ? (
+                <Select
+                  disabled={updatingStatus}
+                  value={enrollment.status}
+                  onValueChange={async (val) => {
+                    setUpdatingStatus(true);
+                    try {
+                      await enrollmentRepository.updateEnrollment(enrollment.id, { status: val });
+                      toast.success("Status enrollment berhasil diperbarui");
+                      fetchData();
+                    } catch {
+                      toast.error("Gagal memperbarui status");
+                    } finally {
+                      setUpdatingStatus(false);
+                    }
+                  }}
+                >
+                  <SelectTrigger className={`h-6 text-[11px] font-bold px-2 py-0 w-auto min-w-[80px] border-none shadow-none focus:ring-0 ${
+                    enrollment.status === 'Aktif' 
+                      ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' 
+                      : enrollment.status === 'Pause'
+                      ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                      : enrollment.status === 'Selesai'
+                      ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}>
+                    {updatingStatus ? <Loader2 className="size-3 animate-spin mr-1" /> : null}
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Aktif">Aktif</SelectItem>
+                    <SelectItem value="Pause">Pause</SelectItem>
+                    <SelectItem value="Selesai">Selesai</SelectItem>
+                    <SelectItem value="Cancel">Cancel</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Badge variant={enrollment.status === "Aktif" ? "outline" : "secondary"} className={enrollment.status === "Aktif" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : ""}>
+                  {enrollment.status}
+                </Badge>
+              )}
             </div>
           </div>
         </div>
@@ -205,8 +253,8 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
              <div className="mt-6">
                 <SaldoPertemuanCard 
                   enrollmentId={enrollment.id}
-                  programId={enrollment.program_id}
-                  jenjangId={enrollment.jenjang_id}
+                  programId={enrollment.program?.id}
+                  jenjangId={enrollment.jenjang?.id}
                 />
              </div>
         </div>

@@ -6,7 +6,7 @@ import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.sto
 import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGuard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Clock, MapPin, User, AlertTriangle, RefreshCw } from "lucide-react";
+import { ArrowLeft, Clock, MapPin, User, AlertTriangle, RefreshCw, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -214,8 +214,8 @@ export default function SesiDetailPage({
             <AccordionItem value="logbook">
                 <AccordionTrigger description="Materi, Pekerjaan Rumah, dan Catatan Sesi">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-amber-100 text-amber-600">
-                             <MapPin className="h-4 w-4" />
+                        <div className="p-2 rounded-lg bg-rose-100 text-rose-600">
+                             <BookOpen className="h-4 w-4" />
                         </div>
                         <span className="text-lg font-semibold">Logbook Sesi & Materi</span>
                     </div>

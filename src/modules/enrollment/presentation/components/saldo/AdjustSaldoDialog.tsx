@@ -83,8 +83,8 @@ export function AdjustSaldoDialog({
     },
   });
 
-  const { isSubmitting, watch } = form.formState;
-  const action = watch("action");
+  const { isSubmitting } = form.formState;
+  const action = form.watch("action");
   const isExpire = action === "EXPIRE";
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {

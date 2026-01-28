@@ -19,6 +19,7 @@ import { StatsCard } from "@/shared/presentation/components/StatsCard";
 import { RealisasiJadwalTable } from "@/modules/realisasi-jadwal-kerja/presentation/components/RealisasiJadwalTable";
 import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
 import { exportRealisasiJadwalKerjaUsecase } from "@/modules/realisasi-jadwal-kerja/application/usecases/exportRealisasiJadwalKerja.usecase";
+import { updateRealisasiJadwalUsecase } from "@/modules/realisasi-jadwal-kerja/application/usecases/updateRealisasiJadwal.usecase";
 import {
   ForbiddenError,
 } from "@/shared/infrastructure/api/errors";
@@ -93,6 +94,7 @@ export default function RealisasiJadwalPage() {
   });
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
   
   const [deleteItem, setDeleteItem] = useState<RealisasiJadwal | null>(null);
 
@@ -150,6 +152,21 @@ export default function RealisasiJadwalPage() {
     setMeta(m);
   }
 
+  const refreshStats = async () => {
+    const [all, a, s, d] = await Promise.all([
+      getRealisasiJadwalListUsecase({ per_page: 1 }),
+      getRealisasiJadwalListUsecase({ per_page: 1, status: "diajukan" }),
+      getRealisasiJadwalListUsecase({ per_page: 1, status: "disetujui" }),
+      getRealisasiJadwalListUsecase({ per_page: 1, status: "ditolak" }),
+    ]);
+    setStats({
+      total: all.meta.total,
+      diajukan: a.meta.total,
+      disetujui: s.meta.total,
+      ditolak: d.meta.total,
+    });
+  };
+
   useEffect(() => {
     if (!allowed) return;
     setLoading(true);
@@ -164,20 +181,7 @@ export default function RealisasiJadwalPage() {
 
     Promise.all([
       loadData(params),
-      (async () => {
-        const [all, a, s, d] = await Promise.all([
-          getRealisasiJadwalListUsecase({ per_page: 1 }),
-          getRealisasiJadwalListUsecase({ per_page: 1, status: "diajukan" }),
-          getRealisasiJadwalListUsecase({ per_page: 1, status: "disetujui" }),
-          getRealisasiJadwalListUsecase({ per_page: 1, status: "ditolak" }),
-        ]);
-        setStats({
-          total: all.meta.total,
-          diajukan: a.meta.total,
-          disetujui: s.meta.total,
-          ditolak: d.meta.total,
-        });
-      })(),
+      refreshStats(),
     ]).catch(handleError).finally(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -193,12 +197,31 @@ export default function RealisasiJadwalPage() {
     sortDir,
   ]);
 
+  async function handleStatusChange(item: RealisasiJadwal, newStatus: string) {
+    setUpdatingId(item.id);
+    try {
+      await updateRealisasiJadwalUsecase(item.id, { status: newStatus as any });
+      toast.success(`Status berhasil diubah ke ${newStatus}`);
+      await Promise.all([
+        loadData(buildParams()),
+        refreshStats()
+      ]);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal mengubah status");
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
   async function confirmDelete() {
     if (!deleteItem) return;
     try {
       await deleteRealisasiJadwalUsecase(deleteItem.id);
       toast.success("Realisasi berhasil dihapus");
-      loadData(buildParams());
+      await Promise.all([
+        loadData(buildParams()),
+        refreshStats()
+      ]);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Gagal menghapus realisasi");
     } finally {
@@ -211,7 +234,10 @@ export default function RealisasiJadwalPage() {
     try {
       const res = await syncRealisasiJadwal();
       toast.success(`Berhasil sinkronisasi ${res.created_count} jadwal untuk hari ${res.day}`);
-      loadData(buildParams());
+      await Promise.all([
+        loadData(buildParams()),
+        refreshStats()
+      ]);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Gagal sinkronisasi jadwal");
     } finally {
@@ -353,6 +379,8 @@ export default function RealisasiJadwalPage() {
             onView={(item) => router.push(`/realisasi-jadwal-kerja/${item.id}`)}
             onEdit={(item) => router.push(`/realisasi-jadwal-kerja/${item.id}/edit`)}
             onDelete={(item) => setDeleteItem(item)}
+            onStatusChange={handleStatusChange}
+            updatingId={updatingId}
             canUpdate={canUpdate}
             canDelete={canDelete}
           />
