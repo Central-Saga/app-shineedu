@@ -94,7 +94,7 @@ export const kasApi = {
   /**
    * Create a new kas transaction
    */
-  create: async (payload: CreateKasTransaksiPayload): Promise<KasTransaksi> => {
+  create: async (payload: CreateKasTransaksiPayload | FormData): Promise<KasTransaksi> => {
     const res = await post<KasTransaksi>('kas/transaksi', payload);
     return res;
   },
@@ -118,9 +118,69 @@ export const KAS_KATEGORI_OPTIONS = [
 ] as const;
 
 export const KAS_METODE_OPTIONS = [
-  { value: 'TUNAI', label: 'Tunai' },
+  { value: 'CASH', label: 'Tunai' },
   { value: 'TRANSFER', label: 'Transfer Bank' },
   { value: 'QRIS', label: 'QRIS' },
-  { value: 'EDC', label: 'EDC / Kartu' },
-  { value: 'LAINNYA', label: 'Lainnya' },
+  { value: 'E_WALLET', label: 'E-Wallet' },
+  { value: 'OTHER', label: 'Lainnya' },
 ] as const;
+
+// Shift Types
+export interface KasShift {
+  id: number;
+  opened_at: string;
+  closed_at?: string;
+  status: 'OPEN' | 'CLOSED';
+  opening_balance: number;
+  closing_balance?: number;
+  expected_cash?: number;
+  actual_cash?: number;
+  variance?: number;
+  notes?: string;
+  opened_by?: { id: number; name: string };
+  closed_by?: { id: number; name: string };
+}
+
+export interface ShiftSummary {
+  shift: KasShift;
+  totals: {
+    total_in: number;
+    total_out: number;
+    net: number;
+    cash_in: number;
+    cash_out: number;
+    expected_cash: number;
+    transaction_count: number;
+  };
+  by_method: Record<string, { in: number; out: number }>;
+  by_category: Record<string, { in: number; out: number }>;
+}
+
+// Shift API
+export const shiftApi = {
+  list: async (params: { status?: string; date?: string; page?: number; per_page?: number } = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.status) queryParams.set('status', params.status);
+    if (params.date) queryParams.set('date', params.date);
+    if (params.page) queryParams.set('page', String(params.page));
+    if (params.per_page) queryParams.set('per_page', String(params.per_page));
+    const queryString = queryParams.toString();
+    return getResponse<KasShift[]>(`kas/shift${queryString ? `?${queryString}` : ''}`);
+  },
+
+  current: async (): Promise<ShiftSummary | null> => {
+    return get<ShiftSummary | null>('kas/shift/current');
+  },
+
+  open: async (openingBalance: number): Promise<KasShift> => {
+    return post<KasShift>('kas/shift/open', { opening_balance: openingBalance });
+  },
+
+  close: async (id: number, actualCash: number, notes?: string): Promise<ShiftSummary> => {
+    return post<ShiftSummary>(`kas/shift/${id}/close`, { actual_cash: actualCash, notes });
+  },
+
+  summary: async (id: number): Promise<ShiftSummary> => {
+    return get<ShiftSummary>(`kas/shift/${id}/summary`);
+  },
+};

@@ -47,6 +47,7 @@ const formSchema = z.object({
   pihak: z.string().optional(),
   keterangan: z.string().optional(),
   external_ref: z.string().optional(),
+  payment_proof: z.instanceof(File).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -70,6 +71,7 @@ export default function CreateKasTransaksiPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       type: "IN",
+      amount: "" as any, // Empty string for better UX
       metode: "",
       kategori: "",
       pihak: "",
@@ -83,21 +85,42 @@ export default function CreateKasTransaksiPage() {
 
   const onSubmit = async (values: FormValues) => {
     try {
-      await kasApi.create({
-        type: values.type,
-        tanggal: values.tanggal ? format(values.tanggal, "yyyy-MM-dd HH:mm:ss") : undefined,
-        amount: values.amount,
-        metode: values.metode,
-        kategori: values.kategori,
-        pihak: values.pihak || undefined,
-        keterangan: values.keterangan || undefined,
-        external_ref: values.external_ref || undefined,
-        idempotency_key: idempotencyKey,
-      });
+      // If there's a file, use FormData
+      if (values.payment_proof) {
+        const formData = new FormData();
+        formData.append('type', values.type);
+        if (values.tanggal) {
+          formData.append('tanggal', format(values.tanggal, "yyyy-MM-dd HH:mm:ss"));
+        }
+        formData.append('amount', String(values.amount));
+        formData.append('metode', values.metode);
+        formData.append('kategori', values.kategori);
+        if (values.pihak) formData.append('pihak', values.pihak);
+        if (values.keterangan) formData.append('keterangan', values.keterangan);
+        if (values.external_ref) formData.append('external_ref', values.external_ref);
+        formData.append('idempotency_key', idempotencyKey);
+        formData.append('payment_proof', values.payment_proof);
+
+        await kasApi.create(formData);
+      } else {
+        // Regular JSON submission
+        await kasApi.create({
+          type: values.type,
+          tanggal: values.tanggal ? format(values.tanggal, "yyyy-MM-dd HH:mm:ss") : undefined,
+          amount: values.amount,
+          metode: values.metode,
+          kategori: values.kategori,
+          pihak: values.pihak || undefined,
+          keterangan: values.keterangan || undefined,
+          external_ref: values.external_ref || undefined,
+          idempotency_key: idempotencyKey,
+        });
+      }
 
       toast.success("Transaksi berhasil disimpan");
+      router.refresh(); // Refresh data before redirect
       router.push("/dashboard/kas/transaksi");
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error?.status === 403) {
         toast.error("Anda tidak memiliki akses untuk membuat transaksi");
         router.replace("/dashboard");
@@ -194,26 +217,6 @@ export default function CreateKasTransaksiPage() {
               />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Amount */}
-                <FormField
-                  control={form.control}
-                  name="amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Jumlah (Rp) <span className="text-red-500">*</span></FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="0"
-                          {...field}
-                          className="font-mono"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
                 {/* Date */}
                 <FormField
                   control={form.control}
@@ -251,6 +254,30 @@ export default function CreateKasTransaksiPage() {
                       </Popover>
                       <FormDescription>
                         Kosongkan untuk menggunakan tanggal hari ini
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Amount */}
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Jumlah (Rp) <span className="text-red-500">*</span></FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                          className="font-mono"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Masukkan nominal transaksi
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -362,10 +389,38 @@ export default function CreateKasTransaksiPage() {
                       <Input
                         placeholder="Contoh: INV-001, No. Faktur, dll"
                         {...field}
+                        value={field.value || ""}
                       />
                     </FormControl>
                     <FormDescription>
                       Nomor referensi dari sistem lain jika ada (opsional)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Payment Proof Upload */}
+              <FormField
+                control={form.control}
+                name="payment_proof"
+                render={({ field: { onChange, ...field } }) => (
+                  <FormItem>
+                    <FormLabel>Bukti Pembayaran</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          onChange(file);
+                        }}
+                        {...field}
+                        value={undefined}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Upload foto/scan bukti pembayaran (opsional, max 5MB)
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

@@ -27,6 +27,10 @@ import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown"
 import { download } from "@/shared/infrastructure/api/httpClient";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { ShiftStatusBar } from "./ShiftStatusBar";
+import { DateRangePicker } from "@/shared/presentation/components/DateRangePicker";
+import { format } from "date-fns";
+
 
 const SORT_OPTIONS = [
   { label: "Tanggal", value: "tanggal" },
@@ -68,6 +72,7 @@ export function KasTransaksiListClient({ data, meta, stats }: KasTransaksiListCl
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setItems } = useBreadcrumbStore();
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const initialQ = searchParams.get("q") || "";
   const [searchValue, setSearchValue] = useState(initialQ);
@@ -102,9 +107,8 @@ export function KasTransaksiListClient({ data, meta, stats }: KasTransaksiListCl
   };
 
   useEffect(() => {
-    const currentQ = searchParams.get("q") || "";
-    if (debouncedQ !== currentQ) {
-      updateUrl({ q: debouncedQ || null, page: "1" });
+    if (debouncedQ !== initialQ) {
+      updateUrl({ q: debouncedQ || null, page: null });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedQ]);
@@ -113,18 +117,21 @@ export function KasTransaksiListClient({ data, meta, stats }: KasTransaksiListCl
     setSearchValue(val);
   };
 
-  const handleExport = async (format: string) => {
+  const handleExport = async (format: "pdf" | "excel") => {
     try {
-      const params: Record<string, string> = {};
-      searchParams.forEach((val, key) => {
-        params[key] = val;
-      });
-      await download("kas/transaksi/export", { ...params, format });
-      toast.success(`Berhasil export ke ${format.toUpperCase()}`);
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast.error(err.message || "Gagal export data");
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("format", format);
+      const filename = await download(`kas/transaksi/export?${params.toString()}`);
+      toast.success(`File ${filename} berhasil diunduh`);
+    } catch (error) {
+      toast.error("Gagal mengekspor data");
+      console.error(error);
     }
+  };
+
+  const handleShiftChange = () => {
+    router.refresh();
+    setRefreshKey(prev => prev + 1);
   };
 
   return (
@@ -144,6 +151,9 @@ export function KasTransaksiListClient({ data, meta, stats }: KasTransaksiListCl
           </div>
         }
       />
+
+      {/* Shift Status Bar */}
+      <ShiftStatusBar key={refreshKey} onShiftChange={handleShiftChange} />
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatsCard
@@ -206,27 +216,24 @@ export function KasTransaksiListClient({ data, meta, stats }: KasTransaksiListCl
             }}
           />
 
-          {/* Date Range Filters */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground whitespace-nowrap">Dari:</Label>
-              <Input
-                type="date"
-                value={searchParams.get("tanggal_from") || ""}
-                onChange={(e) => updateUrl({ tanggal_from: e.target.value || null, page: "1" })}
-                className="h-9 w-[150px]"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground whitespace-nowrap">Sampai:</Label>
-              <Input
-                type="date"
-                value={searchParams.get("tanggal_to") || ""}
-                onChange={(e) => updateUrl({ tanggal_to: e.target.value || null, page: "1" })}
-                className="h-9 w-[150px]"
-              />
-            </div>
-          </div>
+          {/* Date Range Filter */}
+          <DateRangePicker
+            value={{
+              from: searchParams.get("tanggal_from")
+                ? new Date(searchParams.get("tanggal_from")!)
+                : undefined,
+              to: searchParams.get("tanggal_to")
+                ? new Date(searchParams.get("tanggal_to")!)
+                : undefined,
+            }}
+            onChange={(range) => {
+              updateUrl({
+                tanggal_from: range?.from ? format(range.from, "yyyy-MM-dd") : null,
+                tanggal_to: range?.to ? format(range.to, "yyyy-MM-dd") : null,
+                page: "1",
+              });
+            }}
+          />
 
           <div className="flex items-center gap-2">
             <Label className="text-muted-foreground text-sm whitespace-nowrap">

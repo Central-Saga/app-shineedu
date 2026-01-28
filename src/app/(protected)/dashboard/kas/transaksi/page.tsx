@@ -45,10 +45,17 @@ export default function KasTransaksiPage() {
         sort_dir,
       });
 
-      // Fetch ALL transactions to calculate totals (without pagination)
+      // Fetch ALL transactions with same filters to calculate totals (without pagination)
+      const statsFilters = {
+        per_page: 9999,
+        kategori: kategori && kategori !== "__all__" ? kategori : undefined,
+        tanggal_from,
+        tanggal_to,
+      };
+
       const [allInResult, allOutResult] = await Promise.all([
-        kasApi.list({ type: "IN", per_page: 9999 }), // Get all IN transactions
-        kasApi.list({ type: "OUT", per_page: 9999 }), // Get all OUT transactions
+        kasApi.list({ ...statsFilters, type: "IN" }), // Get all IN transactions with filters
+        kasApi.list({ ...statsFilters, type: "OUT" }), // Get all OUT transactions with filters
       ]);
 
       // Calculate actual sum of amounts
