@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
@@ -77,23 +77,22 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
     ]);
   }, [setItems]);
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     if (!allowed || !id || Number.isNaN(id)) return;
-    
-    const fetchData = async () => {
-      try {
-        const data = await enrollmentRepository.getEnrollment(id);
-        setEnrollment(data);
-      } catch {
-        toast.error("Gagal memuat data enrollment");
-        router.replace("/dashboard/enrollment");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    try {
+      const data = await enrollmentRepository.getEnrollment(id);
+      setEnrollment(data);
+    } catch {
+      toast.error("Gagal memuat data enrollment");
+      router.replace("/dashboard/enrollment");
+    } finally {
+      setLoading(false);
+    }
   }, [allowed, id, router]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   if (!allowed) return null;
 
@@ -193,7 +192,7 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
                   </div>
 
                    {/* Registration Fee Info */}
-                   <RegistrationFeeCard enrollment={enrollment} canUpdate={canUpdate} />
+                   <RegistrationFeeCard enrollment={enrollment} canUpdate={canUpdate} onSuccess={fetchData} />
 
                   <div className="space-y-1">
                      <DetailItem icon={Users} label="Kapasitas" value={`${enrollment.jumlah_siswa} Siswa`} />
