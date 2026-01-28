@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import { RegistrationFeeCard } from "@/modules/enrollment/presentation/components/RegistrationFeeCard";
 import { SaldoPertemuanCard } from "@/modules/enrollment/presentation/components/SaldoPertemuanCard";
+import { TransaksiMuridCard } from "@/modules/enrollment/presentation/components/TransaksiMuridCard";
 
 function DetailItem({ icon: Icon, label, value, badge }: { icon: React.ElementType, label: string, value: React.ReactNode, badge?: boolean }) {
   return (
@@ -255,6 +256,16 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
                   enrollmentId={enrollment.id}
                   programId={enrollment.program?.id}
                   jenjangId={enrollment.jenjang?.id}
+                />
+             </div>
+
+             {/* Transaksi Murid Card */}
+             <div className="mt-6">
+                <TransaksiMuridCard 
+                  enrollmentId={enrollment.id}
+                  biayaPendaftaran={Number(enrollment.biaya_pendaftaran_amount) || undefined}
+                  statusPendaftaranPaid={enrollment.biaya_pendaftaran_status === 'PAID'}
+                  onPaymentSuccess={fetchData}
                 />
              </div>
         </div>

@@ -6,7 +6,11 @@ import {
   CreditCard, 
   History, 
   MoreVertical, 
-  Settings2
+  Settings2,
+  DollarSign,
+  Package,
+  Wallet,
+  ArrowUpCircle
 } from "lucide-react";
 
 import {
@@ -29,6 +33,8 @@ import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import { saldoPertemuanApi, PaketMurid } from "@/lib/api/saldo-pertemuan";
 import { TambahPaketDialog } from "./saldo/TambahPaketDialog";
 import { AdjustSaldoDialog } from "./saldo/AdjustSaldoDialog";
+import { BayarPaketBaruDialog } from "./payment/BayarPaketBaruDialog";
+import { TopupKuotaDialog } from "./payment/TopupKuotaDialog";
 
 interface SaldoPertemuanCardProps {
   enrollmentId: number;
@@ -48,6 +54,7 @@ export function SaldoPertemuanCard({ enrollmentId, programId, jenjangId }: Saldo
 
   const canAdjust = authStore.hasPermission("paket_murid.adjust") || authStore.hasPermission("enrollment.update");
   const canView = authStore.hasPermission("enrollment.view"); // Assuming basic view permission
+  const canPayment = authStore.hasPermission("paket_murid.create") || authStore.hasPermission("enrollment.update");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -79,13 +86,58 @@ export function SaldoPertemuanCard({ enrollmentId, programId, jenjangId }: Saldo
                 <CreditCard className="size-4" /> Saldo Pertemuan
             </CardTitle>
         </div>
-        <div>
-            <TambahPaketDialog 
-                enrollmentId={enrollmentId} 
-                programId={programId}
-                jenjangId={jenjangId}
-                onSuccess={fetchData} 
-            />
+        <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="default">
+                  <DollarSign className="size-4 mr-1" />
+                  Bayar / Topup
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <TambahPaketDialog 
+                  enrollmentId={enrollmentId} 
+                  programId={programId}
+                  jenjangId={jenjangId}
+                  onSuccess={fetchData}
+                  triggerButton={
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <Package className="size-4 mr-2" />
+                      <span>Tambah Paket Gratis</span>
+                    </DropdownMenuItem>
+                  }
+                />
+                {canPayment && (
+                  <>
+                    <BayarPaketBaruDialog
+                      enrollmentId={enrollmentId}
+                      programId={programId}
+                      jenjangId={jenjangId}
+                      onSuccess={fetchData}
+                      triggerButton={
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                          <Wallet className="size-4 mr-2" />
+                          <span>Bayar Paket Baru</span>
+                        </DropdownMenuItem>
+                      }
+                    />
+                    <TopupKuotaDialog
+                      enrollmentId={enrollmentId}
+                      programId={programId}
+                      jenjangId={jenjangId}
+                      existingPaketMurid={data}
+                      onSuccess={fetchData}
+                      triggerButton={
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                          <ArrowUpCircle className="size-4 mr-2" />
+                          <span>Topup Kuota</span>
+                        </DropdownMenuItem>
+                      }
+                    />
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
         </div>
       </CardHeader>
       <CardContent className="pt-0">

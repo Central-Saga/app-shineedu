@@ -55,9 +55,10 @@ interface TambahPaketDialogProps {
   programId?: number;
   jenjangId?: number;
   onSuccess: () => void;
+  triggerButton?: React.ReactNode;
 }
 
-export function TambahPaketDialog({ enrollmentId, programId, jenjangId, onSuccess }: TambahPaketDialogProps) {
+export function TambahPaketDialog({ enrollmentId, programId, jenjangId, onSuccess, triggerButton }: TambahPaketDialogProps) {
   const [open, setOpen] = useState(false);
   const [pakets, setPakets] = useState<Paket[]>([]);
   const [loadingPaket, setLoadingPaket] = useState(false);
@@ -120,10 +121,12 @@ export function TambahPaketDialog({ enrollmentId, programId, jenjangId, onSucces
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-1">
-          <Plus className="size-4" />
-          Tambah Paket
-        </Button>
+        {triggerButton || (
+          <Button size="sm" className="gap-1">
+            <Plus className="size-4" />
+            Tambah Paket
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
