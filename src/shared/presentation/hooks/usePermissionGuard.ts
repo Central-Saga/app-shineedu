@@ -8,22 +8,15 @@ import { authStore, useAuthStore } from "@/modules/auth/infrastructure/auth.stor
 export function usePermissionGuard(permission: string): { allowed: boolean } {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
-  const token = useAuthStore((s) => s.token);
   const allowed = useAuthStore((s) => authStore.hasPermission(permission));
 
   useEffect(() => {
-    // Jika tidak ada token, berarti memang belum login
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
-
-    // Hanya tendang user jika data user SUDAH ada tapi izin TIDAK ada
+    // Hanya lakukan pengecekan jika user sudah ter-load (tidak null)
     if (user && !allowed) {
-      toast.error("Tidak punya akses ke halaman tersebut");
+      toast.error("Anda tidak memiliki akses ke halaman ini");
       router.replace("/dashboard");
     }
-  }, [allowed, user, token, router]);
+  }, [user, allowed, router]);
 
   return { allowed };
 }
