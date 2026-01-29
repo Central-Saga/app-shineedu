@@ -394,7 +394,7 @@ export function SidebarCatalogToggle({ can }: { can: (key: string) => boolean })
   const canJenjang = can("catalog.jenjang.view");
   const canProgram = can("catalog.program.view");
   const canPaket = can("catalog.paket.view");
-  const canHarga = can("catalog.harga.view");
+  const canHarga = can("catalog.pricing.view");
 
   if (!canJenjang && !canProgram && !canPaket && !canHarga) return null;
 

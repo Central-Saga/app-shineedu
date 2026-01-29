@@ -40,7 +40,7 @@ import type { PaginatedMeta } from "@/shared/domain/types";
 const PER_PAGE_OPTIONS = [15, 30, 50, 100];
 
 export default function PaketHargaPage() {
-  const { allowed } = usePermissionGuard("catalog.harga.view");
+  const { allowed } = usePermissionGuard("catalog.pricing.view");
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -79,9 +79,9 @@ export default function PaketHargaPage() {
   const [paketOptions, setPaketOptions] = useState<{label: string, value: string}[]>([]);
 
   const { setItems } = useBreadcrumbStore();
-  const canCreate = useAuthStore((s) => s.permissionsSet.has("catalog.harga.create"));
-  const canUpdate = useAuthStore((s) => s.permissionsSet.has("catalog.harga.update"));
-  const canDelete = useAuthStore((s) => s.permissionsSet.has("catalog.harga.delete"));
+  const canCreate = useAuthStore((s) => s.permissionsSet.has("catalog.pricing.create"));
+  const canUpdate = useAuthStore((s) => s.permissionsSet.has("catalog.pricing.update"));
+  const canDelete = useAuthStore((s) => s.permissionsSet.has("catalog.pricing.delete"));
 
   const [stats, setStats] = useState({
     total: 0,

@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 export default function LookupPage() {
-  const { allowed } = usePermissionGuard("catalog.harga.view");
+  const { allowed } = usePermissionGuard("catalog.pricing.view");
   const { setItems } = useBreadcrumbStore();
   
   const [programs, setPrograms] = useState<Program[]>([]);
