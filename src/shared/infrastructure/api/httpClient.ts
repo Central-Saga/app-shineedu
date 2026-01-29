@@ -11,9 +11,7 @@ import {
 } from "./errors";
 
 const BASE =
-  typeof window === "undefined"
-    ? "http://api:8000/api/v2"
-    : process.env.NEXT_PUBLIC_API_BASE_URL || "";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.shineeducationbali.com/api/v2";
 
 let tokenGetter: (() => string | null) | null = null;
 let onUnauthorized: (() => void) | null = null;
