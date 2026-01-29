@@ -19,9 +19,11 @@ function buildPermissionsSet(user: User): Set<string> {
 }
 
 function isSuperadmin(user: User): boolean {
-  return (user.roles ?? []).some(
-    (r) => r.name?.toLowerCase() === "superadmin"
-  );
+  return (user.roles ?? []).some((r) => {
+    const name = r?.name;
+    if (typeof name !== "string") return false;
+    return name.toLowerCase().replace(/\s+/g, "") === "superadmin";
+  });
 }
 
 export const useAuthStore = create<State>(() => ({

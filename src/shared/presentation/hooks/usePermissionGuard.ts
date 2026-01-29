@@ -10,9 +10,11 @@ import type { User } from "@/modules/auth/domain/entities";
  * Helper to check if a user is superadmin.
  */
 function isSuperadmin(user: User): boolean {
-  return (user.roles ?? []).some(
-    (r: any) => r.name?.toLowerCase() === "superadmin"
-  );
+  return (user.roles ?? []).some((r: any) => {
+    const name = r?.name;
+    if (typeof name !== "string") return false;
+    return name.toLowerCase().replace(/\s+/g, "") === "superadmin";
+  });
 }
 
 /**
