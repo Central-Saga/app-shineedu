@@ -1,0 +1,34 @@
+# ========================================
+# COMMANDS TO RUN IN SSH SESSION
+# ========================================
+# Copy-paste commands ini di SSH terminal Anda
+# ========================================
+
+# 1. Cek dimana aplikasi berada
+pwd
+ls -la
+
+# 2. Cari folder aplikasi (biasanya app-shineedu atau sejenisnya)
+find ~ -name "server.js" -type f 2>/dev/null | grep shineedu
+
+# 3. Atau cek PM2 untuk tahu path aplikasi
+pm2 list
+pm2 info app-shineedu
+
+# 4. Setelah tahu path aplikasi, navigate ke sana
+# Contoh: cd ~/app-shineedu
+# Ganti dengan path yang benar
+
+# 5. Backup folder .next yang lama
+mv .next .next_backup_$(date +%Y%m%d_%H%M%S)
+
+# 6. Buat folder .next baru (kosong dulu)
+mkdir -p .next
+
+# 7. Cek path lengkap (untuk rsync)
+pwd
+# Copy output ini, nanti kita pakai untuk rsync
+
+# ========================================
+# SETELAH DAPAT PATH, KEMBALI KE TERMINAL LOCAL
+# ========================================
