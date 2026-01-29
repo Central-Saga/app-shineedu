@@ -28,15 +28,13 @@ import {
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import { saldoPertemuanApi, PaketMurid } from "@/lib/api/saldo-pertemuan";
 import { AdjustSaldoDialog } from "./saldo/AdjustSaldoDialog";
-import { UniversalPaketDialog } from "./payment/UniversalPaketDialog";
+import { TopupPaketDialog } from "./payment/TopupPaketDialog";
 
 interface SaldoPertemuanCardProps {
   enrollmentId: number;
-  programId?: number;
-  jenjangId?: number;
 }
 
-export function SaldoPertemuanCard({ enrollmentId, programId, jenjangId }: SaldoPertemuanCardProps) {
+export function SaldoPertemuanCard({ enrollmentId }: SaldoPertemuanCardProps) {
   const [data, setData] = useState<PaketMurid[]>([]);
   const [loading, setLoading] = useState(true);
   // No local state for history sheet needed anymore since it's a new page
@@ -80,10 +78,8 @@ export function SaldoPertemuanCard({ enrollmentId, programId, jenjangId }: Saldo
             </CardTitle>
         </div>
         <div className="flex items-center gap-2">
-            <UniversalPaketDialog
+            <TopupPaketDialog
               enrollmentId={enrollmentId}
-              programId={programId}
-              jenjangId={jenjangId}
               existingPaketMurid={data}
               onSuccess={fetchData}
             />

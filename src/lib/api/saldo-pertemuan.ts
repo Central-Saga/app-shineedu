@@ -13,6 +13,7 @@ export interface PaketMurid {
   paket?: {
     id: number;
     nama: string;
+    pertemuan_per_bulan?: number;
   };
 }
 

@@ -41,9 +41,16 @@ import { saldoPertemuanApi } from "@/lib/api/saldo-pertemuan";
 // Schema for form
 const formSchema = z.object({
   action: z.enum(["ADD", "SUBTRACT", "EXPIRE"]),
-  qty: z.coerce.number().min(0, "Jumlah harus lebih dari 0"),
+  qty: z.number().min(0, "Jumlah harus lebih dari 0"),
   reason: z.string().min(3, "Alasan wajib diisi (min 3 karakter)"),
 });
+
+// Explicit type definition to avoid zod inference issues
+type FormValues = {
+  action: "ADD" | "SUBTRACT" | "EXPIRE";
+  qty: number;
+  reason: string;
+};
 
 export interface AdjustSaldoDialogProps {
   paketMuridId: number;
@@ -74,8 +81,8 @@ export function AdjustSaldoDialog({
     }
   };
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema) as never,
     defaultValues: {
       action: "ADD",
       qty: 0,

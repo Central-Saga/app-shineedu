@@ -45,11 +45,16 @@ export interface EnrollmentTransaksi {
 export const enrollmentPaymentsApi = {
   /**
    * Pay registration fee for an enrollment
+   * Supports both JSON payload and FormData (for file uploads)
    */
-  payRegistrationFee: async (enrollmentId: number, payload: PayRegistrationFeePayload): Promise<{ transaksi_id: number; message: string }> => {
+  payRegistrationFee: async (
+    enrollmentId: number, 
+    payload: PayRegistrationFeePayload | FormData
+  ): Promise<{ transaksi_id: number; message: string }> => {
     const res = await post<{ transaksi_id: number; message: string }>(`enrollments/${enrollmentId}/pay-registration-fee`, payload);
     return res;
   },
+
 
   /**
    * Pay for package / topup meeting quota

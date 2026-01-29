@@ -121,14 +121,15 @@ export default function CreateKasTransaksiPage() {
       router.refresh(); // Refresh data before redirect
       router.push("/dashboard/kas/transaksi");
     } catch (error: unknown) {
-      if (error?.status === 403) {
+      const err = error as { status?: number; message?: string; errors?: Record<string, string[]> };
+      if (err?.status === 403) {
         toast.error("Anda tidak memiliki akses untuk membuat transaksi");
         router.replace("/dashboard");
         return;
       }
-      if (error?.status === 422) {
+      if (err?.status === 422) {
         // Handle validation errors
-        const fieldErrors = error.errors;
+        const fieldErrors = err.errors;
         if (fieldErrors) {
           Object.entries(fieldErrors).forEach(([field, messages]) => {
             if (Array.isArray(messages)) {
@@ -136,10 +137,10 @@ export default function CreateKasTransaksiPage() {
             }
           });
         }
-        toast.error(error.message || "Data tidak valid. Silakan periksa kembali.");
+        toast.error(err.message || "Data tidak valid. Silakan periksa kembali.");
         return;
       }
-      toast.error(error.message || "Gagal menyimpan transaksi");
+      toast.error(err?.message || "Gagal menyimpan transaksi");
     }
   };
 

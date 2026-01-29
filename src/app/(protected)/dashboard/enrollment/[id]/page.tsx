@@ -254,8 +254,6 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
              <div className="mt-6">
                 <SaldoPertemuanCard 
                   enrollmentId={enrollment.id}
-                  programId={enrollment.program?.id}
-                  jenjangId={enrollment.jenjang?.id}
                 />
              </div>
 
@@ -263,9 +261,7 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
              <div className="mt-6">
                 <TransaksiMuridCard 
                   enrollmentId={enrollment.id}
-                  biayaPendaftaran={Number(enrollment.biaya_pendaftaran_amount) || undefined}
                   statusPendaftaranPaid={enrollment.biaya_pendaftaran_status === 'PAID'}
-                  onPaymentSuccess={fetchData}
                 />
              </div>
         </div>

@@ -117,7 +117,7 @@ export function KasTransaksiListClient({ data, meta, stats }: KasTransaksiListCl
     setSearchValue(val);
   };
 
-  const handleExport = async (format: "pdf" | "excel") => {
+  const handleExport = async (format: string) => {
     try {
       const params = new URLSearchParams(searchParams.toString());
       params.set("format", format);

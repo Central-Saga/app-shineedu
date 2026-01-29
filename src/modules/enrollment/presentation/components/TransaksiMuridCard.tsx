@@ -15,7 +15,6 @@ import Link from "next/link";
 
 import { enrollmentPaymentsApi, EnrollmentTransaksi } from "@/lib/api/enrollmentPayments";
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
-import { PayRegistrationFeeDialog } from "./payment/PayRegistrationFeeDialog";
 
 const formatCurrency = (val: number | string | null | undefined) => {
   if (val === null || val === undefined) return "Rp 0";
@@ -43,16 +42,12 @@ const formatDate = (s: string | null | undefined) => {
 
 interface TransaksiMuridCardProps {
   enrollmentId: number;
-  biayaPendaftaran?: number;
   statusPendaftaranPaid?: boolean;
-  onPaymentSuccess?: () => void;
 }
 
 export function TransaksiMuridCard({
   enrollmentId,
-  biayaPendaftaran,
   statusPendaftaranPaid = false,
-  onPaymentSuccess,
 }: TransaksiMuridCardProps) {
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<EnrollmentTransaksi[]>([]);
@@ -75,11 +70,6 @@ export function TransaksiMuridCard({
     fetchTransactions();
   }, [fetchTransactions]);
 
-  const handlePaymentSuccess = () => {
-    fetchTransactions();
-    onPaymentSuccess?.();
-  };
-
   return (
     <Card>
       <CardHeader className="py-4 border-b">
@@ -97,22 +87,17 @@ export function TransaksiMuridCard({
         </div>
       </CardHeader>
       <CardContent className="pt-4 space-y-4">
-        {/* Action Buttons */}
-        <div className="flex flex-wrap gap-2">
-          {canPayRegistration && !statusPendaftaranPaid && (
-            <PayRegistrationFeeDialog
-              enrollmentId={enrollmentId}
-              defaultAmount={biayaPendaftaran}
-              onSuccess={handlePaymentSuccess}
-              triggerButton={
-                <Button size="sm" className="gap-1">
-                  <CreditCard className="size-4" />
-                  Bayar Pendaftaran
-                </Button>
-              }
-            />
-          )}
-        </div>
+        {/* Action Buttons - ONLY show if registration not paid */}
+        {canPayRegistration && !statusPendaftaranPaid && (
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" className="gap-1" asChild>
+              <Link href={`/dashboard/enrollment/${enrollmentId}/payment`}>
+                <CreditCard className="size-4" />
+                Bayar Pendaftaran
+              </Link>
+            </Button>
+          </div>
+        )}
 
         {/* Recent Transactions */}
         <div className="space-y-2">

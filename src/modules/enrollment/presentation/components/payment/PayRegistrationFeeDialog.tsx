@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { CalendarIcon, Loader2, CreditCard } from "lucide-react";
+import { CalendarIcon, Loader2, CreditCard, Upload, X, FileText, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
@@ -44,36 +44,47 @@ import { cn } from "@/lib/utils";
 import { enrollmentPaymentsApi } from "@/lib/api/enrollmentPayments";
 import { KAS_METODE_OPTIONS } from "@/lib/api/kas";
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+
 const formSchema = z.object({
   amount: z.number().min(1, "Jumlah harus lebih dari 0"),
   metode: z.string().min(1, "Metode pembayaran harus dipilih"),
   tanggal: z.date().optional(),
   keterangan: z.string().optional(),
   external_ref: z.string().optional(),
+  bukti_file: z.instanceof(File).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 interface PayRegistrationFeeDialogProps {
   enrollmentId: number;
-  defaultAmount?: number;
+  registrationFee?: number;  // Biaya Pendaftaran
+  packagePrice?: number;     // Harga Paket
   onSuccess: () => void;
   triggerButton?: React.ReactNode;
 }
 
 export function PayRegistrationFeeDialog({
   enrollmentId,
-  defaultAmount,
+  registrationFee = 0,
+  packagePrice = 0,
   onSuccess,
   triggerButton,
 }: PayRegistrationFeeDialogProps) {
   const [open, setOpen] = useState(false);
   const [idempotencyKey] = useState(() => uuidv4());
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Total amount = registration fee + package price
+  const totalAmount = registrationFee + packagePrice;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      amount: defaultAmount || 0,
+      amount: totalAmount || 0,
       metode: "",
       keterangan: "",
       external_ref: "",
@@ -81,33 +92,91 @@ export function PayRegistrationFeeDialog({
   });
 
   const { isSubmitting } = form.formState;
+  const buktiFile = form.watch("bukti_file");
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("Ukuran file maksimal 5MB");
+      return;
+    }
+
+    // Validate file type
+    if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
+      toast.error("Format file harus JPG, PNG, WebP, atau PDF");
+      return;
+    }
+
+    form.setValue("bukti_file", file);
+
+    // Create preview for images
+    if (file.type.startsWith("image/")) {
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    } else {
+      setPreviewUrl(null);
+    }
+  };
+
+  const clearFile = () => {
+    form.setValue("bukti_file", undefined);
+    setPreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const onSubmit = async (values: FormValues) => {
     try {
-      await enrollmentPaymentsApi.payRegistrationFee(enrollmentId, {
-        amount: values.amount,
-        metode: values.metode,
-        tanggal: values.tanggal ? format(values.tanggal, "yyyy-MM-dd HH:mm:ss") : undefined,
-        keterangan: values.keterangan || undefined,
-        external_ref: values.external_ref || undefined,
-        idempotency_key: idempotencyKey,
-      });
+      // Use FormData if there's a file
+      if (values.bukti_file) {
+        const formData = new FormData();
+        formData.append("amount", values.amount.toString());
+        formData.append("metode", values.metode);
+        if (values.tanggal) {
+          formData.append("tanggal", format(values.tanggal, "yyyy-MM-dd HH:mm:ss"));
+        }
+        if (values.keterangan) {
+          formData.append("keterangan", values.keterangan);
+        }
+        if (values.external_ref) {
+          formData.append("external_ref", values.external_ref);
+        }
+        formData.append("idempotency_key", idempotencyKey);
+        formData.append("bukti_file", values.bukti_file);
+
+        await enrollmentPaymentsApi.payRegistrationFee(enrollmentId, formData);
+      } else {
+        await enrollmentPaymentsApi.payRegistrationFee(enrollmentId, {
+          amount: values.amount,
+          metode: values.metode,
+          tanggal: values.tanggal ? format(values.tanggal, "yyyy-MM-dd HH:mm:ss") : undefined,
+          keterangan: values.keterangan || undefined,
+          external_ref: values.external_ref || undefined,
+          idempotency_key: idempotencyKey,
+        });
+      }
 
       toast.success("Pembayaran biaya pendaftaran berhasil dicatat");
       setOpen(false);
       form.reset();
+      clearFile();
       onSuccess();
-    } catch (error: any) {
-      if (error?.status === 403) {
+    } catch (error: unknown) {
+      const err = error as { status?: number; message?: string; errors?: Record<string, string[]> };
+      if (err?.status === 403) {
         toast.error("Anda tidak memiliki akses untuk memproses pembayaran");
         return;
       }
-      if (error?.status === 409) {
-        toast.error(error.message || "Biaya pendaftaran sudah dibayar sebelumnya");
+      if (err?.status === 409) {
+        toast.error(err.message || "Biaya pendaftaran sudah dibayar sebelumnya");
         return;
       }
-      if (error?.status === 422) {
-        const fieldErrors = error.errors;
+      if (err?.status === 422) {
+        const fieldErrors = err.errors;
         if (fieldErrors) {
           Object.entries(fieldErrors).forEach(([field, messages]) => {
             if (Array.isArray(messages)) {
@@ -115,10 +184,10 @@ export function PayRegistrationFeeDialog({
             }
           });
         }
-        toast.error(error.message || "Data tidak valid");
+        toast.error(err.message || "Data tidak valid");
         return;
       }
-      toast.error(error.message || "Gagal mencatat pembayaran");
+      toast.error(err?.message || "Gagal mencatat pembayaran");
     }
   };
 
@@ -134,29 +203,51 @@ export function PayRegistrationFeeDialog({
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Bayar Biaya Pendaftaran</DialogTitle>
+          <DialogTitle>Bayar Pendaftaran + Paket Pertama</DialogTitle>
           <DialogDescription>
-            Catat pembayaran biaya pendaftaran untuk enrollment ini.
+            Pembayaran ini akan mencatat biaya pendaftaran sekaligus mengaktifkan saldo pertemuan paket pertama.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Breakdown Info */}
+            {(registrationFee > 0 || packagePrice > 0) && (
+              <div className="rounded-lg bg-muted/50 p-3 space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Biaya Pendaftaran</span>
+                  <span className="font-mono">Rp {registrationFee.toLocaleString("id-ID")}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Harga Paket</span>
+                  <span className="font-mono">Rp {packagePrice.toLocaleString("id-ID")}</span>
+                </div>
+                <div className="flex justify-between font-semibold border-t pt-1 mt-1">
+                  <span>Total</span>
+                  <span className="font-mono text-primary">Rp {totalAmount.toLocaleString("id-ID")}</span>
+                </div>
+              </div>
+            )}
+
             {/* Amount */}
             <FormField
               control={form.control}
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Jumlah (Rp) <span className="text-red-500">*</span></FormLabel>
+                  <FormLabel>Jumlah Bayar (Rp) <span className="text-red-500">*</span></FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       placeholder="0"
                       {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
                       className="font-mono"
                     />
                   </FormControl>
+                  <FormDescription>
+                    Isi sesuai total atau sesuaikan jika berbeda (misal: diskon, cicilan, dll.)
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -225,6 +316,71 @@ export function PayRegistrationFeeDialog({
                 </FormItem>
               )}
             />
+
+            {/* Bukti Pembayaran (File Upload) */}
+            <FormItem>
+              <FormLabel>Bukti Pembayaran</FormLabel>
+              <FormControl>
+                <div className="space-y-2">
+                  {!buktiFile ? (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-colors"
+                    >
+                      <Upload className="size-6 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        Klik untuk upload bukti pembayaran
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        JPG, PNG, WebP, PDF (max 5MB)
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="border rounded-lg p-3 bg-muted/30">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {previewUrl ? (
+                            <ImageIcon className="size-4 text-blue-500 shrink-0" />
+                          ) : (
+                            <FileText className="size-4 text-red-500 shrink-0" />
+                          )}
+                          <span className="text-sm truncate">{buktiFile.name}</span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={clearFile}
+                          className="shrink-0 h-7 w-7 p-0"
+                        >
+                          <X className="size-4" />
+                        </Button>
+                      </div>
+                      {previewUrl && (
+                        <div className="mt-2">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={previewUrl}
+                            alt="Preview"
+                            className="max-h-32 rounded border object-contain"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.webp,.pdf"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </div>
+              </FormControl>
+              <FormDescription>
+                Upload bukti pembayaran (opsional)
+              </FormDescription>
+            </FormItem>
 
             {/* Keterangan */}
             <FormField
