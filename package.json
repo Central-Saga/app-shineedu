@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:bundle": "next build && ./bundle.sh",
     "start": "NODE_ENV=production node server.js",
     "lint": "eslint"
   },
