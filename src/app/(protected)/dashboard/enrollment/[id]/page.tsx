@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
@@ -23,9 +23,19 @@ import {
   Package,
   Users,
   Info,
-  Infinity as InfinityIcon
+  Infinity as InfinityIcon,
+  Loader2
 } from "lucide-react";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 import { RegistrationFeeCard } from "@/modules/enrollment/presentation/components/RegistrationFeeCard";
+import { SaldoPertemuanCard } from "@/modules/enrollment/presentation/components/SaldoPertemuanCard";
+import { TransaksiMuridCard } from "@/modules/enrollment/presentation/components/TransaksiMuridCard";
 
 function DetailItem({ icon: Icon, label, value, badge }: { icon: React.ElementType, label: string, value: React.ReactNode, badge?: boolean }) {
   return (
@@ -64,6 +74,7 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
   const router = useRouter();
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [loading, setLoading] = useState(true);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const canUpdate = authStore.hasPermission("enrollment.update");
   const { setItems } = useBreadcrumbStore();
@@ -76,23 +87,22 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
     ]);
   }, [setItems]);
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     if (!allowed || !id || Number.isNaN(id)) return;
-    
-    const fetchData = async () => {
-      try {
-        const data = await enrollmentRepository.getEnrollment(id);
-        setEnrollment(data);
-      } catch {
-        toast.error("Gagal memuat data enrollment");
-        router.replace("/dashboard/enrollment");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    try {
+      const data = await enrollmentRepository.getEnrollment(id);
+      setEnrollment(data);
+    } catch {
+      toast.error("Gagal memuat data enrollment");
+      router.replace("/dashboard/enrollment");
+    } finally {
+      setLoading(false);
+    }
   }, [allowed, id, router]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   if (!allowed) return null;
 
@@ -145,9 +155,48 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
               <Badge variant="secondary" className="font-mono text-[10px] px-2 py-0 border">
                  {enrollment.kode_enrollment || "N/A"}
               </Badge>
-              <Badge variant={enrollment.status === "Aktif" ? "outline" : "secondary"} className={enrollment.status === "Aktif" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : ""}>
-                {enrollment.status}
-              </Badge>
+              
+              {canUpdate ? (
+                <Select
+                  disabled={updatingStatus}
+                  value={enrollment.status}
+                  onValueChange={async (val) => {
+                    setUpdatingStatus(true);
+                    try {
+                      await enrollmentRepository.updateEnrollment(enrollment.id, { status: val });
+                      toast.success("Status enrollment berhasil diperbarui");
+                      fetchData();
+                    } catch {
+                      toast.error("Gagal memperbarui status");
+                    } finally {
+                      setUpdatingStatus(false);
+                    }
+                  }}
+                >
+                  <SelectTrigger className={`h-6 text-[11px] font-bold px-2 py-0 w-auto min-w-[80px] border-none shadow-none focus:ring-0 ${
+                    enrollment.status === 'Aktif' 
+                      ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' 
+                      : enrollment.status === 'Pause'
+                      ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                      : enrollment.status === 'Selesai'
+                      ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}>
+                    {updatingStatus ? <Loader2 className="size-3 animate-spin mr-1" /> : null}
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Aktif">Aktif</SelectItem>
+                    <SelectItem value="Pause">Pause</SelectItem>
+                    <SelectItem value="Selesai">Selesai</SelectItem>
+                    <SelectItem value="Cancel">Cancel</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Badge variant={enrollment.status === "Aktif" ? "outline" : "secondary"} className={enrollment.status === "Aktif" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : ""}>
+                  {enrollment.status}
+                </Badge>
+              )}
             </div>
           </div>
         </div>
@@ -166,40 +215,55 @@ export default function EnrollmentDetailPage({ params }: { params: Promise<{ id:
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Student & Cost Info */}
         <div className="lg:col-span-1 space-y-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col items-center text-center pb-6 border-b mb-4">
-                 <div className="size-16 bg-slate-50 rounded-xl flex items-center justify-center text-slate-300 mb-4 border">
-                    <User className="size-8" />
-                 </div>
-                 <h2 className="text-xl font-bold">{enrollment.murid?.nama_lengkap || "-"}</h2>
-                 <p className="text-sm text-muted-foreground mt-1 font-medium">
-                    {enrollment.murid?.kode_murid || "BELUM ADA KODE"}
-                 </p>
-                 <div className="flex gap-2 mt-4">
-                    <Button asChild variant="outline" size="sm" className="h-8 text-xs">
-                        <Link href={`/dashboard/murid/${enrollment.murid?.id || enrollment.murid_id}`}>
-                           Lihat Profil
-                        </Link>
-                    </Button>
-                 </div>
-              </div>
+             <Card>
+                <CardContent className="pt-6">
+                  {/* Existing Content */}
+                  <div className="flex flex-col items-center text-center pb-6 border-b mb-4">
+                     <div className="size-16 bg-slate-50 rounded-xl flex items-center justify-center text-slate-300 mb-4 border">
+                        <User className="size-8" />
+                     </div>
+                     <h2 className="text-xl font-bold">{enrollment.murid?.nama_lengkap || "-"}</h2>
+                     <p className="text-sm text-muted-foreground mt-1 font-medium">
+                        {enrollment.murid?.kode_murid || "BELUM ADA KODE"}
+                     </p>
+                     <div className="flex gap-2 mt-4">
+                        <Button asChild variant="outline" size="sm" className="h-8 text-xs">
+                            <Link href={`/dashboard/murid/${enrollment.murid?.id || enrollment.murid_id}`}>
+                                Lihat Profil
+                            </Link>
+                        </Button>
+                     </div>
+                  </div>
 
-              <div className="bg-primary/5 rounded-lg p-4 mb-4 border border-primary/10">
-                 <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mb-1">Total Biaya</p>
-                 <p className="text-2xl font-bold text-primary">{formatCurrency(enrollment.harga_final)}</p>
-              </div>
+                  <div className="bg-primary/5 rounded-lg p-4 mb-4 border border-primary/10">
+                     <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mb-1">Total Biaya</p>
+                     <p className="text-2xl font-bold text-primary">{formatCurrency(enrollment.harga_final)}</p>
+                  </div>
 
-               {/* Registration Fee Info */}
-               <RegistrationFeeCard enrollment={enrollment} canUpdate={canUpdate} />
+                   {/* Registration Fee Info */}
+                   <RegistrationFeeCard enrollment={enrollment} canUpdate={canUpdate} onSuccess={fetchData} />
 
+                  <div className="space-y-1">
+                     <DetailItem icon={Users} label="Kapasitas" value={`${enrollment.jumlah_siswa} Siswa`} />
+                     <DetailItem icon={Package} label="Tipe Paket" value={enrollment.paket?.nama} />
+                  </div>
+                </CardContent>
+             </Card>
 
-              <div className="space-y-1">
-                 <DetailItem icon={Users} label="Kapasitas" value={`${enrollment.jumlah_siswa} Siswa`} />
-                 <DetailItem icon={Package} label="Tipe Paket" value={enrollment.paket?.nama} />
-              </div>
-            </CardContent>
-          </Card>
+             {/* Saldo Pertemuan Card */}
+             <div className="mt-6">
+                <SaldoPertemuanCard 
+                  enrollmentId={enrollment.id}
+                />
+             </div>
+
+             {/* Transaksi Murid Card */}
+             <div className="mt-6">
+                <TransaksiMuridCard 
+                  enrollmentId={enrollment.id}
+                  statusPendaftaranPaid={enrollment.biaya_pendaftaran_status === 'PAID'}
+                />
+             </div>
         </div>
 
         {/* Right Column: Enrollment Info */}

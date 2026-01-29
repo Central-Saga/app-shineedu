@@ -28,11 +28,13 @@ import {
   School,
   IdCard,
   Info,
-  BookOpen
+  BookOpen,
+  LayoutDashboard
 } from "lucide-react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MuridLogbookList } from "@/features/sesi/components/MuridLogbookList";
+import { MuridSummary } from "@/modules/murid/presentation/components/MuridSummary";
 
 function DetailItem({ icon: Icon, label, value, badge }: { icon: React.ElementType, label: string, value: string | null | undefined, badge?: boolean }) {
   return (
@@ -243,11 +245,18 @@ export default function MuridDetailPage({ params }: { params: Promise<{ id: stri
 
         {/* Right Column: Detailed Info with Tabs */}
         <div className="lg:col-span-2">
-          <Tabs defaultValue="profil" className="w-full">
+          <Tabs defaultValue="summary" className="w-full">
             <TabsList className="mb-4">
+              <TabsTrigger value="summary" className="gap-2">
+                <LayoutDashboard className="size-3.5" /> Ringkasan
+              </TabsTrigger>
               <TabsTrigger value="profil">Profil Lengkap</TabsTrigger>
               {canViewLogbook && <TabsTrigger value="logbook">Riwayat Logbook</TabsTrigger>}
             </TabsList>
+
+            <TabsContent value="summary">
+               <MuridSummary murid={murid} />
+            </TabsContent>
 
             <TabsContent value="profil" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

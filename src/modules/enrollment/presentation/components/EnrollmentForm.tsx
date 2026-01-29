@@ -88,16 +88,31 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
       mode_murid: "existing",
       jumlah_siswa: 1,
       tanggal_mulai: new Date().toISOString().split("T")[0],
+      catatan: "",
+      biaya_pendaftaran_amount: 0,
+      biaya_pendaftaran_status: "WAIVED",
     },
   });
 
   // Form Watchers
   const modeMurid = form.watch("mode_murid" as any);
+  const muridId = form.watch("murid_id" as any);
   const programId = form.watch("program_id" as any);
   const jenjangId = form.watch("jenjang_id" as any);
   const paketId = form.watch("paket_id" as any);
   const jumlahSiswa = form.watch("jumlah_siswa" as any);
   const tanggalMulai = form.watch("tanggal_mulai");
+
+  // Auto-select jenjang when murid is selected
+  useEffect(() => {
+    if (isEdit || !muridId) return;
+    
+    const selectedMurid = murids.find(m => m.id === muridId);
+    if (selectedMurid?.jenjang_id) {
+      form.setValue("jenjang_id", selectedMurid.jenjang_id);
+      toast.success(`Jenjang otomatis dipilih: ${selectedMurid.jenjang?.nama || 'Jenjang murid'}`);
+    }
+  }, [muridId, murids, isEdit, form]);
 
   // Catalog Selection State
   const [filteredPrograms, setFilteredPrograms] = useState<Program[]>([]);

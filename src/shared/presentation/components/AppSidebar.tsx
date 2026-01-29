@@ -13,6 +13,7 @@ import {
   BookOpen,
   ListChecks,
   School,
+  Wallet,
 } from "lucide-react";
 import {
   Collapsible,
@@ -277,6 +278,33 @@ export function AppSidebar() {
             </CollapsibleContent>
           </SidebarGroup>
         </Collapsible>
+
+        {authStore.hasPermission("kas.view") && (
+          <Collapsible defaultOpen className="group/collapsible">
+            <SidebarGroup className="py-1">
+              <SidebarGroupLabel asChild className="mb-0 h-7 px-2">
+                <CollapsibleTrigger className="flex w-full items-center justify-between hover:text-sidebar-foreground transition-colors">
+                  FINANCE
+                  <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                </CollapsibleTrigger>
+              </SidebarGroupLabel>
+              <CollapsibleContent>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={pathname.startsWith("/dashboard/kas")}>
+                        <Link href="/dashboard/kas/transaksi" className="py-1">
+                          <Wallet className="size-4 shrink-0" />
+                          <span>Kas</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </CollapsibleContent>
+            </SidebarGroup>
+          </Collapsible>
+        )}
 
         <Collapsible defaultOpen className="group/collapsible">
           <SidebarGroup className="py-1">

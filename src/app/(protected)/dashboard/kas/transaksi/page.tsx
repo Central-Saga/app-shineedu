@@ -1,0 +1,89 @@
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
+import { kasApi, KasTransaksi } from "@/lib/api/kas";
+import { KasTransaksiListClient } from "@/modules/finance/presentation/components/KasTransaksiListClient";
+import { toast } from "sonner";
+
+import type { PaginatedMeta } from "@/shared/domain/types";
+import { DEFAULT_META } from "@/shared/infrastructure/api/httpClient";
+
+export default function KasTransaksiPage() {
+  const searchParams = useSearchParams();
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<KasTransaksi[]>([]);
+  const [meta, setMeta] = useState<PaginatedMeta>(DEFAULT_META);
+  const [stats, setStats] = useState({ total_in: 0, total_out: 0, balance: 0 });
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const page = Number(searchParams.get("page")) || 1;
+      const per_page = Number(searchParams.get("per_page")) || 15;
+      const q = searchParams.get("q") || undefined;
+      const typeParam = searchParams.get("type");
+      const kategori = searchParams.get("kategori") || undefined;
+      const tanggal_from = searchParams.get("tanggal_from") || undefined;
+      const tanggal_to = searchParams.get("tanggal_to") || undefined;
+      const sort_by = searchParams.get("sort_by") || "tanggal";
+      const sort_dir = (searchParams.get("sort_dir") as "asc" | "desc") || "desc";
+
+      // Validate type param
+      const validType = typeParam === "IN" || typeParam === "OUT" ? typeParam : undefined;
+
+      // Fetch main list
+      const result = await kasApi.list({
+        page,
+        per_page,
+        q,
+        type: validType,
+        kategori: kategori && kategori !== "__all__" ? kategori : undefined,
+        tanggal_from,
+        tanggal_to,
+        sort_by,
+        sort_dir,
+      });
+
+      // Fetch ALL transactions with same filters to calculate totals (without pagination)
+      const statsFilters = {
+        per_page: 9999,
+        kategori: kategori && kategori !== "__all__" ? kategori : undefined,
+        tanggal_from,
+        tanggal_to,
+      };
+
+      const [allInResult, allOutResult] = await Promise.all([
+        kasApi.list({ ...statsFilters, type: "IN" }), // Get all IN transactions with filters
+        kasApi.list({ ...statsFilters, type: "OUT" }), // Get all OUT transactions with filters
+      ]);
+
+      // Calculate actual sum of amounts
+      const totalIn = allInResult.data.reduce((sum, trx) => sum + Number(trx.amount || 0), 0);
+      const totalOut = allOutResult.data.reduce((sum, trx) => sum + Number(trx.amount || 0), 0);
+
+      setData(result.data);
+      setMeta(result.meta);
+      setStats({
+        total_in: totalIn,
+        total_out: totalOut,
+        balance: totalIn - totalOut,
+      });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast.error(err.message || "Gagal memuat data transaksi");
+    } finally {
+      setLoading(false);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  if (loading && data.length === 0) {
+    return <div className="flex h-48 items-center justify-center">Memuat data...</div>;
+  }
+
+  return <KasTransaksiListClient data={data} meta={meta} stats={stats} />;
+}

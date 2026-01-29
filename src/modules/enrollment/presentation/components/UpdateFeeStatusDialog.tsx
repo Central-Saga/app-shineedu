@@ -46,6 +46,7 @@ interface UpdateFeeStatusDialogProps {
   enrollment: Enrollment;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
   trigger?: React.ReactNode;
 }
 
@@ -53,6 +54,7 @@ export function UpdateFeeStatusDialog({
   enrollment,
   open,
   onOpenChange,
+  onSuccess,
   trigger,
 }: UpdateFeeStatusDialogProps) {
   const router = useRouter();
@@ -77,6 +79,7 @@ export function UpdateFeeStatusDialog({
       });
       toast.success("Status biaya pendaftaran berhasil diperbarui");
       onOpenChange(false);
+      onSuccess?.();
       router.refresh();
     } catch (error: any) {
       toast.error(error.message || "Gagal memperbarui status");

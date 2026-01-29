@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 interface RegistrationFeeCardProps {
   enrollment: Enrollment;
   canUpdate: boolean;
+  onSuccess?: () => void;
 }
 
-export function RegistrationFeeCard({ enrollment, canUpdate }: RegistrationFeeCardProps) {
+export function RegistrationFeeCard({ enrollment, canUpdate, onSuccess }: RegistrationFeeCardProps) {
   const [open, setOpen] = useState(false);
 
   const formatDate = (s: string | null | undefined) => {
@@ -61,6 +62,7 @@ export function RegistrationFeeCard({ enrollment, canUpdate }: RegistrationFeeCa
           enrollment={enrollment}
           open={open}
           onOpenChange={setOpen}
+          onSuccess={onSuccess}
         />
       </div>
     </div>
