@@ -14,8 +14,11 @@
 /coverage
 
 # next.js
-/.next/
+.next/
+.next_bundle/
+.next_old/
 /out/
+/.temp_zip_stage/
 
 # production
 /build
