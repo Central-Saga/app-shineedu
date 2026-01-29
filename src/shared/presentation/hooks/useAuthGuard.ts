@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { authStore } from "@/modules/auth/infrastructure/auth.store";
+import { authStore, useAuthStore } from "@/modules/auth/infrastructure/auth.store";
 
 type GuardState = "loading" | "ready";
 
 export function useAuthGuard(): GuardState {
   const router = useRouter();
   const [state, setState] = useState<GuardState>("loading");
-  const token = authStore.getState().token;
-  const user = authStore.getState().user;
+  const token = useAuthStore((s) => s.token);
+  const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
     if (!token) {

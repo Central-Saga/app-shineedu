@@ -8,7 +8,8 @@ import { PageHeader } from "@/shared/presentation/components/PageHeader";
 import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGuard";
 import { DataTableToolbar } from "@/shared/presentation/components/table/DataTableToolbar";
 import { DataTablePagination } from "@/shared/presentation/components/table/DataTablePagination";
-import { authStore, useAuthStore } from "@/modules/auth/infrastructure/auth.store";
+import { useAuthStore } from "@/modules/auth/infrastructure/auth.store";
+import { checkPermission } from "@/shared/presentation/hooks/usePermissionGuard";
 import { 
     listPaketHarga, 
     deletePaketHarga,
@@ -79,9 +80,9 @@ export default function PaketHargaPage() {
   const [paketOptions, setPaketOptions] = useState<{label: string, value: string}[]>([]);
 
   const { setItems } = useBreadcrumbStore();
-  const canCreate = useAuthStore((s) => authStore.hasPermission("catalog.pricing.create"));
-  const canUpdate = useAuthStore((s) => authStore.hasPermission("catalog.pricing.update"));
-  const canDelete = useAuthStore((s) => authStore.hasPermission("catalog.pricing.delete"));
+  const canCreate = useAuthStore((s) => checkPermission(s, "catalog.pricing.create"));
+  const canUpdate = useAuthStore((s) => checkPermission(s, "catalog.pricing.update"));
+  const canDelete = useAuthStore((s) => checkPermission(s, "catalog.pricing.delete"));
 
   const [stats, setStats] = useState({
     total: 0,
