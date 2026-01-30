@@ -15,6 +15,7 @@ import {
   School,
   Wallet,
   ImageIcon,
+  FileText,
 } from "lucide-react";
 import {
   Collapsible,
@@ -280,7 +281,7 @@ export function AppSidebar() {
           </SidebarGroup>
         </Collapsible>
 
-        {authStore.hasPermission("landing.gallery.view") && (
+        {(authStore.hasPermission("landing.gallery.view") || authStore.hasPermission("blog.view")) && (
           <Collapsible defaultOpen className="group/collapsible">
             <SidebarGroup className="py-1">
               <SidebarGroupLabel asChild className="mb-0 h-7 px-2">
@@ -300,6 +301,16 @@ export function AppSidebar() {
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
+                    {authStore.hasPermission("blog.view") && (
+                      <SidebarMenuItem>
+                        <SidebarMenuButton asChild isActive={pathname.startsWith("/blogs")}>
+                          <Link href="/blogs" className="py-1">
+                            <FileText className="size-4 shrink-0" />
+                            <span>Blog</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )}
                   </SidebarMenu>
                 </SidebarGroupContent>
               </CollapsibleContent>
