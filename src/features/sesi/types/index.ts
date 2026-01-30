@@ -35,8 +35,9 @@ export interface AbsensiItem {
   id?: number; // Might be null if not generated yet? usually attached to enrollment
   sesi_id: number;
   enrollment_id: number;
-  status: 'HADIR' | 'IZIN' | 'SAKIT' | 'ALPHA' | 'BATAL';
+  status: 'HADIR' | 'TIDAK_HADIR' | 'PINDAH_JADWAL';
   catatan?: string | null;
+  target_session_id?: number | null; // For PINDAH_JADWAL
   
   // Relations
   enrollment?: Enrollment;
