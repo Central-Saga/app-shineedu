@@ -48,7 +48,7 @@ export const academicApi = {
   },
 
   getPrograms: async () => {
-      return getResponse<{id: number, nama: string}[]>(`catalog/program`);
+      return getResponse<{id: number, nama: string, jenjangs: {id: number, nama: string}[]}[]>(`catalog/program?per_page=100`);
   },
 
   getJenjangs: async () => {

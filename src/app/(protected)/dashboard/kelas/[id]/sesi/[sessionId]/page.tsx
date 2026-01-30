@@ -138,6 +138,13 @@ export default function SesiDetailPage({
                          <RefreshCw className="mr-2 h-3.5 w-3.5" /> Sync Anggota
                      </Button>
                   )}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => router.push(`/dashboard/kelas/${kelasId}/sesi/${sessionId}/materi-tugas`)}
+                  >
+                    <BookOpen className="mr-2 h-3.5 w-3.5" /> Materi & Tugas
+                  </Button>
              </div>
         </div>
 

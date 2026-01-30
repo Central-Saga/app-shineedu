@@ -3,8 +3,8 @@ import { z } from "zod";
 
 export const createKelasSchema = z.object({
   nama_kelas: z.string().min(1, "Nama kelas wajib diisi"),
-  program_id: z.coerce.number().min(1, "Program wajib dipilih"),
-  jenjang_id: z.coerce.number().min(1, "Jenjang wajib dipilih"),
+  program_id: z.number().min(1, "Program wajib dipilih").optional(),
+  jenjang_id: z.number().min(1, "Jenjang wajib dipilih").optional(),
   tipe_kelas: z.enum(["REGULER", "PRIVATE"], {
     message: "Tipe kelas wajib dipilih",
   }),
@@ -15,6 +15,16 @@ export const createKelasSchema = z.object({
   periode_selesai: z.string().optional().nullable(),
   ruangan_default: z.string().optional().nullable(),
   catatan: z.string().optional().nullable(),
+}).refine((data) => {
+  return data.program_id !== undefined && data.program_id > 0;
+}, {
+  message: "Program wajib dipilih",
+  path: ["program_id"],
+}).refine((data) => {
+  return data.jenjang_id !== undefined && data.jenjang_id > 0;
+}, {
+  message: "Jenjang wajib dipilih",
+  path: ["jenjang_id"],
 }).refine((data) => {
   if (data.tipe_kelas === "PRIVATE" && !data.mode_private) {
     return false;

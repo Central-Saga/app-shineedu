@@ -5,14 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { 
   CheckCircle2, 
   XCircle, 
-  Clock, 
-  UserCheck, 
   BookOpen,
   Calendar,
   AlertCircle,
   History
 } from "lucide-react";
-import { Murid } from "@/modules/murid/domain/entities";
 import { cn } from "@/lib/utils";
 
 interface MuridSummaryProps {
@@ -20,7 +17,7 @@ interface MuridSummaryProps {
 }
 
 export function MuridSummary({ murid }: MuridSummaryProps) {
-  const absensi = murid.absensi_summary || { total: 0, hadir: 0, izin: 0, sakit: 0, alpha: 0 };
+  const absensi = murid.absensi_summary || { total: 0, hadir: 0, tidak_hadir: 0 };
   const enrollments = murid.enrollments || [];
 
   const presenceRate = absensi.total > 0 
@@ -30,7 +27,7 @@ export function MuridSummary({ murid }: MuridSummaryProps) {
   return (
     <div className="space-y-6">
       {/* Attendance Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-emerald-50 border-emerald-100">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -46,26 +43,12 @@ export function MuridSummary({ murid }: MuridSummaryProps) {
           </CardContent>
         </Card>
 
-        <Card className="bg-blue-50 border-blue-100">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-blue-600 uppercase tracking-wider">Izin/Sakit</p>
-                <p className="text-2xl font-bold text-blue-700">{absensi.izin + absensi.sakit}</p>
-              </div>
-              <div className="p-2 bg-white rounded-lg text-blue-600 shadow-sm">
-                <Clock className="size-5" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         <Card className="bg-rose-50 border-rose-100">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-rose-600 uppercase tracking-wider">Alpha</p>
-                <p className="text-2xl font-bold text-rose-700">{absensi.alpha}</p>
+                <p className="text-xs font-medium text-rose-600 uppercase tracking-wider">Tidak Hadir</p>
+                <p className="text-2xl font-bold text-rose-700">{absensi.tidak_hadir || 0}</p>
               </div>
               <div className="p-2 bg-white rounded-lg text-rose-600 shadow-sm">
                 <XCircle className="size-5" />
@@ -155,14 +138,30 @@ export function MuridSummary({ murid }: MuridSummaryProps) {
         <CardContent className="pt-0">
           {murid.absensi_history && murid.absensi_history.length > 0 ? (
             <div className="divide-y max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-              {murid.absensi_history.map((abs: any) => (
+              {murid.absensi_history.map((abs: any) => {
+                // Map status to display label
+                const getStatusLabel = (status: string) => {
+                  if (status === 'HADIR') return 'Hadir';
+                  if (status === 'TIDAK_HADIR') return 'Tidak Hadir';
+                  if (status === 'PINDAH_JADWAL') return 'Pindah Jadwal';
+                  // Fallback for old data
+                  if (status === 'IZIN' || status === 'SAKIT' || status === 'ALPHA') return 'Tidak Hadir';
+                  if (status === 'BATAL') return 'Pindah Jadwal';
+                  return status;
+                };
+
+                const statusLabel = getStatusLabel(abs.status);
+                const isHadir = abs.status === 'HADIR';
+                const isPindah = abs.status === 'PINDAH_JADWAL' || abs.status === 'BATAL';
+
+                return (
                 <div key={abs.id} className="py-3 flex items-center justify-between hover:bg-slate-50 transition-colors px-2 rounded-lg">
                   <div className="flex items-center gap-4">
                     <div className={cn(
                       "size-9 rounded-full flex items-center justify-center shrink-0",
-                      abs.status === "HADIR" ? "bg-emerald-50 text-emerald-600" :
-                      abs.status === "ALPHA" ? "bg-rose-50 text-rose-600" :
-                      "bg-amber-50 text-amber-600"
+                      isHadir ? "bg-emerald-50 text-emerald-600" :
+                      isPindah ? "bg-blue-50 text-blue-600" :
+                      "bg-rose-50 text-rose-600"
                     )}>
                       <Calendar className="size-4" />
                     </div>
@@ -182,16 +181,16 @@ export function MuridSummary({ murid }: MuridSummaryProps) {
                       variant="outline"
                       className={cn(
                         "text-[10px] font-bold px-2 h-6 uppercase tracking-tight",
-                        abs.status === "HADIR" ? "bg-emerald-50 text-emerald-700 border-emerald-100" :
-                        abs.status === "ALPHA" ? "bg-rose-50 text-rose-700 border-rose-100" :
-                        "bg-amber-50 text-amber-700 border-amber-100"
+                        isHadir ? "bg-emerald-50 text-emerald-700 border-emerald-100" :
+                        isPindah ? "bg-blue-50 text-blue-700 border-blue-100" :
+                        "bg-rose-50 text-rose-700 border-rose-100"
                       )}
                     >
-                      {abs.status}
+                      {statusLabel}
                     </Badge>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           ) : (
             <div className="py-10 text-center">

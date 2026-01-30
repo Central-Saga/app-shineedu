@@ -24,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { bulkAbsensiSchema } from "@/features/sesi/schemas";
@@ -56,16 +55,25 @@ export function AbsensiEditor({
   const [manualParticipants, setManualParticipants] = useState<AbsensiItem[]>([]);
 
   const getFormItems = useCallback(() => {
+    // Map old status values to new ones for backward compatibility
+    const mapStatus = (status: string): 'HADIR' | 'TIDAK_HADIR' | 'PINDAH_JADWAL' => {
+      if (status === 'HADIR') return 'HADIR';
+      if (status === 'IZIN' || status === 'SAKIT' || status === 'ALPHA') return 'TIDAK_HADIR';
+      if (status === 'BATAL') return 'PINDAH_JADWAL';
+      // Default fallback
+      return status as any;
+    };
+
     return [
       ...(absensi || []).map(a => ({
           enrollment_id: a.enrollment_id,
-          status: a.status as any,
+          status: mapStatus(a.status),
           catatan: a.catatan || "",
           target_session_id: undefined
       })),
       ...(manualParticipants || []).map(a => ({
           enrollment_id: a.enrollment_id,
-          status: a.status as any,
+          status: mapStatus(a.status),
           catatan: a.catatan || "",
           target_session_id: undefined
       }))
@@ -158,11 +166,20 @@ export function AbsensiEditor({
             </div>
             {canEdit && (
                 <div className="flex items-center gap-2">
+                    {Object.keys(form.formState.errors).length > 0 && (
+                        <div className="text-xs text-destructive">
+                            {JSON.stringify(form.formState.errors)}
+                        </div>
+                    )}
                     <SearchEnrollmentDialog 
                         onSelect={handleAddManualStudent} 
                         excludeIds={fields.map(f => f.enrollment_id)}
                     />
-                    <Button onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting} size="sm">
+                    <Button 
+                        onClick={form.handleSubmit(onSubmit)} 
+                        disabled={isSubmitting} 
+                        size="sm"
+                    >
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Simpan Absensi
                     </Button>
@@ -221,19 +238,16 @@ export function AbsensiEditor({
                                                                 <SelectTrigger className={cn(
                                                                     "h-9 w-[140px] font-medium transition-all",
                                                                     currentStatusVal === "HADIR" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-                                                                    currentStatusVal === "BATAL" ? "bg-blue-50 text-blue-700 border-blue-200" :
-                                                                    currentStatusVal === "ALPHA" ? "bg-rose-50 text-rose-700 border-rose-200" :
-                                                                    "bg-amber-50 text-amber-700 border-amber-200"
+                                                                    currentStatusVal === "PINDAH_JADWAL" ? "bg-blue-50 text-blue-700 border-blue-200" :
+                                                                    "bg-rose-50 text-rose-700 border-rose-200"
                                                                 )}>
                                                                     <SelectValue />
                                                                 </SelectTrigger>
                                                             </FormControl>
                                                             <SelectContent>
                                                                 <SelectItem value="HADIR">Hadir</SelectItem>
-                                                                <SelectItem value="IZIN">Izin</SelectItem>
-                                                                <SelectItem value="SAKIT">Sakit</SelectItem>
-                                                                <SelectItem value="ALPHA">Alpha</SelectItem>
-                                                                <SelectItem value="BATAL">Pindah Jadwal</SelectItem>
+                                                                <SelectItem value="TIDAK_HADIR">Tidak Hadir</SelectItem>
+                                                                <SelectItem value="PINDAH_JADWAL">Pindah Jadwal</SelectItem>
                                                             </SelectContent>
                                                         </Select>
                                                     </FormItem>
@@ -242,7 +256,7 @@ export function AbsensiEditor({
                                         />
                                     </TableCell>
                                     <TableCell className="px-4">
-                                        {currentStatus === "BATAL" ? (
+                                        {currentStatus === "PINDAH_JADWAL" ? (
                                              <div className="space-y-2 min-w-[280px] animate-in fade-in duration-300">
                                                  {originalItem?.catatan?.includes("[Pindah ke") && !form.watch(`items.${index}.target_session_id`) && (
                                                      <div className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-100 rounded-md text-blue-700 text-xs font-medium mb-1">

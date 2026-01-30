@@ -17,6 +17,7 @@ import {
   Briefcase,
   ClipboardList,
   ImageIcon,
+  FileText,
 } from "lucide-react";
 import {
   Collapsible,
@@ -283,6 +284,26 @@ export function AppSidebar() {
                         <Link href="/dashboard/kelas" className="py-1">
                           <School className="size-4 shrink-0" />
                           <span>Kelas</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
+                  {authStore.hasPermission("materials.view") && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={pathname.startsWith("/dashboard/materi-modul")}>
+                        <Link href="/dashboard/materi-modul" className="py-1">
+                          <FileText className="size-4 shrink-0" />
+                          <span>Materi Modul</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
+                  {authStore.hasPermission("assignment.view") && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={pathname.startsWith("/dashboard/assignments")}>
+                        <Link href="/dashboard/assignments" className="py-1">
+                          <ClipboardList className="size-4 shrink-0" />
+                          <span>Tugas</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>

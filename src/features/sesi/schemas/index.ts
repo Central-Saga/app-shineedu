@@ -45,9 +45,18 @@ export const logbookSesiSchema = z.object({
 
 export const bulkAbsensiItemSchema = z.object({
     enrollment_id: z.number(),
-    status: z.enum(['HADIR', 'IZIN', 'SAKIT', 'ALPHA', 'BATAL']),
+    status: z.enum(['HADIR', 'TIDAK_HADIR', 'PINDAH_JADWAL']),
     catatan: z.string().optional().nullable(),
     target_session_id: z.coerce.number().optional().nullable(),
+}).superRefine((data, ctx) => {
+    // If status is PINDAH_JADWAL, target_session_id is required
+    if (data.status === 'PINDAH_JADWAL' && !data.target_session_id) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Sesi tujuan wajib dipilih untuk pindah jadwal",
+            path: ["target_session_id"]
+        });
+    }
 });
 
 export const bulkAbsensiSchema = z.object({
