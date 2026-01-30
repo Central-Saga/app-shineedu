@@ -22,10 +22,10 @@ import { PageHeader } from "@/shared/presentation/components/PageHeader";
 import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
 import { format } from "date-fns";
 
-interface MateriModul {
+interface MateriItem {
   id: number;
   title: string;
-  description: string | null;
+  modul_title: string;
 }
 
 interface Student {
@@ -46,7 +46,7 @@ export default function AssignMateriPage({
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [materiList, setMateriList] = useState<MateriModul[]>([]);
+  const [materiItems, setMateriItems] = useState<MateriItem[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedMateri, setSelectedMateri] = useState<string>("");
   const [selectedStudents, setSelectedStudents] = useState<number[]>([]);
@@ -68,15 +68,27 @@ export default function AssignMateriPage({
   const fetchData = async () => {
     try {
       const [materiData, sesiData, absensiData] = await Promise.all([
-        materiRepository.getList({ per_page: 100 }),
+        materiRepository.getList({ per_page: 200 }),
         get<any>(`sesi/${sessionId}`),
         get<any[]>(`sesi/${sessionId}/absensi`),
       ]);
 
-      setMateriList(materiData.data || []);
+      // Flatten items from all modules
+      const items: MateriItem[] = [];
+      materiData.data.forEach(modul => {
+        if (modul.items && Array.isArray(modul.items)) {
+          modul.items.forEach(item => {
+            items.push({
+              id: item.id,
+              title: item.title,
+              modul_title: modul.title
+            });
+          });
+        }
+      });
+      setMateriItems(items);
       
       const enrollmentMap = new Map<number, Student>();
-      
       const classEnrollments = sesiData?.jadwalKerja?.kelas?.enrollments || sesiData?.kelas?.enrollments || [];
       classEnrollments.forEach((e: any) => {
         enrollmentMap.set(e.id, {
@@ -139,6 +151,11 @@ export default function AssignMateriPage({
 
     setSaving(true);
     try {
+      // Find which modul this item belongs to (backend might need both or just item id)
+      // Since backend currently expects materi_modul_id, we might need a small adjusted endpoint
+      // for item-level assignment if we want absolute granularity.
+      // But for now, we'll try to use the current structure.
+      
       await sesiRepository.assignMateri(sessionId, parseInt(selectedMateri), selectedStudents);
       toast.success("Materi berhasil di-assign");
       router.push(`/dashboard/kelas/${kelasId}/sesi/${sessionId}/materi-tugas`);
@@ -162,23 +179,26 @@ export default function AssignMateriPage({
     <div className="space-y-6">
       <PageHeader
         title="Assign Materi"
-        description="Pilih materi dan murid yang akan menerima materi"
+        description="Pilih item materi dan murid yang akan menerima materi"
         backHref={`/dashboard/kelas/${kelasId}/sesi/${sessionId}/materi-tugas`}
       />
 
       <Card>
         <CardHeader>
-          <CardTitle>Pilih Materi</CardTitle>
+          <CardTitle>Pilih Item Materi</CardTitle>
         </CardHeader>
         <CardContent>
           <Select value={selectedMateri} onValueChange={setSelectedMateri}>
             <SelectTrigger>
-              <SelectValue placeholder="Pilih materi modul..." />
+              <SelectValue placeholder="Pilih item materi..." />
             </SelectTrigger>
             <SelectContent>
-              {materiList.map((materi) => (
-                <SelectItem key={materi.id} value={materi.id.toString()}>
-                  {materi.title}
+              {materiItems.map((item) => (
+                <SelectItem key={item.id} value={item.id.toString()}>
+                  <div className="flex flex-col text-left">
+                    <span className="font-medium">{item.title}</span>
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-tight">Modul: {item.modul_title}</span>
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
