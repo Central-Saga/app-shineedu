@@ -14,6 +14,7 @@ import {
   Pencil,
   Trash2,
   Download,
+  ExternalLink,
   Eye,
   EyeOff
 } from "lucide-react";
@@ -223,11 +224,28 @@ export function MateriItemList({ modulId }: MateriItemListProps) {
                         <Button
                           variant="ghost"
                           size="icon"
-                          asChild
+                          onClick={async () => {
+                            try {
+                              await materiRepository.downloadItem(item.id, item.title);
+                              toast.success('File berhasil diunduh');
+                            } catch {
+                              toast.error('Gagal mengunduh file');
+                            }
+                          }}
                           title="Download"
                         >
-                          <a href={`${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://api.shineeducationbali.com/storage'}/${item.file_path}`} download target="_blank" rel="noopener noreferrer">
-                            <Download className="size-4" />
+                          <Download className="size-4" />
+                        </Button>
+                      )}
+                      {item.type === "URL" && item.url && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          asChild
+                          title="Buka URL"
+                        >
+                          <a href={item.url} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="size-4" />
                           </a>
                         </Button>
                       )}

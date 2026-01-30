@@ -9,6 +9,7 @@ import {
   put,
   del,
   upload,
+  download,
   DEFAULT_META as SHARED_DEFAULT_META,
 } from "@/shared/infrastructure/api/httpClient";
 import { buildQuery } from "@/shared/lib/buildQuery";
@@ -107,6 +108,13 @@ export const materiRepository = {
    */
   toggleItemStatus: async (itemId: number | string): Promise<MateriModulItem> => {
     return await post<MateriModulItem>(`${BASE_URL}/items/${itemId}/toggle-status`, {});
+  },
+
+  /**
+   * Download item file
+   */
+  downloadItem: async (itemId: number | string, filename?: string): Promise<void> => {
+    return await download(`${BASE_URL}/items/${itemId}/download`, undefined, filename);
   },
 
   /**
