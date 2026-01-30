@@ -40,15 +40,13 @@ import { assignmentRepository } from "@/modules/learning/infrastructure/assignme
 import { materiRepository } from "@/modules/learning/infrastructure/materi.repository";
 import { academicApi } from "@/modules/academic/infrastructure/api";
 import { sesiApi } from "@/features/sesi/api/sesi.api";
+import { get } from "@/shared/infrastructure/api/httpClient";
 import type { Assignment, MateriModul } from "@/modules/learning/domain/entities";
 import type { Kelas } from "@/modules/academic/domain/types";
 import type { Sesi } from "@/features/sesi/types";
 import { Loader2, Upload, Link as LinkIcon } from "lucide-react";
 
-const formSchema = z.object({
-  kelas_id: z.string().min(1, "Kelas wajib dipilih"),
-  sesi_id: z.string().optional(),
-  enrollment_ids: z.array(z.number()).min(1, "Pilih minimal 1 murid"),
+const baseSchema = z.object({
   title: z.string().min(1, "Judul wajib diisi"),
   instructions: z.string().optional(),
   materi_modul_id: z.string().optional(),
@@ -58,7 +56,19 @@ const formSchema = z.object({
   due_at: z.date().optional(),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+const createSchema = baseSchema.extend({
+  kelas_id: z.string().min(1, "Kelas wajib dipilih"),
+  sesi_id: z.string().optional(),
+  enrollment_ids: z.array(z.number()).min(1, "Pilih minimal 1 murid"),
+});
+
+const editSchema = baseSchema.extend({
+  kelas_id: z.string().optional(),
+  sesi_id: z.string().optional(),
+  enrollment_ids: z.array(z.number()).optional(),
+});
+
+type FormValues = z.infer<typeof createSchema>;
 
 interface AssignmentFormProps {
   initialData?: Assignment;
@@ -73,6 +83,8 @@ export function AssignmentForm({ initialData, isEdit = false }: AssignmentFormPr
   const [materiModuls, setMateriModuls] = useState<MateriModul[]>([]);
   const [kelasEnrollments, setKelasEnrollments] = useState<Array<{ id: number; murid?: { nama_lengkap: string }; kode_enrollment: string }>>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const formSchema = isEdit ? editSchema : createSchema;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -90,6 +102,7 @@ export function AssignmentForm({ initialData, isEdit = false }: AssignmentFormPr
   });
 
   const selectedKelasId = form.watch("kelas_id");
+  const selectedSesiId = form.watch("sesi_id");
   const attachmentType = form.watch("attachment_type");
 
   // Load kelas list
@@ -104,6 +117,20 @@ export function AssignmentForm({ initialData, isEdit = false }: AssignmentFormPr
     };
     loadKelas();
   }, []);
+
+  // Populate form when editing
+  useEffect(() => {
+    if (isEdit && initialData) {
+      // Set kelas_id from enrollment's kelas
+      if (initialData.enrollment?.kelas_id) {
+        form.setValue("kelas_id", String(initialData.enrollment.kelas_id));
+      }
+      // Set sesi_id from realisasi_jadwal_kerja_id
+      if (initialData.realisasi_jadwal_kerja_id) {
+        form.setValue("sesi_id", String(initialData.realisasi_jadwal_kerja_id));
+      }
+    }
+  }, [isEdit, initialData, form]);
 
   // Load sesi when kelas is selected
   useEffect(() => {
@@ -134,63 +161,72 @@ export function AssignmentForm({ initialData, isEdit = false }: AssignmentFormPr
     }
 
     const loadEnrollments = async () => {
+      console.log("🔍 Starting to load enrollments for class:", selectedKelasId);
       try {
-        // Get class detail and all sessions in parallel
-        const [kelasResult, sesiResult] = await Promise.all([
-          academicApi.getKelasDetail(Number(selectedKelasId)),
-          sesiApi.getSesiByKelas(Number(selectedKelasId), { per_page: 999 }),
-        ]);
+        // Get class detail
+        const kelasResult = await academicApi.getKelasDetail(Number(selectedKelasId));
+        console.log("📚 Class data:", kelasResult.data);
 
-        const enrollmentMap = new Map<
-          number,
-          { id: number; murid?: { nama_lengkap: string }; kode_enrollment: string }
-        >();
-
-        // Add class enrollments (permanent students)
         const classEnrollments = kelasResult.data?.enrollments || [];
-        classEnrollments.forEach((e: { id: number; murid?: { nama_lengkap: string }; kode_enrollment: string }) => {
-          enrollmentMap.set(e.id, {
-            id: e.id,
-            murid: e.murid,
-            kode_enrollment: e.kode_enrollment,
-          });
-        });
+        console.log("👥 Class enrollments:", classEnrollments);
 
-        // Get attendance from all sessions to find transfer students
-        const sessions = sesiResult.data || [];
-        const absensiPromises = sessions.map((sesi) =>
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/sesi/${sesi.id}/absensi`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-          })
-            .then((res) => res.json())
-            .then((data) => (data.success && data.data ? data.data : []))
-            .catch(() => [])
-        );
+        const enrollments = classEnrollments.map((e: { id: number; murid?: { nama_lengkap: string }; kode_enrollment: string }) => ({
+          id: e.id,
+          murid: e.murid,
+          kode_enrollment: e.kode_enrollment,
+        }));
 
-        const allAbsensiData = await Promise.all(absensiPromises);
-
-        // Add transfer students from attendance
-        allAbsensiData.flat().forEach((a: { enrollment_id: number; enrollment?: { murid?: { nama_lengkap: string }; kode_enrollment?: string } }) => {
-          if (!enrollmentMap.has(a.enrollment_id) && a.enrollment) {
-            enrollmentMap.set(a.enrollment_id, {
-              id: a.enrollment_id,
-              murid: a.enrollment.murid,
-              kode_enrollment: a.enrollment.kode_enrollment || `ENR-${a.enrollment_id}`,
-            });
-          }
-        });
-
-        const finalEnrollments = Array.from(enrollmentMap.values());
-        console.log(`Loaded ${finalEnrollments.length} students for class ${selectedKelasId}:`, finalEnrollments);
-        setKelasEnrollments(finalEnrollments);
+        console.log(`✨ FINAL: Loaded ${enrollments.length} students:`, enrollments);
+        setKelasEnrollments(enrollments);
       } catch (error) {
-        console.error("Failed to load enrollments", error);
+        console.error("💥 Failed to load enrollments:", error);
         setKelasEnrollments([]);
       }
     };
 
     loadEnrollments();
   }, [selectedKelasId, form]);
+
+  // Load additional students from session when sesi is selected
+  useEffect(() => {
+    if (!selectedSesiId || !selectedKelasId) {
+      return;
+    }
+
+    const loadSessionStudents = async () => {
+      console.log("🔍 Loading students from session:", selectedSesiId);
+      try {
+        const absensiData = await get<any[]>(`sesi/${selectedSesiId}/absensi`);
+        console.log("📊 Session attendance data:", absensiData);
+
+        if (absensiData && Array.isArray(absensiData)) {
+          const enrollmentMap = new Map(
+            kelasEnrollments.map((e) => [e.id, e])
+          );
+
+          // Add transfer students from this session
+          absensiData.forEach((a: { enrollment_id: number; enrollment?: { murid?: { nama_lengkap: string }; kode_enrollment?: string } }) => {
+            if (!enrollmentMap.has(a.enrollment_id) && a.enrollment) {
+              console.log("➕ Adding transfer student from session:", a.enrollment);
+              enrollmentMap.set(a.enrollment_id, {
+                id: a.enrollment_id,
+                murid: a.enrollment.murid,
+                kode_enrollment: a.enrollment.kode_enrollment || `ENR-${a.enrollment_id}`,
+              });
+            }
+          });
+
+          const updatedEnrollments = Array.from(enrollmentMap.values());
+          console.log(`✨ Updated with session students: ${updatedEnrollments.length} total`, updatedEnrollments);
+          setKelasEnrollments(updatedEnrollments);
+        }
+      } catch (error) {
+        console.error("💥 Failed to load session students:", error);
+      }
+    };
+
+    loadSessionStudents();
+  }, [selectedSesiId, selectedKelasId]);
 
   // Load materi moduls
   useEffect(() => {
@@ -215,7 +251,9 @@ export function AssignmentForm({ initialData, isEdit = false }: AssignmentFormPr
         attachment_type: values.attachment_type,
         attachment_url: values.attachment_type === "URL" ? values.attachment_url : undefined,
         attachment_file: values.attachment_type === "FILE" ? selectedFile : undefined,
-        due_at: values.due_at?.toISOString(),
+        due_at: values.due_at 
+          ? `${values.due_at.getFullYear()}-${String(values.due_at.getMonth() + 1).padStart(2, '0')}-${String(values.due_at.getDate()).padStart(2, '0')}`
+          : undefined,
         realisasi_jadwal_kerja_id: values.sesi_id ? Number(values.sesi_id) : undefined,
       };
 
@@ -346,6 +384,7 @@ export function AssignmentForm({ initialData, isEdit = false }: AssignmentFormPr
                             date={field.value}
                             setDate={field.onChange}
                             placeholder="Pilih tanggal (opsional)"
+                            fromDate={new Date()}
                           />
                         </FormControl>
                         <FormDescription>Batas waktu pengumpulan tugas</FormDescription>
@@ -421,6 +460,12 @@ export function AssignmentForm({ initialData, isEdit = false }: AssignmentFormPr
                                 File terpilih: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
                               </p>
                             )}
+                            {!selectedFile && isEdit && initialData?.attachment_url && (
+                              <div className="text-sm text-muted-foreground">
+                                <p>File saat ini: <a href={initialData.attachment_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{initialData.attachment_url.split('/').pop()}</a></p>
+                                <p className="text-xs mt-1">Upload file baru untuk mengganti</p>
+                              </div>
+                            )}
                           </div>
                         </FormControl>
                         <FormDescription>
@@ -457,10 +502,10 @@ export function AssignmentForm({ initialData, isEdit = false }: AssignmentFormPr
             </AccordionContent>
           </AccordionItem>
 
-          {/* Penerima Tugas */}
+          {/* Penerima Tugas - Only show when creating new assignment */}
           {!isEdit && (
-            <AccordionItem value="penerima">
-              <AccordionTrigger description="Pilih kelas, sesi, dan murid yang akan menerima tugas">
+            <AccordionItem value="penerima-tugas">
+              <AccordionTrigger description="Pilih kelas dan murid yang akan menerima tugas">
                 Penerima Tugas
               </AccordionTrigger>
               <AccordionContent>

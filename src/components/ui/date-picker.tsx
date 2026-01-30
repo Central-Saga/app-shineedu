@@ -21,9 +21,11 @@ interface DatePickerProps {
   id?: string
   disabled?: boolean
   disabledDates?: any // Pass to Calendar
+  fromDate?: Date // Minimum selectable date
+  toDate?: Date // Maximum selectable date
 }
 
-export function DatePicker({ date, setDate, placeholder = "Pick a date", className, id, disabled, disabledDates }: DatePickerProps) {
+export function DatePicker({ date, setDate, placeholder = "Pick a date", className, id, disabled, disabledDates, fromDate, toDate }: DatePickerProps) {
   return (
     <Popover open={disabled ? false : undefined}>
       <PopoverTrigger asChild>
@@ -47,6 +49,8 @@ export function DatePicker({ date, setDate, placeholder = "Pick a date", classNa
           selected={date ?? undefined}
           onSelect={setDate as any}
           disabled={disabledDates}
+          fromDate={fromDate}
+          toDate={toDate}
           captionLayout="dropdown"
           fromYear={1950}
           toYear={new Date().getFullYear() + 2}

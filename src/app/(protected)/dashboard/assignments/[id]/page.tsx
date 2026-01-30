@@ -11,7 +11,7 @@ import { StatusBadge, DueBadge } from "@/modules/learning/presentation/component
 import { SubmissionList } from "@/modules/learning/presentation/components/SubmissionList";
 import { assignmentRepository } from "@/modules/learning/infrastructure/assignment.repository";
 import type { Assignment } from "@/modules/learning/domain/entities";
-import { ArrowLeft, User, Calendar, BookOpen, XCircle } from "lucide-react";
+import { ArrowLeft, User, Calendar, BookOpen, XCircle, Pencil } from "lucide-react";
 
 export default function AssignmentDetailPage() {
   const params = useParams();
@@ -68,14 +68,25 @@ export default function AssignmentDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <PageHeader
-          title={data.title}
-          description="Detail tugas dan submission"
-        />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <PageHeader
+            title={data.title}
+            description="Detail tugas dan submission"
+          />
+        </div>
+        {data.status !== "CLOSED" && (
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/dashboard/assignments/${data.id}/edit`)}
+          >
+            <Pencil className="h-4 w-4 mr-2" />
+            Edit Tugas
+          </Button>
+        )}
       </div>
 
       {/* Assignment Info */}
@@ -118,6 +129,43 @@ export default function AssignmentDetailPage() {
               <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">
                 {data.instructions}
               </p>
+            </div>
+          )}
+
+          {/* Attachment Section */}
+          {data.attachment_type && data.attachment_type !== "NONE" && (
+            <div>
+              <strong className="text-sm">Lampiran:</strong>
+              {data.attachment_type === "FILE" && data.attachment_url && (
+                <div className="mt-2 p-3 border rounded-lg bg-muted/50">
+                  <a
+                    href={data.attachment_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary hover:underline flex items-center gap-2"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    {data.attachment_url.split('/').pop() || 'Download File'}
+                  </a>
+                </div>
+              )}
+              {data.attachment_type === "URL" && data.attachment_url && (
+                <div className="mt-2 p-3 border rounded-lg bg-muted/50">
+                  <a
+                    href={data.attachment_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary hover:underline flex items-center gap-2"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                    {data.attachment_url}
+                  </a>
+                </div>
+              )}
             </div>
           )}
 

@@ -139,6 +139,9 @@ export interface UpdateAssignmentRequest {
   due_at?: string;
   status?: AssignmentStatus;
   materi_modul_id?: number;
+  attachment_type?: 'NONE' | 'FILE' | 'URL';
+  attachment_url?: string;
+  attachment_file?: File;
 }
 
 export interface SubmitAssignmentRequest {
