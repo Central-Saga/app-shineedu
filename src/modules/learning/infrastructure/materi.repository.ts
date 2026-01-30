@@ -65,9 +65,28 @@ export const materiRepository = {
 
   // Item management
   /**
-   * Add item to materi modul
+   * Add item to materi modul (supports FormData for file upload)
    */
-  addItem: async (modulId: number | string, data: CreateMateriItemRequest): Promise<MateriModulItem> => {
+  addItem: async (modulId: number | string, data: CreateMateriItemRequest | FormData): Promise<MateriModulItem> => {
+    if (data instanceof FormData) {
+      // Use fetch directly for FormData
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v2/${BASE_URL}/${modulId}/items`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') : ''}`,
+        },
+        body: data,
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to add item');
+      }
+      
+      const result = await response.json();
+      return result.data;
+    }
+    
     return await post<MateriModulItem>(`${BASE_URL}/${modulId}/items`, data);
   },
 
@@ -79,9 +98,28 @@ export const materiRepository = {
   },
 
   /**
-   * Update item
+   * Update item (supports FormData for file upload)
    */
-  updateItem: async (itemId: number | string, data: Partial<CreateMateriItemRequest>): Promise<MateriModulItem> => {
+  updateItem: async (itemId: number | string, data: Partial<CreateMateriItemRequest> | FormData): Promise<MateriModulItem> => {
+    if (data instanceof FormData) {
+      // Use fetch directly for FormData
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v2/${BASE_URL}/items/${itemId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') : ''}`,
+        },
+        body: data,
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update item');
+      }
+      
+      const result = await response.json();
+      return result.data;
+    }
+    
     return await put<MateriModulItem>(`${BASE_URL}/items/${itemId}`, data);
   },
 
@@ -90,6 +128,27 @@ export const materiRepository = {
    */
   deleteItem: async (itemId: number | string): Promise<void> => {
     return await del(`${BASE_URL}/items/${itemId}`);
+  },
+
+  /**
+   * Toggle item status (active/inactive)
+   */
+  toggleItemStatus: async (itemId: number | string): Promise<MateriModulItem> => {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v2/${BASE_URL}/items/${itemId}/toggle-status`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') : ''}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to toggle status');
+    }
+    
+    const result = await response.json();
+    return result.data;
   },
 
   /**

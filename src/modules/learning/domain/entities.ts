@@ -7,7 +7,7 @@
 export interface MateriModulItem {
   id: number;
   materi_modul_id: number;
-  type: 'VIDEO' | 'PDF' | 'LINK' | 'TEXT' | 'QUIZ' | 'FILE';
+  type: 'FILE' | 'URL';
   title: string;
   content?: string | null;
   url?: string | null;

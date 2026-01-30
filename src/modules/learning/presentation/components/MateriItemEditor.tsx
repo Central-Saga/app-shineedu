@@ -4,7 +4,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -33,31 +34,22 @@ import {
   Pencil,
   Trash2,
   GripVertical,
-  Video,
-  FileText,
   Link as LinkIcon,
-  Type,
-  HelpCircle,
   File,
   Loader2,
+  Upload,
+  ExternalLink,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const typeIcons: Record<string, React.ReactNode> = {
-  VIDEO: <Video className="h-4 w-4" />,
-  PDF: <FileText className="h-4 w-4" />,
-  LINK: <LinkIcon className="h-4 w-4" />,
-  TEXT: <Type className="h-4 w-4" />,
-  QUIZ: <HelpCircle className="h-4 w-4" />,
   FILE: <File className="h-4 w-4" />,
+  URL: <LinkIcon className="h-4 w-4" />,
 };
 
 const typeLabels: Record<string, string> = {
-  VIDEO: "Video",
-  PDF: "PDF",
-  LINK: "Link",
-  TEXT: "Teks",
-  QUIZ: "Quiz",
   FILE: "File",
+  URL: "URL",
 };
 
 interface MateriItemEditorProps {
@@ -67,10 +59,10 @@ interface MateriItemEditorProps {
 }
 
 interface ItemFormData {
-  type: MateriModulItem["type"];
+  type: "FILE" | "URL";
   title: string;
-  content: string;
   url: string;
+  file: File | null;
 }
 
 export function MateriItemEditor({
@@ -82,29 +74,57 @@ export function MateriItemEditor({
   const [editingItem, setEditingItem] = useState<MateriModulItem | null>(null);
   const [deleteItemId, setDeleteItemId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
 
   const [formData, setFormData] = useState<ItemFormData>({
-    type: "TEXT",
+    type: "FILE",
     title: "",
-    content: "",
     url: "",
+    file: null,
   });
 
   const openAddDialog = () => {
     setEditingItem(null);
-    setFormData({ type: "TEXT", title: "", content: "", url: "" });
+    setFormData({ type: "FILE", title: "", url: "", file: null });
     setDialogOpen(true);
   };
 
   const openEditDialog = (item: MateriModulItem) => {
     setEditingItem(item);
     setFormData({
-      type: item.type,
+      type: item.type as "FILE" | "URL",
       title: item.title,
-      content: item.content || "",
       url: item.url || "",
+      file: null,
     });
     setDialogOpen(true);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const allowedExtensions = [
+        'doc', 'docx', 'xls', 'xlsx', 'pdf', 'ppt', 'pptx',
+        'jpg', 'jpeg', 'png', 'gif', 'zip'
+      ];
+      const extension = file.name.split('.').pop()?.toLowerCase();
+      
+      if (!extension || !allowedExtensions.includes(extension)) {
+        toast.error("Format file tidak didukung. Gunakan: Word, Excel, PDF, PowerPoint, Gambar (JPG/PNG/GIF), atau ZIP");
+        e.target.value = '';
+        return;
+      }
+
+      // Validate file size (50MB)
+      if (file.size > 50 * 1024 * 1024) {
+        toast.error("Ukuran file maksimal 50MB");
+        e.target.value = '';
+        return;
+      }
+
+      setFormData({ ...formData, file });
+    }
   };
 
   const handleSave = async () => {
@@ -113,27 +133,43 @@ export function MateriItemEditor({
       return;
     }
 
+    if (formData.type === "URL" && !formData.url.trim()) {
+      toast.error("URL wajib diisi untuk tipe URL");
+      return;
+    }
+
+    if (formData.type === "FILE" && !editingItem && !formData.file) {
+      toast.error("File wajib diupload untuk tipe FILE");
+      return;
+    }
+
     setSaving(true);
     try {
-      const payload = {
-        type: formData.type,
-        title: formData.title,
-        content: formData.type === "TEXT" ? formData.content : undefined,
-        url: ["VIDEO", "PDF", "LINK"].includes(formData.type) ? formData.url : undefined,
-      };
+      const formDataToSend = new FormData();
+      formDataToSend.append("type", formData.type);
+      formDataToSend.append("title", formData.title);
+      
+      if (formData.type === "URL") {
+        formDataToSend.append("url", formData.url);
+      }
+      
+      if (formData.type === "FILE" && formData.file) {
+        formDataToSend.append("file", formData.file);
+      }
 
       if (editingItem) {
-        await materiRepository.updateItem(editingItem.id, payload);
+        await materiRepository.updateItem(editingItem.id, formDataToSend);
         toast.success("Item berhasil diperbarui");
       } else {
-        await materiRepository.addItem(modulId, payload);
+        await materiRepository.addItem(modulId, formDataToSend);
         toast.success("Item berhasil ditambahkan");
       }
 
       setDialogOpen(false);
       onItemsChange();
-    } catch (error) {
-      toast.error("Gagal menyimpan item");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Gagal menyimpan item";
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -145,15 +181,25 @@ export function MateriItemEditor({
       await materiRepository.deleteItem(deleteItemId);
       toast.success("Item berhasil dihapus");
       onItemsChange();
-    } catch (error) {
+    } catch {
       toast.error("Gagal menghapus item");
     } finally {
       setDeleteItemId(null);
     }
   };
 
-  const showUrlField = ["VIDEO", "PDF", "LINK"].includes(formData.type);
-  const showContentField = formData.type === "TEXT";
+  const handleToggleStatus = async (itemId: number) => {
+    setTogglingId(itemId);
+    try {
+      await materiRepository.toggleItemStatus(itemId);
+      toast.success("Status berhasil diubah");
+      onItemsChange();
+    } catch {
+      toast.error("Gagal mengubah status");
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   return (
     <Card>
@@ -167,7 +213,7 @@ export function MateriItemEditor({
       <CardContent>
         {items.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            <FileText className="h-8 w-8 mx-auto mb-2" />
+            <File className="h-8 w-8 mx-auto mb-2" />
             <p>Belum ada item. Klik &quot;Tambah Item&quot; untuk menambahkan.</p>
           </div>
         ) : (
@@ -182,24 +228,46 @@ export function MateriItemEditor({
                 <div className="flex items-center gap-2 flex-1">
                   {typeIcons[item.type]}
                   <span className="font-medium">{item.title}</span>
-                  <span className="text-xs text-muted-foreground">
-                    ({typeLabels[item.type]})
-                  </span>
+                  <Badge variant="outline" className="text-xs">
+                    {typeLabels[item.type]}
+                  </Badge>
+                  {item.type === "URL" && item.url && (
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                  {!item.is_active && (
+                    <Badge variant="secondary" className="text-xs">
+                      Nonaktif
+                    </Badge>
+                  )}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => openEditDialog(item)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setDeleteItemId(item.id)}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={item.is_active}
+                    onCheckedChange={() => handleToggleStatus(item.id)}
+                    disabled={togglingId === item.id}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => openEditDialog(item)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setDeleteItemId(item.id)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
@@ -208,7 +276,7 @@ export function MateriItemEditor({
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
               {editingItem ? "Edit Item" : "Tambah Item"}
@@ -217,12 +285,13 @@ export function MateriItemEditor({
 
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-2 block">Tipe</label>
+              <Label className="mb-2">Tipe *</Label>
               <Select
                 value={formData.type}
                 onValueChange={(v) =>
-                  setFormData({ ...formData, type: v as MateriModulItem["type"] })
+                  setFormData({ ...formData, type: v as "FILE" | "URL", file: null, url: "" })
                 }
+                disabled={!!editingItem}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -238,10 +307,15 @@ export function MateriItemEditor({
                   ))}
                 </SelectContent>
               </Select>
+              {editingItem && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Tipe tidak dapat diubah saat edit
+                </p>
+              )}
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Judul *</label>
+              <Label className="mb-2">Judul *</Label>
               <Input
                 value={formData.title}
                 onChange={(e) =>
@@ -251,30 +325,41 @@ export function MateriItemEditor({
               />
             </div>
 
-            {showUrlField && (
+            {formData.type === "URL" && (
               <div>
-                <label className="text-sm font-medium mb-2 block">URL</label>
+                <Label className="mb-2">URL *</Label>
                 <Input
+                  type="url"
                   value={formData.url}
                   onChange={(e) =>
                     setFormData({ ...formData, url: e.target.value })
                   }
-                  placeholder="https://..."
+                  placeholder="https://example.com"
                 />
               </div>
             )}
 
-            {showContentField && (
+            {formData.type === "FILE" && (
               <div>
-                <label className="text-sm font-medium mb-2 block">Konten</label>
-                <Textarea
-                  value={formData.content}
-                  onChange={(e) =>
-                    setFormData({ ...formData, content: e.target.value })
-                  }
-                  placeholder="Tulis konten teks..."
-                  rows={5}
-                />
+                <Label className="mb-2">
+                  File {!editingItem && "*"}
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    onChange={handleFileChange}
+                    accept=".doc,.docx,.xls,.xlsx,.pdf,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.zip"
+                  />
+                  <Upload className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Format: Word, Excel, PDF, PowerPoint, Gambar, ZIP (Max 50MB)
+                </p>
+                {editingItem && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Kosongkan jika tidak ingin mengubah file
+                  </p>
+                )}
               </div>
             )}
           </div>

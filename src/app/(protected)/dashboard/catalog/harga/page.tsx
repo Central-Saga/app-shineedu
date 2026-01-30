@@ -63,9 +63,9 @@ export default function PaketHargaPage() {
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [perPage, setPerPage] = useState(Number(searchParams.get("per_page")) || 15);
   const [status, setStatus] = useState<string | null>(searchParams.get("status") || null);
-  const [programId, setProgramId] = useState<string>(searchParams.get("program_id") || "all");
-  const [jenjangId, setJenjangId] = useState<string>(searchParams.get("jenjang_id") || "all");
-  const [paketId, setPaketId] = useState<string>(searchParams.get("paket_id") || "all");
+  const [programId, setProgramId] = useState<string | null>(searchParams.get("program_id") || null);
+  const [jenjangId, setJenjangId] = useState<string | null>(searchParams.get("jenjang_id") || null);
+  const [paketId, setPaketId] = useState<string | null>(searchParams.get("paket_id") || null);
   const [sortBy, setSortBy] = useState<string>(searchParams.get("sort_by") || "created_at");
   const [sortDir, setSortDir] = useState<"asc" | "desc">((searchParams.get("sort_dir") as "asc" | "desc") || "desc");
 
@@ -114,9 +114,9 @@ export default function PaketHargaPage() {
           per_page: perPage,
           q: debouncedQ,
           status: status === "all" ? undefined : (status as "Aktif" | "Non Aktif" | undefined),
-          program_id: programId !== "all" ? Number(programId) : undefined,
-          jenjang_id: jenjangId !== "all" ? Number(jenjangId) : undefined,
-          paket_id: paketId !== "all" ? Number(paketId) : undefined,
+          program_id: programId ? Number(programId) : undefined,
+          jenjang_id: jenjangId ? Number(jenjangId) : undefined,
+          paket_id: paketId ? Number(paketId) : undefined,
           sort_by: sortBy,
           sort_dir: sortDir,
         }),
@@ -147,9 +147,9 @@ export default function PaketHargaPage() {
         if (perPage !== 15) params.set("per_page", String(perPage));
         if (debouncedQ) params.set("q", debouncedQ);
         if (status && status !== "all") params.set("status", status);
-        if (programId && programId !== "all") params.set("program_id", programId);
-        if (jenjangId && jenjangId !== "all") params.set("jenjang_id", jenjangId);
-        if (paketId && paketId !== "all") params.set("paket_id", paketId);
+        if (programId) params.set("program_id", programId);
+        if (jenjangId) params.set("jenjang_id", jenjangId);
+        if (paketId) params.set("paket_id", paketId);
         params.set("sort_by", sortBy);
         params.set("sort_dir", sortDir);
         router.replace(`/dashboard/catalog/harga?${params.toString()}`);
@@ -182,9 +182,9 @@ export default function PaketHargaPage() {
       await exportPaketHarga(format, {
         q: debouncedQ,
         status: status === "all" ? undefined : (status as any),
-        program_id: programId !== "all" ? Number(programId) : undefined,
-        jenjang_id: jenjangId !== "all" ? Number(jenjangId) : undefined,
-        paket_id: paketId !== "all" ? Number(paketId) : undefined,
+        program_id: programId ? Number(programId) : undefined,
+        jenjang_id: jenjangId ? Number(jenjangId) : undefined,
+        paket_id: paketId ? Number(paketId) : undefined,
         sort_by: sortBy,
         sort_dir: sortDir,
       });
@@ -253,9 +253,9 @@ export default function PaketHargaPage() {
                 key: "program_id",
                 label: "Program",
                 value: programId,
-                options: [{ label: "Semua", value: "all" }, ...programOptions],
+                options: programOptions,
                 onChange: (val) => {
-                  setProgramId(val || "all");
+                  setProgramId(val);
                   setPage(1);
                 },
               },
@@ -263,9 +263,9 @@ export default function PaketHargaPage() {
                 key: "jenjang_id",
                 label: "Jenjang",
                 value: jenjangId,
-                options: [{ label: "Semua", value: "all" }, ...jenjangOptions],
+                options: jenjangOptions,
                 onChange: (val) => {
-                  setJenjangId(val || "all");
+                  setJenjangId(val);
                   setPage(1);
                 },
               },
@@ -273,9 +273,9 @@ export default function PaketHargaPage() {
                 key: "paket_id",
                 label: "Paket",
                 value: paketId,
-                options: [{ label: "Semua", value: "all" }, ...paketOptions],
+                options: paketOptions,
                 onChange: (val) => {
-                  setPaketId(val || "all");
+                  setPaketId(val);
                   setPage(1);
                 },
               },

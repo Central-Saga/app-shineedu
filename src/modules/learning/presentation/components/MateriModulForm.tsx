@@ -19,13 +19,7 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { materiRepository } from "@/modules/learning/infrastructure/materi.repository";
 import { listProgram, listJenjang } from "@/modules/catalog/infrastructure/catalog.repository";
@@ -68,8 +62,8 @@ export function MateriModulForm({ initialData, isEdit = false }: MateriModulForm
     const loadCatalogs = async () => {
       try {
         const [programRes, jenjangRes] = await Promise.all([
-          listProgram({}),
-          listJenjang({}),
+          listProgram({ per_page: 999 }),
+          listJenjang({ per_page: 999 }),
         ]);
         setPrograms(programRes.items || []);
         setJenjangs(jenjangRes.items || []);
@@ -155,20 +149,16 @@ export function MateriModulForm({ initialData, isEdit = false }: MateriModulForm
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Program</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih program (opsional)" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {programs.map((p) => (
-                          <SelectItem key={p.id} value={String(p.id)}>
-                            {p.nama}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <SearchableSelect
+                        options={programs.map((p) => ({ value: String(p.id), label: p.nama }))}
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        placeholder="Pilih program (opsional)"
+                        searchPlaceholder="Cari program..."
+                        emptyText="Program tidak ditemukan"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -180,20 +170,16 @@ export function MateriModulForm({ initialData, isEdit = false }: MateriModulForm
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Jenjang</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih jenjang (opsional)" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {jenjangs.map((j) => (
-                          <SelectItem key={j.id} value={String(j.id)}>
-                            {j.nama}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <SearchableSelect
+                        options={jenjangs.map((j) => ({ value: String(j.id), label: j.nama }))}
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        placeholder="Pilih jenjang (opsional)"
+                        searchPlaceholder="Cari jenjang..."
+                        emptyText="Jenjang tidak ditemukan"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
