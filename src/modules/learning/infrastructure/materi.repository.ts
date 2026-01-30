@@ -43,6 +43,14 @@ export const materiRepository = {
   },
 
   /**
+   * Get all items for a specific module
+   */
+  getItems: async (modulId: number | string): Promise<MateriModulItem[]> => {
+    const res = await get<MateriModulItem[]>(`${BASE_URL}/${modulId}/items`);
+    return res || [];
+  },
+
+  /**
    * Create new materi modul
    */
   create: async (data: CreateMateriModulRequest): Promise<MateriModul> => {
@@ -68,25 +76,7 @@ export const materiRepository = {
    * Add item to materi modul (supports FormData for file upload)
    */
   addItem: async (modulId: number | string, data: CreateMateriItemRequest | FormData): Promise<MateriModulItem> => {
-    if (data instanceof FormData) {
-      // Use fetch directly for FormData
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v2/${BASE_URL}/${modulId}/items`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') : ''}`,
-        },
-        body: data,
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to add item');
-      }
-      
-      const result = await response.json();
-      return result.data;
-    }
-    
+    // The post helper already handles FormData correctly
     return await post<MateriModulItem>(`${BASE_URL}/${modulId}/items`, data);
   },
 
@@ -101,25 +91,7 @@ export const materiRepository = {
    * Update item (supports FormData for file upload)
    */
   updateItem: async (itemId: number | string, data: Partial<CreateMateriItemRequest> | FormData): Promise<MateriModulItem> => {
-    if (data instanceof FormData) {
-      // Use fetch directly for FormData
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v2/${BASE_URL}/items/${itemId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') : ''}`,
-        },
-        body: data,
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to update item');
-      }
-      
-      const result = await response.json();
-      return result.data;
-    }
-    
+    // The put helper already handles FormData correctly
     return await put<MateriModulItem>(`${BASE_URL}/items/${itemId}`, data);
   },
 
@@ -134,21 +106,7 @@ export const materiRepository = {
    * Toggle item status (active/inactive)
    */
   toggleItemStatus: async (itemId: number | string): Promise<MateriModulItem> => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v2/${BASE_URL}/items/${itemId}/toggle-status`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') : ''}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to toggle status');
-    }
-    
-    const result = await response.json();
-    return result.data;
+    return await post<MateriModulItem>(`${BASE_URL}/items/${itemId}/toggle-status`, {});
   },
 
   /**

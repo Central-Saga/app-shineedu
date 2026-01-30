@@ -20,11 +20,17 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { materiRepository } from "@/modules/learning/infrastructure/materi.repository";
 import { listProgram, listJenjang } from "@/modules/catalog/infrastructure/catalog.repository";
 import type { MateriModul } from "@/modules/learning/domain/entities";
 import { Loader2 } from "lucide-react";
+import type { Program, Jenjang } from "@/modules/catalog/domain/entities";
 
 const formSchema = z.object({
   title: z.string().min(1, "Judul wajib diisi"),
@@ -44,8 +50,8 @@ interface MateriModulFormProps {
 export function MateriModulForm({ initialData, isEdit = false }: MateriModulFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [programs, setPrograms] = useState<{ id: number; nama: string }[]>([]);
-  const [jenjangs, setJenjangs] = useState<{ id: number; nama: string }[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [jenjangs, setJenjangs] = useState<Jenjang[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -79,7 +85,7 @@ export function MateriModulForm({ initialData, isEdit = false }: MateriModulForm
     try {
       const payload = {
         title: values.title,
-        description: values.description || undefined,
+        description: values.description || "",
         program_id: values.program_id ? Number(values.program_id) : undefined,
         jenjang_id: values.jenjang_id ? Number(values.jenjang_id) : undefined,
         is_active: values.is_active,
@@ -87,139 +93,183 @@ export function MateriModulForm({ initialData, isEdit = false }: MateriModulForm
 
       if (isEdit && initialData) {
         await materiRepository.update(initialData.id, payload);
-        toast.success("Materi modul berhasil diperbarui");
+        toast.success("Modul berhasil diperbarui");
       } else {
-        const result = await materiRepository.create(payload);
-        toast.success("Materi modul berhasil dibuat");
-        router.push(`/dashboard/materi-modul/${result.id}/edit`);
-        return;
+        await materiRepository.create(payload);
+        toast.success("Modul berhasil dibuat");
       }
+
       router.push("/dashboard/materi-modul");
-    } catch (error) {
-      toast.error(isEdit ? "Gagal memperbarui materi modul" : "Gagal membuat materi modul");
+      router.refresh();
+    } catch {
+      toast.error("Gagal menyimpan modul");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{isEdit ? "Edit Materi Modul" : "Buat Materi Modul"}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Judul *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Contoh: Modul Matematika Dasar" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <Accordion defaultValue="informasi-utama" className="w-full">
+          
+          {/* Informasi Utama */}
+          <AccordionItem value="informasi-utama">
+            <AccordionTrigger description="Informasi dasar mengenai modul pembelajaran">
+              Informasi Utama
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Judul <span className="text-red-500">*</span></FormLabel>
+                      <FormControl>
+                        <Input placeholder="Contoh: Modul Matematika Dasar" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Deskripsi</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Deskripsi singkat tentang modul ini..."
-                      rows={3}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Deskripsi</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Deskripsi singkat tentang modul ini..."
+                          rows={3}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </AccordionContent>
+          </AccordionItem>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="program_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Program</FormLabel>
-                    <FormControl>
-                      <SearchableSelect
-                        options={programs.map((p) => ({ value: String(p.id), label: p.nama }))}
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        placeholder="Pilih program (opsional)"
-                        searchPlaceholder="Cari program..."
-                        emptyText="Program tidak ditemukan"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          {/* Katalog */}
+          <AccordionItem value="katalog">
+            <AccordionTrigger description="Pengaturan Program dan Jenjang (opsional)">
+              Katalog
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="program_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Program</FormLabel>
+                      <FormControl>
+                        <SearchableSelect
+                          options={programs.map((p) => ({ value: String(p.id), label: p.nama }))}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          placeholder="Pilih program (opsional)"
+                          searchPlaceholder="Cari program..."
+                          emptyText="Program tidak ditemukan"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="jenjang_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Jenjang</FormLabel>
-                    <FormControl>
-                      <SearchableSelect
-                        options={jenjangs.map((j) => ({ value: String(j.id), label: j.nama }))}
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        placeholder="Pilih jenjang (opsional)"
-                        searchPlaceholder="Cari jenjang..."
-                        emptyText="Jenjang tidak ditemukan"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                <FormField
+                  control={form.control}
+                  name="jenjang_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Jenjang</FormLabel>
+                      <FormControl>
+                        <SearchableSelect
+                          options={jenjangs.map((j) => ({ value: String(j.id), label: j.nama }))}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          placeholder="Pilih jenjang (opsional)"
+                          searchPlaceholder="Cari jenjang..."
+                          emptyText="Jenjang tidak ditemukan"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </AccordionContent>
+          </AccordionItem>
 
-            <FormField
-              control={form.control}
-              name="is_active"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Aktif</FormLabel>
-                    <FormDescription>
-                      Modul yang tidak aktif tidak akan ditampilkan kepada murid
-                    </FormDescription>
+          {/* Status */}
+          {isEdit ? (
+            <AccordionItem value="status">
+              <AccordionTrigger description="Pengaturan status aktif/nonaktif modul">
+                Status
+              </AccordionTrigger>
+              <AccordionContent>
+                <FormField
+                  control={form.control}
+                  name="is_active"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">Aktif</FormLabel>
+                        <FormDescription>
+                          Modul yang tidak aktif tidak akan ditampilkan kepada murid
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </AccordionContent>
+            </AccordionItem>
+          ) : (
+            <AccordionItem value="status">
+              <AccordionTrigger description="Status modul baru">
+                Status
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="flex flex-col gap-2">
+                  <FormLabel>Status</FormLabel>
+                  <div className="flex items-center gap-2 rounded-xl border px-4 py-2.5 bg-slate-50/50 cursor-not-allowed opacity-70">
+                    <div className="size-2.5 rounded-full bg-emerald-500 animate-pulse ring-4 ring-emerald-500/20" />
+                    <span className="text-sm font-medium">Status: Aktif</span>
                   </div>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+                  <p className="text-[0.8rem] text-muted-foreground">
+                    Modul baru secara otomatis berstatus <strong>Aktif</strong>.
+                  </p>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          )}
+        </Accordion>
 
-            <div className="flex justify-end gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push("/dashboard/materi-modul")}
-              >
-                Batal
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isEdit ? "Simpan Perubahan" : "Buat Modul"}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+        <div className="flex items-center gap-3 pt-6">
+          <Button type="submit" size="lg" disabled={loading} className="px-8">
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isEdit ? "Simpan Perubahan" : "Buat Modul"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            onClick={() => router.push("/dashboard/materi-modul")}
+            disabled={loading}
+          >
+            Batal
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Plus, BookOpen, CheckCircle2, XCircle } from "lucide-react";
+import { Plus, BookOpen, CheckCircle2, XCircle, Eye } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { PageHeader } from "@/shared/presentation/components/PageHeader";
 import { StatsCard } from "@/shared/presentation/components/StatsCard";
 import { DataTableToolbar } from "@/shared/presentation/components/table/DataTableToolbar";
@@ -297,13 +298,35 @@ export function MateriModulListClient({
                           : "-"}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end gap-1 items-center">
+                          <Switch
+                            checked={item.is_active}
+                            onCheckedChange={async (checked) => {
+                              try {
+                                await materiRepository.update(item.id, { is_active: checked });
+                                toast.success(`Modul ${checked ? 'diaktifkan' : 'dinonaktifkan'}`);
+                                router.refresh();
+                              } catch {
+                                toast.error('Gagal mengubah status');
+                              }
+                            }}
+                            className="scale-75 shrink-0 mr-1"
+                          />
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() =>
-                              router.push(`/dashboard/materi-modul/${item.id}/edit`)
-                            }
+                            onClick={() => router.push(`/dashboard/materi-modul/${item.id}`)}
+                            title="Detail"
+                            className="text-slate-500 hover:text-blue-600 hover:bg-blue-50 h-8 w-8"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => router.push(`/dashboard/materi-modul/${item.id}/edit`)}
+                            title="Edit"
+                            className="text-slate-500 hover:text-amber-600 hover:bg-amber-50 h-8 w-8"
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -311,8 +334,10 @@ export function MateriModulListClient({
                             variant="ghost"
                             size="icon"
                             onClick={() => setDeleteId(item.id)}
+                            title="Hapus"
+                            className="text-slate-500 hover:text-rose-600 hover:bg-rose-50 h-8 w-8"
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
