@@ -145,6 +145,7 @@ export default function SesiMateriTugasPage({
       <PageHeader
         title="Materi & Tugas Sesi"
         description="Kelola materi modul dan tugas yang diberikan pada sesi ini"
+        backHref={`/dashboard/kelas/${kelasId}/sesi/${sessionId}`}
       />
 
       {/* Materi Section */}

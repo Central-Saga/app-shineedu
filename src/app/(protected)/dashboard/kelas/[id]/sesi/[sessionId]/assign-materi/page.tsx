@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import { toast } from "sonner";
 import { materiRepository } from "@/modules/learning/infrastructure/materi.repository";
 import { sesiRepository } from "@/modules/learning/infrastructure/sesi.repository";
@@ -32,40 +32,6 @@ interface Student {
   enrollment_id: number;
   murid_nama: string;
   murid_id: number;
-}
-
-interface SesiDetail {
-  kelas?: {
-    enrollments?: Array<{
-      id: number;
-      murid_id: number;
-      murid?: {
-        nama_lengkap: string;
-      };
-    }>;
-  };
-  jadwalKerja?: {
-    kelas?: {
-      nama_kelas?: string;
-      enrollments?: Array<{
-        id: number;
-        murid_id: number;
-        murid?: {
-          nama_lengkap: string;
-        };
-      }>;
-    };
-  };
-  absensi?: Array<{
-    enrollment_id: number;
-    enrollment?: {
-      murid_id: number;
-      murid?: {
-        nama_lengkap: string;
-      };
-    };
-  }>;
-  tanggal?: string;
 }
 
 export default function AssignMateriPage({
@@ -101,19 +67,18 @@ export default function AssignMateriPage({
 
   const fetchData = async () => {
     try {
-      const [materiData, sesiData] = await Promise.all([
+      const [materiData, sesiData, absensiData] = await Promise.all([
         materiRepository.getList({ per_page: 100 }),
-        get<SesiDetail>(`sesi/${sessionId}`),
+        get<any>(`sesi/${sessionId}`),
+        get<any[]>(`sesi/${sessionId}/absensi`),
       ]);
 
       setMateriList(materiData.data || []);
       
-      // Build a unique list of students from both class enrollments and session attendance
       const enrollmentMap = new Map<number, Student>();
       
-      // 1. Add from class enrollments
       const classEnrollments = sesiData?.jadwalKerja?.kelas?.enrollments || sesiData?.kelas?.enrollments || [];
-      classEnrollments.forEach(e => {
+      classEnrollments.forEach((e: any) => {
         enrollmentMap.set(e.id, {
           enrollment_id: e.id,
           murid_nama: e.murid?.nama_lengkap || "Unknown",
@@ -121,21 +86,19 @@ export default function AssignMateriPage({
         });
       });
 
-      // 2. Add from session attendance (to capture transfer students)
-      const sessionAbsensi = sesiData?.absensi || [];
-      sessionAbsensi.forEach(a => {
-        if (a.enrollment && !enrollmentMap.has(a.enrollment_id)) {
+      const sessionAbsensi = absensiData || [];
+      sessionAbsensi.forEach((a: any) => {
+        if (!enrollmentMap.has(a.enrollment_id)) {
           enrollmentMap.set(a.enrollment_id, {
             enrollment_id: a.enrollment_id,
-            murid_nama: a.enrollment.murid?.nama_lengkap || "Unknown",
-            murid_id: a.enrollment.murid_id,
+            murid_nama: a.enrollment?.murid?.nama_lengkap || "Unknown",
+            murid_id: a.enrollment?.murid_id || 0,
           });
         }
       });
 
       setStudents(Array.from(enrollmentMap.values()));
 
-      // Set breadcrumbs
       setItems([
         { label: "Dashboard", href: "/dashboard" },
         { label: "Kelas", href: "/dashboard/kelas" },
@@ -200,6 +163,7 @@ export default function AssignMateriPage({
       <PageHeader
         title="Assign Materi"
         description="Pilih materi dan murid yang akan menerima materi"
+        backHref={`/dashboard/kelas/${kelasId}/sesi/${sessionId}/materi-tugas`}
       />
 
       <Card>
