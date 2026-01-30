@@ -87,7 +87,7 @@ export function AssignmentForm({ initialData, isEdit = false }: AssignmentFormPr
   const formSchema = isEdit ? editSchema : createSchema;
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as any,
     defaultValues: {
       kelas_id: "",
       sesi_id: "",
@@ -122,8 +122,8 @@ export function AssignmentForm({ initialData, isEdit = false }: AssignmentFormPr
   useEffect(() => {
     if (isEdit && initialData) {
       // Set kelas_id from enrollment's kelas
-      if (initialData.enrollment?.kelas_id) {
-        form.setValue("kelas_id", String(initialData.enrollment.kelas_id));
+      if ((initialData.enrollment as any)?.kelas_id) {
+        form.setValue("kelas_id", String((initialData.enrollment as any).kelas_id));
       }
       // Set sesi_id from realisasi_jadwal_kerja_id
       if (initialData.realisasi_jadwal_kerja_id) {

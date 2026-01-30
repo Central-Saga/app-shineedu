@@ -27,7 +27,12 @@ export async function listLandingGallery(
   const res = await getResponse<LandingGalleryItem[]>(
     qs ? `landing-gallery?${qs}` : "landing-gallery"
   );
-  const data = Array.isArray(res.data) ? res.data : (res.data as { data?: LandingGalleryItem[] })?.data ?? [];
+  let data: LandingGalleryItem[] = [];
+  if (Array.isArray(res.data)) {
+    data = res.data;
+  } else if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+    data = (res.data as { data: LandingGalleryItem[] }).data || [];
+  }
   return {
     items: data as LandingGalleryItem[],
     meta: res.meta ?? DEFAULT_META,

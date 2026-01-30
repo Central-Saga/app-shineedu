@@ -22,12 +22,7 @@ import { PageHeader } from "@/shared/presentation/components/PageHeader";
 import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
 import { format } from "date-fns";
 
-interface Assignment {
-  id: number;
-  title: string;
-  description: string | null;
-  due_date: string | null;
-}
+import { Assignment } from "@/modules/learning/domain/entities";
 
 interface Student {
   enrollment_id: number;
@@ -181,9 +176,9 @@ export default function AssignTugasPage({
                 <SelectItem key={assignment.id} value={assignment.id.toString()}>
                   <div>
                     <div>{assignment.title}</div>
-                    {assignment.due_date && (
+                    {assignment.due_at && (
                       <div className="text-xs text-slate-500">
-                        Deadline: {new Date(assignment.due_date).toLocaleDateString('id-ID')}
+                        Deadline: {new Date(assignment.due_at).toLocaleDateString('id-ID')}
                       </div>
                     )}
                   </div>

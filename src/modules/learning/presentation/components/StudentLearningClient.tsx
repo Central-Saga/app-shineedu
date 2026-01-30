@@ -96,7 +96,8 @@ export function StudentLearningClient() {
       });
 
       const results = await Promise.all(kelasDataPromises);
-      setKelasData(results.filter((r): r is KelasWithSesi => r !== null));
+      const filteredResults = results.filter((r) => r !== null) as KelasWithSesi[];
+      setKelasData(filteredResults);
     } catch (error) {
       console.error("Failed to fetch student learning data:", error);
       toast.error("Gagal memuat data pembelajaran");

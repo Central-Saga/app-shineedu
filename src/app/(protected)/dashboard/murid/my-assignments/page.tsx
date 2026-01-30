@@ -235,7 +235,7 @@ export default function MyAssignmentsPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <CardTitle className="text-lg">{item.assignment_title}</CardTitle>
                       {getStatusBadge(item)}
-                      {item.submission?.score !== null && (
+                      {item.submission && item.submission.score !== null && (
                         <Badge variant="outline" className="bg-blue-50">
                           <Award className="mr-1 size-3" />
                           Nilai: {item.submission.score}

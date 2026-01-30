@@ -43,7 +43,6 @@ export function LogbookMuridEditor({
   // Safety check for map
   const getInitialItems = useCallback(() => {
     return (absensi || [])
-      .filter(a => a.status !== "BATAL")
       .map(a => {
         const existing = (logbookMurid || []).find(l => l.enrollment_id === a.enrollment_id);
         return {

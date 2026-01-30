@@ -101,7 +101,7 @@ export default function SesiMateriTugasPage({
       if (!response.ok) throw new Error("Failed to unassign");
 
       toast.success("Materi berhasil di-unassign");
-      fetchAssignments();
+      fetchData();
     } catch (error) {
       console.error(error);
       toast.error("Gagal unassign materi");
@@ -125,7 +125,7 @@ export default function SesiMateriTugasPage({
       if (!response.ok) throw new Error("Failed to unassign");
 
       toast.success("Tugas berhasil di-unassign");
-      fetchAssignments();
+      fetchData();
     } catch (error) {
       console.error(error);
       toast.error("Gagal unassign tugas");
