@@ -69,6 +69,23 @@ export const assignmentRepository = {
    * Update assignment
    */
   update: async (id: number | string, data: UpdateAssignmentRequest): Promise<Assignment> => {
+    // If there's a file attachment, use FormData
+    if (data.attachment_file) {
+      const formData = new FormData();
+      if (data.title) formData.append('title', data.title);
+      if (data.instructions) formData.append('instructions', data.instructions);
+      if (data.due_at) formData.append('due_at', data.due_at);
+      if (data.status) formData.append('status', data.status);
+      if (data.materi_modul_id) formData.append('materi_modul_id', String(data.materi_modul_id));
+      if (data.attachment_type) formData.append('attachment_type', data.attachment_type);
+      if (data.attachment_url) formData.append('attachment_url', data.attachment_url);
+      formData.append('attachment_file', data.attachment_file);
+      formData.append('_method', 'PUT'); // Laravel method spoofing for FormData
+      
+      return await post<Assignment>(`${BASE_URL}/${id}`, formData);
+    }
+    
+    // Otherwise use regular JSON
     return await put<Assignment>(`${BASE_URL}/${id}`, data);
   },
 

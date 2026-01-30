@@ -249,13 +249,21 @@ export function AssignmentForm({ initialData, isEdit = false }: AssignmentFormPr
         title: values.title,
         instructions: values.instructions || undefined,
         attachment_type: values.attachment_type,
-        attachment_url: values.attachment_type === "URL" ? values.attachment_url : undefined,
-        attachment_file: values.attachment_type === "FILE" ? selectedFile : undefined,
         due_at: values.due_at 
           ? `${values.due_at.getFullYear()}-${String(values.due_at.getMonth() + 1).padStart(2, '0')}-${String(values.due_at.getDate()).padStart(2, '0')}`
           : undefined,
         realisasi_jadwal_kerja_id: values.sesi_id ? Number(values.sesi_id) : undefined,
       };
+
+      // Only add attachment_url if type is URL
+      if (values.attachment_type === "URL" && values.attachment_url) {
+        basePayload.attachment_url = values.attachment_url;
+      }
+
+      // Only add attachment_file if type is FILE and file is selected
+      if (values.attachment_type === "FILE" && selectedFile) {
+        basePayload.attachment_file = selectedFile;
+      }
 
       if (isEdit && initialData) {
         await assignmentRepository.update(initialData.id, basePayload);
