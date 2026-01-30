@@ -16,6 +16,7 @@ import {
   Wallet,
   Briefcase,
   ClipboardList,
+  ImageIcon,
 } from "lucide-react";
 import {
   Collapsible,
@@ -292,6 +293,33 @@ export function AppSidebar() {
             </CollapsibleContent>
           </SidebarGroup>
         </Collapsible>
+
+        {authStore.hasPermission("landing.gallery.view") && (
+          <Collapsible defaultOpen className="group/collapsible">
+            <SidebarGroup className="py-1">
+              <SidebarGroupLabel asChild className="mb-0 h-7 px-2">
+                <CollapsibleTrigger className="flex w-full items-center justify-between hover:text-sidebar-foreground transition-colors">
+                  LANDING
+                  <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                </CollapsibleTrigger>
+              </SidebarGroupLabel>
+              <CollapsibleContent>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={pathname.startsWith("/gallery-landing")}>
+                        <Link href="/gallery-landing" className="py-1">
+                          <ImageIcon className="size-4 shrink-0" />
+                          <span>Gallery Landing</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </CollapsibleContent>
+            </SidebarGroup>
+          </Collapsible>
+        )}
 
         {authStore.hasPermission("kas.view") && (
           <Collapsible defaultOpen className="group/collapsible">
