@@ -1,8 +1,12 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎓 Shine Education Bali - Admin Panel
 
-## Getting Started
+Admin panel untuk mengelola sistem pendidikan Shine Education Bali.
 
-First, run the development server:
+---
+
+## 🚀 Getting Started
+
+### Development Server
 
 ```bash
 npm run dev
@@ -10,27 +14,154 @@ npm run dev
 yarn dev
 # or
 pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📚 Documentation
 
-## Learn More
+Semua dokumentasi project tersedia di folder **`docs/`**:
 
-To learn more about Next.js, take a look at the following resources:
+### **📘 Learning Management System** (Latest - 30 Jan 2026)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+📁 **Path**: [`docs/learning-management-system/`](./docs/learning-management-system/)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Fitur**:
 
-## Deploy on Vercel
+- ✅ UI Standardization (Materi Modul & Assignments)
+- ✅ Bulk Assignment (assign tugas ke banyak murid sekaligus)
+- ✅ Student View (halaman untuk murid)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Quick Links**:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [📋 Summary](./docs/learning-management-system/SUMMARY.md) - Ringkasan development
+- [⚡ Quick Start](./docs/learning-management-system/QUICK_START.md) - Quick reference
+- [📖 Master Documentation](./docs/learning-management-system/MASTER_DOCUMENTATION.md) - Comprehensive guide
+
+**Start Here**: [`docs/learning-management-system/README.md`](./docs/learning-management-system/README.md)
+
+---
+
+### **📂 All Documentation**
+
+Lihat index lengkap: [`docs/README.md`](./docs/README.md)
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui
+- **State Management**: Zustand
+- **Form Handling**: React Hook Form + Zod
+- **API Client**: Custom HTTP Client
+
+---
+
+## 📁 Project Structure
+
+```
+app-shineedu/
+├── docs/                           📚 Documentation
+│   ├── README.md                   Index semua dokumentasi
+│   └── learning-management-system/ Dokumentasi LMS
+│
+├── src/
+│   ├── app/                        Next.js App Router
+│   │   ├── (auth)/                 Auth pages (login, etc)
+│   │   └── (protected)/            Protected pages (dashboard, etc)
+│   │
+│   ├── modules/                    Business logic modules
+│   │   ├── auth/                   Authentication
+│   │   ├── academic/               Academic (Kelas, Program, Jenjang)
+│   │   ├── enrollment/             Enrollment
+│   │   ├── learning/               Learning (Materi, Tugas)
+│   │   └── ...
+│   │
+│   ├── features/                   Shared features
+│   │   ├── sesi/                   Session management
+│   │   └── ...
+│   │
+│   ├── components/                 Shared components
+│   │   └── ui/                     UI components (shadcn)
+│   │
+│   └── shared/                     Shared utilities
+│       ├── infrastructure/         API, stores, etc
+│       └── lib/                    Utilities
+│
+└── public/                         Static assets
+```
+
+---
+
+## 🧪 Testing
+
+### Quick Test - Bulk Assignment (5 menit)
+
+```bash
+# Navigate to:
+http://app.shineeducationbali.test/dashboard/assignments/create
+
+# Test:
+✓ Pilih kelas
+✓ Pilih "Pilih Semua" untuk murid
+✓ Isi detail tugas
+✓ Klik "Buat [N] Tugas"
+```
+
+### Quick Test - Student View (10 menit)
+
+```bash
+# Prasyarat: Buat user student, enrollment, kelas, sesi, tugas
+
+# Navigate to:
+http://app.shineeducationbali.test/student/learning
+
+# Test:
+✓ Lihat card kelas
+✓ Klik "Lihat Detail"
+✓ Klik "Kerjakan" pada tugas
+✓ Submit tugas
+```
+
+**Detail Testing**: Lihat [`docs/learning-management-system/MASTER_DOCUMENTATION.md`](./docs/learning-management-system/MASTER_DOCUMENTATION.md)
+
+---
+
+## 📞 Support
+
+Jika ada pertanyaan atau butuh bantuan:
+
+1. Baca dokumentasi yang relevan di folder `docs/`
+2. Cek section Troubleshooting di dokumentasi
+3. Hubungi tim development
+
+---
+
+## 🆕 Latest Updates
+
+### **30 Januari 2026** - Learning Management System
+
+- ✅ UI Standardization
+- ✅ Bulk Assignment Feature (penghematan waktu ~85%!)
+- ✅ Student View Complete
+- 📚 7 comprehensive documentation files
+
+**Detail**: [`docs/learning-management-system/SUMMARY.md`](./docs/learning-management-system/SUMMARY.md)
+
+---
+
+## 📖 Learn More
+
+To learn more about Next.js:
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Learn Next.js](https://nextjs.org/learn)
+
+---
+
+**Last Updated**: 30 Januari 2026, 11:07 WIB
