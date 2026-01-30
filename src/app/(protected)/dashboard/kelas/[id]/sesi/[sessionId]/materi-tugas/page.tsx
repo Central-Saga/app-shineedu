@@ -8,6 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, FileText, Trash2, ExternalLink, CheckCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { sesiRepository } from "@/modules/learning/infrastructure/sesi.repository";
+import { PageHeader } from "@/shared/presentation/components/PageHeader";
+import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
+import { format } from "date-fns";
+import { get } from "@/shared/infrastructure/api/httpClient";
 
 interface MateriAssignment {
   materi_id: number;
@@ -44,16 +48,34 @@ export default function SesiMateriTugasPage({
   const [loading, setLoading] = useState(true);
   const [materiAssignments, setMateriAssignments] = useState<MateriAssignment[]>([]);
   const [assignmentAssignments, setAssignmentAssignments] = useState<AssignmentAssignment[]>([]);
+  const { setItems } = useBreadcrumbStore();
 
   useEffect(() => {
-    fetchAssignments();
+    fetchData();
   }, [sessionId]);
 
-  const fetchAssignments = async () => {
+  const fetchData = async () => {
     try {
-      const data = await sesiRepository.getMateriAssignments(sessionId);
-      setMateriAssignments(data.materi || []);
-      setAssignmentAssignments(data.assignments || []);
+      setLoading(true);
+      const [assignments, sesiData] = await Promise.all([
+        sesiRepository.getMateriAssignments(sessionId),
+        get<any>(`sesi/${sessionId}`)
+      ]);
+      
+      setMateriAssignments(assignments.materi || []);
+      setAssignmentAssignments(assignments.assignments || []);
+
+      // Set breadcrumbs
+      setItems([
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Kelas", href: "/dashboard/kelas" },
+        { label: sesiData?.kelas?.nama_kelas || "Detail Kelas", href: `/dashboard/kelas/${kelasId}` },
+        { 
+          label: sesiData?.tanggal ? `Sesi ${format(new Date(sesiData.tanggal), "dd/MM/yy")}` : "Detail Sesi", 
+          href: `/dashboard/kelas/${kelasId}/sesi/${sessionId}` 
+        },
+        { label: "Materi & Tugas" },
+      ]);
     } catch (error: any) {
       console.error('Fetch error:', error);
       toast.error(error.message || "Gagal memuat data");
@@ -120,6 +142,11 @@ export default function SesiMateriTugasPage({
 
   return (
     <div className="space-y-6">
+      <PageHeader
+        title="Materi & Tugas Sesi"
+        description="Kelola materi modul dan tugas yang diberikan pada sesi ini"
+      />
+
       {/* Materi Section */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">

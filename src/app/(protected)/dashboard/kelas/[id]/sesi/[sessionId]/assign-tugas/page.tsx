@@ -18,6 +18,9 @@ import { toast } from "sonner";
 import { assignmentRepository } from "@/modules/learning/infrastructure/assignment.repository";
 import { sesiRepository } from "@/modules/learning/infrastructure/sesi.repository";
 import { get } from "@/shared/infrastructure/api/httpClient";
+import { PageHeader } from "@/shared/presentation/components/PageHeader";
+import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
+import { format } from "date-fns";
 
 interface Assignment {
   id: number;
@@ -44,6 +47,7 @@ interface SesiDetail {
   };
   jadwalKerja?: {
     kelas?: {
+      nama_kelas?: string;
       enrollments?: Array<{
         id: number;
         murid_id: number;
@@ -53,6 +57,16 @@ interface SesiDetail {
       }>;
     };
   };
+  absensi?: Array<{
+    enrollment_id: number;
+    enrollment?: {
+      murid_id: number;
+      murid?: {
+        nama_lengkap: string;
+      };
+    };
+  }>;
+  tanggal?: string;
 }
 
 export default function AssignTugasPage({
@@ -72,6 +86,7 @@ export default function AssignTugasPage({
   const [selectedAssignment, setSelectedAssignment] = useState<string>("");
   const [selectedStudents, setSelectedStudents] = useState<number[]>([]);
   const [selectAll, setSelectAll] = useState(false);
+  const { setItems } = useBreadcrumbStore();
 
   useEffect(() => {
     fetchData();
@@ -94,16 +109,45 @@ export default function AssignTugasPage({
 
       setAssignmentList(assignmentData.data || []);
       
-      // Get students from kelas enrollments
-      // Try jadwalKerja.kelas first (for scheduled sessions), fallback to kelas (for direct class sessions)
-      const enrollments = sesiData?.jadwalKerja?.kelas?.enrollments || sesiData?.kelas?.enrollments || [];
-      setStudents(
-        enrollments.map((e) => ({
+      // Build a unique list of students from both class enrollments and session attendance
+      const enrollmentMap = new Map<number, Student>();
+      
+      // 1. Add from class enrollments
+      const classEnrollments = sesiData?.jadwalKerja?.kelas?.enrollments || sesiData?.kelas?.enrollments || [];
+      classEnrollments.forEach(e => {
+        enrollmentMap.set(e.id, {
           enrollment_id: e.id,
           murid_nama: e.murid?.nama_lengkap || "Unknown",
           murid_id: e.murid_id,
-        }))
-      );
+        });
+      });
+
+      // 2. Add from session attendance (to capture transfer students)
+      const sessionAbsensi = sesiData?.absensi || [];
+      sessionAbsensi.forEach(a => {
+        if (a.enrollment && !enrollmentMap.has(a.enrollment_id)) {
+          enrollmentMap.set(a.enrollment_id, {
+            enrollment_id: a.enrollment_id,
+            murid_nama: a.enrollment.murid?.nama_lengkap || "Unknown",
+            murid_id: a.enrollment.murid_id,
+          });
+        }
+      });
+
+      setStudents(Array.from(enrollmentMap.values()));
+
+      // Set breadcrumbs
+      setItems([
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Kelas", href: "/dashboard/kelas" },
+        { label: sesiData?.kelas?.nama_kelas || "Detail Kelas", href: `/dashboard/kelas/${kelasId}` },
+        { 
+          label: sesiData?.tanggal ? `Sesi ${format(new Date(sesiData.tanggal), "dd/MM/yy")}` : "Detail Sesi", 
+          href: `/dashboard/kelas/${kelasId}/sesi/${sessionId}` 
+        },
+        { label: "Materi & Tugas", href: `/dashboard/kelas/${kelasId}/sesi/${sessionId}/materi-tugas` },
+        { label: "Assign Tugas" },
+      ]);
     } catch (error) {
       console.error(error);
       toast.error("Gagal memuat data");
@@ -154,21 +198,10 @@ export default function AssignTugasPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.back()}
-        >
-          <ArrowLeft className="size-4" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Assign Tugas</h1>
-          <p className="text-sm text-slate-600">
-            Pilih tugas dan murid yang akan menerima tugas
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Assign Tugas"
+        description="Pilih tugas dan murid yang akan menerima tugas"
+      />
 
       <Card>
         <CardHeader>
