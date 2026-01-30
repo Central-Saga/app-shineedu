@@ -55,16 +55,25 @@ export function AbsensiEditor({
   const [manualParticipants, setManualParticipants] = useState<AbsensiItem[]>([]);
 
   const getFormItems = useCallback(() => {
+    // Map old status values to new ones for backward compatibility
+    const mapStatus = (status: string): 'HADIR' | 'TIDAK_HADIR' | 'PINDAH_JADWAL' => {
+      if (status === 'HADIR') return 'HADIR';
+      if (status === 'IZIN' || status === 'SAKIT' || status === 'ALPHA') return 'TIDAK_HADIR';
+      if (status === 'BATAL') return 'PINDAH_JADWAL';
+      // Default fallback
+      return status as any;
+    };
+
     return [
       ...(absensi || []).map(a => ({
           enrollment_id: a.enrollment_id,
-          status: a.status as any,
+          status: mapStatus(a.status),
           catatan: a.catatan || "",
           target_session_id: undefined
       })),
       ...(manualParticipants || []).map(a => ({
           enrollment_id: a.enrollment_id,
-          status: a.status as any,
+          status: mapStatus(a.status),
           catatan: a.catatan || "",
           target_session_id: undefined
       }))
