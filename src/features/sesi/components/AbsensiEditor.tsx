@@ -157,11 +157,20 @@ export function AbsensiEditor({
             </div>
             {canEdit && (
                 <div className="flex items-center gap-2">
+                    {Object.keys(form.formState.errors).length > 0 && (
+                        <div className="text-xs text-destructive">
+                            {JSON.stringify(form.formState.errors)}
+                        </div>
+                    )}
                     <SearchEnrollmentDialog 
                         onSelect={handleAddManualStudent} 
                         excludeIds={fields.map(f => f.enrollment_id)}
                     />
-                    <Button onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting} size="sm">
+                    <Button 
+                        onClick={form.handleSubmit(onSubmit)} 
+                        disabled={isSubmitting} 
+                        size="sm"
+                    >
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Simpan Absensi
                     </Button>
