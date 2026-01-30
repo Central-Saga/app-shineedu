@@ -45,6 +45,23 @@ export const assignmentRepository = {
    * Create new assignment
    */
   create: async (data: CreateAssignmentRequest): Promise<Assignment> => {
+    // If there's a file attachment, use FormData
+    if (data.attachment_file) {
+      const formData = new FormData();
+      formData.append('enrollment_id', String(data.enrollment_id));
+      if (data.realisasi_jadwal_kerja_id) formData.append('realisasi_jadwal_kerja_id', String(data.realisasi_jadwal_kerja_id));
+      if (data.materi_modul_id) formData.append('materi_modul_id', String(data.materi_modul_id));
+      formData.append('title', data.title);
+      if (data.instructions) formData.append('instructions', data.instructions);
+      if (data.attachment_type) formData.append('attachment_type', data.attachment_type);
+      if (data.attachment_url) formData.append('attachment_url', data.attachment_url);
+      formData.append('attachment_file', data.attachment_file);
+      if (data.due_at) formData.append('due_at', data.due_at);
+      
+      return await post<Assignment>(BASE_URL, formData);
+    }
+    
+    // Otherwise use regular JSON
     return await post<Assignment>(BASE_URL, data);
   },
 

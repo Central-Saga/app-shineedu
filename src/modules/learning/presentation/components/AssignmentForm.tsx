@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import {
   Form,
   FormControl,
@@ -26,7 +28,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Card, CardContent } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import { assignmentRepository } from "@/modules/learning/infrastructure/assignment.repository";
 import { materiRepository } from "@/modules/learning/infrastructure/materi.repository";
@@ -35,16 +43,18 @@ import { sesiApi } from "@/features/sesi/api/sesi.api";
 import type { Assignment, MateriModul } from "@/modules/learning/domain/entities";
 import type { Kelas } from "@/modules/academic/domain/types";
 import type { Sesi } from "@/features/sesi/types";
-import { Loader2, Users, Calendar } from "lucide-react";
+import { Loader2, Upload, Link as LinkIcon } from "lucide-react";
 
 const formSchema = z.object({
-  assignment_mode: z.enum(["single", "bulk"]),
-  kelas_id: z.string().optional(),
+  kelas_id: z.string().min(1, "Kelas wajib dipilih"),
   sesi_id: z.string().optional(),
   enrollment_ids: z.array(z.number()).min(1, "Pilih minimal 1 murid"),
-  materi_modul_id: z.string().optional(),
   title: z.string().min(1, "Judul wajib diisi"),
   instructions: z.string().optional(),
+  materi_modul_id: z.string().optional(),
+  attachment_type: z.enum(["NONE", "FILE", "URL"]).default("NONE"),
+  attachment_url: z.string().url("URL tidak valid").optional().or(z.literal("")),
+  attachment_file: z.instanceof(File).optional(),
   due_at: z.date().optional(),
 });
 
@@ -62,22 +72,25 @@ export function AssignmentForm({ initialData, isEdit = false }: AssignmentFormPr
   const [sesiList, setSesiList] = useState<Sesi[]>([]);
   const [materiModuls, setMateriModuls] = useState<MateriModul[]>([]);
   const [kelasEnrollments, setKelasEnrollments] = useState<Array<{ id: number; murid?: { nama_lengkap: string }; kode_enrollment: string }>>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      assignment_mode: "bulk",
       kelas_id: "",
       sesi_id: "",
       enrollment_ids: initialData?.enrollment_id ? [initialData.enrollment_id] : [],
-      materi_modul_id: initialData?.materi_modul_id ? String(initialData.materi_modul_id) : "",
       title: initialData?.title || "",
       instructions: initialData?.instructions || "",
+      materi_modul_id: initialData?.materi_modul_id ? String(initialData.materi_modul_id) : "",
+      attachment_type: initialData?.attachment_type || "NONE",
+      attachment_url: initialData?.attachment_url || "",
       due_at: initialData?.due_at ? new Date(initialData.due_at) : undefined,
     },
   });
 
   const selectedKelasId = form.watch("kelas_id");
+  const attachmentType = form.watch("attachment_type");
 
   // Load kelas list
   useEffect(() => {
@@ -122,14 +135,60 @@ export function AssignmentForm({ initialData, isEdit = false }: AssignmentFormPr
 
     const loadEnrollments = async () => {
       try {
-        const result = await academicApi.getKelasDetail(Number(selectedKelasId));
-        if (result.success && result.data) {
-          setKelasEnrollments(result.data.enrollments || []);
-        }
-      } catch {
-        console.error("Failed to load enrollments");
+        // Get class detail and all sessions in parallel
+        const [kelasResult, sesiResult] = await Promise.all([
+          academicApi.getKelasDetail(Number(selectedKelasId)),
+          sesiApi.getSesiByKelas(Number(selectedKelasId), { per_page: 999 }),
+        ]);
+
+        const enrollmentMap = new Map<
+          number,
+          { id: number; murid?: { nama_lengkap: string }; kode_enrollment: string }
+        >();
+
+        // Add class enrollments (permanent students)
+        const classEnrollments = kelasResult.data?.enrollments || [];
+        classEnrollments.forEach((e: { id: number; murid?: { nama_lengkap: string }; kode_enrollment: string }) => {
+          enrollmentMap.set(e.id, {
+            id: e.id,
+            murid: e.murid,
+            kode_enrollment: e.kode_enrollment,
+          });
+        });
+
+        // Get attendance from all sessions to find transfer students
+        const sessions = sesiResult.data || [];
+        const absensiPromises = sessions.map((sesi) =>
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/sesi/${sesi.id}/absensi`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          })
+            .then((res) => res.json())
+            .then((data) => (data.success && data.data ? data.data : []))
+            .catch(() => [])
+        );
+
+        const allAbsensiData = await Promise.all(absensiPromises);
+
+        // Add transfer students from attendance
+        allAbsensiData.flat().forEach((a: { enrollment_id: number; enrollment?: { murid?: { nama_lengkap: string }; kode_enrollment?: string } }) => {
+          if (!enrollmentMap.has(a.enrollment_id) && a.enrollment) {
+            enrollmentMap.set(a.enrollment_id, {
+              id: a.enrollment_id,
+              murid: a.enrollment.murid,
+              kode_enrollment: a.enrollment.kode_enrollment || `ENR-${a.enrollment_id}`,
+            });
+          }
+        });
+
+        const finalEnrollments = Array.from(enrollmentMap.values());
+        console.log(`Loaded ${finalEnrollments.length} students for class ${selectedKelasId}:`, finalEnrollments);
+        setKelasEnrollments(finalEnrollments);
+      } catch (error) {
+        console.error("Failed to load enrollments", error);
+        setKelasEnrollments([]);
       }
     };
+
     loadEnrollments();
   }, [selectedKelasId, form]);
 
@@ -149,10 +208,13 @@ export function AssignmentForm({ initialData, isEdit = false }: AssignmentFormPr
   const onSubmit = async (values: FormValues) => {
     setLoading(true);
     try {
-      const basePayload = {
+      const basePayload: any = {
         materi_modul_id: values.materi_modul_id ? Number(values.materi_modul_id) : undefined,
         title: values.title,
         instructions: values.instructions || undefined,
+        attachment_type: values.attachment_type,
+        attachment_url: values.attachment_type === "URL" ? values.attachment_url : undefined,
+        attachment_file: values.attachment_type === "FILE" ? selectedFile : undefined,
         due_at: values.due_at?.toISOString(),
         realisasi_jadwal_kerja_id: values.sesi_id ? Number(values.sesi_id) : undefined,
       };
@@ -173,7 +235,9 @@ export function AssignmentForm({ initialData, isEdit = false }: AssignmentFormPr
         toast.success(`Berhasil membuat ${values.enrollment_ids.length} tugas`);
       }
       router.push("/dashboard/assignments");
-    } catch {
+      router.refresh();
+    } catch (error: any) {
+      console.error(error);
       toast.error(isEdit ? "Gagal memperbarui tugas" : "Gagal membuat tugas");
     } finally {
       setLoading(false);
@@ -192,261 +256,374 @@ export function AssignmentForm({ initialData, isEdit = false }: AssignmentFormPr
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      form.setValue("attachment_file", file);
+    }
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{isEdit ? "Edit Tugas" : "Buat Tugas Baru"}</CardTitle>
-        <CardDescription>
-          {isEdit
-            ? "Perbarui informasi tugas yang sudah ada"
-            : "Assign tugas ke murid berdasarkan kelas dan sesi"}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {!isEdit && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <Accordion defaultValue="informasi-utama" className="w-full">
+          
+          {/* Informasi Utama */}
+          <AccordionItem value="informasi-utama">
+            <AccordionTrigger description="Informasi dasar mengenai tugas">
+              Informasi Utama
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-6">
                 <FormField
                   control={form.control}
-                  name="kelas_id"
+                  name="title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        <Calendar className="inline h-4 w-4 mr-2" />
-                        Kelas *
-                      </FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Pilih kelas..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {kelasList.map((k) => (
-                            <SelectItem key={k.id} value={String(k.id)}>
-                              {k.nama_kelas} - {k.kode_kelas}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>Pilih kelas terlebih dahulu</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sesi_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        <Calendar className="inline h-4 w-4 mr-2" />
-                        Sesi (Opsional)
-                      </FormLabel>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={!selectedKelasId}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Pilih sesi..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {sesiList.map((s) => (
-                            <SelectItem key={s.id} value={String(s.id)}>
-                              {new Date(s.tanggal).toLocaleDateString("id-ID")} - {s.jam_mulai_plan}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>Link tugas ke sesi tertentu</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
-
-            {!isEdit && selectedKelasId && (
-              <FormField
-                control={form.control}
-                name="enrollment_ids"
-                render={() => (
-                  <FormItem>
-                    <div className="flex items-center justify-between mb-2">
-                      <FormLabel>
-                        <Users className="inline h-4 w-4 mr-2" />
-                        Pilih Murid *
-                      </FormLabel>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={toggleAllEnrollments}
-                      >
-                        {form.watch("enrollment_ids").length === kelasEnrollments.length
-                          ? "Batalkan Semua"
-                          : "Pilih Semua"}
-                      </Button>
-                    </div>
-                    <Card>
-                      <CardContent className="pt-4">
-                        {kelasEnrollments.length === 0 ? (
-                          <p className="text-sm text-muted-foreground text-center py-4">
-                            Tidak ada murid di kelas ini
-                          </p>
-                        ) : (
-                          <div className="space-y-2 max-h-64 overflow-y-auto">
-                            {kelasEnrollments.map((enrollment) => (
-                              <FormField
-                                key={enrollment.id}
-                                control={form.control}
-                                name="enrollment_ids"
-                                render={({ field }) => {
-                                  return (
-                                    <FormItem
-                                      key={enrollment.id}
-                                      className="flex flex-row items-start space-x-3 space-y-0 p-3 border rounded-lg hover:bg-muted/50"
-                                    >
-                                      <FormControl>
-                                        <Checkbox
-                                          checked={field.value?.includes(enrollment.id)}
-                                          onCheckedChange={(checked) => {
-                                            return checked
-                                              ? field.onChange([...field.value, enrollment.id])
-                                              : field.onChange(
-                                                  field.value?.filter(
-                                                    (value) => value !== enrollment.id
-                                                  )
-                                                );
-                                          }}
-                                        />
-                                      </FormControl>
-                                      <div className="flex-1">
-                                        <FormLabel className="text-sm font-medium cursor-pointer">
-                                          {enrollment.murid?.nama_lengkap || "Unknown"}
-                                        </FormLabel>
-                                        <p className="text-xs text-muted-foreground">
-                                          {enrollment.kode_enrollment}
-                                        </p>
-                                      </div>
-                                    </FormItem>
-                                  );
-                                }}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                    <FormDescription>
-                      {form.watch("enrollment_ids").length} murid dipilih
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Judul Tugas *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Contoh: PR Matematika Bab 1" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="instructions"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Instruksi</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Instruksi pengerjaan tugas..."
-                      rows={4}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="materi_modul_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Materi Terkait (Opsional)</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormLabel>Judul Tugas <span className="text-red-500">*</span></FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih materi" />
-                        </SelectTrigger>
+                        <Input placeholder="Contoh: PR Matematika Bab 1" {...field} />
                       </FormControl>
-                      <SelectContent>
-                        {materiModuls.map((m) => (
-                          <SelectItem key={m.id} value={String(m.id)}>
-                            {m.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="due_at"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tenggat Waktu (Opsional)</FormLabel>
-                    <FormControl>
-                      <DatePicker
-                        date={field.value}
-                        setDate={field.onChange}
-                        placeholder="Pilih tanggal"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                <FormField
+                  control={form.control}
+                  name="instructions"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Instruksi</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Instruksi pengerjaan tugas..."
+                          rows={4}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <div className="flex justify-end gap-4 pt-4 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push("/dashboard/assignments")}
-              >
-                Batal
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isEdit
-                  ? "Simpan Perubahan"
-                  : `Buat ${form.watch("enrollment_ids").length} Tugas`}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="materi_modul_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Materi Terkait</FormLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih materi (opsional)" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {materiModuls.map((m) => (
+                              <SelectItem key={m.id} value={String(m.id)}>
+                                {m.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>Hubungkan tugas dengan materi pembelajaran</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="due_at"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tenggat Waktu</FormLabel>
+                        <FormControl>
+                          <DatePicker
+                            date={field.value}
+                            setDate={field.onChange}
+                            placeholder="Pilih tanggal (opsional)"
+                          />
+                        </FormControl>
+                        <FormDescription>Batas waktu pengumpulan tugas</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Lampiran */}
+          <AccordionItem value="lampiran">
+            <AccordionTrigger description="Tambahkan file atau link sebagai referensi">
+              Lampiran
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="attachment_type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipe Lampiran</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="NONE" id="none" />
+                            <Label htmlFor="none" className="cursor-pointer">Tidak Ada</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="FILE" id="file" />
+                            <Label htmlFor="file" className="cursor-pointer flex items-center gap-1">
+                              <Upload className="h-3 w-3" />
+                              File
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="URL" id="url" />
+                            <Label htmlFor="url" className="cursor-pointer flex items-center gap-1">
+                              <LinkIcon className="h-3 w-3" />
+                              URL/Link
+                            </Label>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {attachmentType === "FILE" && (
+                  <FormField
+                    control={form.control}
+                    name="attachment_file"
+                    render={() => (
+                      <FormItem>
+                        <FormLabel>Upload File</FormLabel>
+                        <FormControl>
+                          <div className="space-y-2">
+                            <Input
+                              type="file"
+                              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.zip"
+                              onChange={handleFileChange}
+                            />
+                            {selectedFile && (
+                              <p className="text-sm text-muted-foreground">
+                                File terpilih: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
+                              </p>
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          Maksimal 50MB. Format: PDF, DOC, XLS, PPT, JPG, PNG, ZIP
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {attachmentType === "URL" && (
+                  <FormField
+                    control={form.control}
+                    name="attachment_url"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>URL/Link</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="https://example.com/materi"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Masukkan link ke Google Drive, YouTube, atau website lainnya
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Penerima Tugas */}
+          {!isEdit && (
+            <AccordionItem value="penerima">
+              <AccordionTrigger description="Pilih kelas, sesi, dan murid yang akan menerima tugas">
+                Penerima Tugas
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="kelas_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Kelas <span className="text-red-500">*</span></FormLabel>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih kelas..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {kelasList.map((k) => (
+                                <SelectItem key={k.id} value={String(k.id)}>
+                                  {k.nama_kelas} - {k.kode_kelas}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>Pilih kelas terlebih dahulu</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="sesi_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sesi</FormLabel>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            disabled={!selectedKelasId}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih sesi (opsional)" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {sesiList.map((s) => (
+                                <SelectItem key={s.id} value={String(s.id)}>
+                                  {new Date(s.tanggal).toLocaleDateString("id-ID")} - {s.jam_mulai_plan}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>Link tugas ke sesi tertentu</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {selectedKelasId && (
+                    <FormField
+                      control={form.control}
+                      name="enrollment_ids"
+                      render={() => (
+                        <FormItem>
+                          <div className="flex items-center justify-between mb-2">
+                            <FormLabel>Pilih Murid <span className="text-red-500">*</span></FormLabel>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={toggleAllEnrollments}
+                            >
+                              {form.watch("enrollment_ids").length === kelasEnrollments.length
+                                ? "Batalkan Semua"
+                                : "Pilih Semua"}
+                            </Button>
+                          </div>
+                          <Card>
+                            <CardContent className="pt-4">
+                              {kelasEnrollments.length === 0 ? (
+                                <p className="text-sm text-muted-foreground text-center py-4">
+                                  Tidak ada murid di kelas ini
+                                </p>
+                              ) : (
+                                <div className="space-y-2 max-h-64 overflow-y-auto">
+                                  {kelasEnrollments.map((enrollment) => (
+                                    <FormField
+                                      key={enrollment.id}
+                                      control={form.control}
+                                      name="enrollment_ids"
+                                      render={({ field }) => {
+                                        return (
+                                          <FormItem
+                                            key={enrollment.id}
+                                            className="flex flex-row items-start space-x-3 space-y-0 p-3 border rounded-lg hover:bg-muted/50"
+                                          >
+                                            <FormControl>
+                                              <Checkbox
+                                                checked={field.value?.includes(enrollment.id)}
+                                                onCheckedChange={(checked) => {
+                                                  return checked
+                                                    ? field.onChange([...field.value, enrollment.id])
+                                                    : field.onChange(
+                                                        field.value?.filter(
+                                                          (value) => value !== enrollment.id
+                                                        )
+                                                      );
+                                                }}
+                                              />
+                                            </FormControl>
+                                            <div className="flex-1">
+                                              <FormLabel className="text-sm font-medium cursor-pointer">
+                                                {enrollment.murid?.nama_lengkap || "Unknown"}
+                                              </FormLabel>
+                                              <p className="text-xs text-muted-foreground">
+                                                {enrollment.kode_enrollment}
+                                              </p>
+                                            </div>
+                                          </FormItem>
+                                        );
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                          <FormDescription>
+                            {form.watch("enrollment_ids").length} murid dipilih
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          )}
+        </Accordion>
+
+        <div className="flex items-center gap-3 pt-6">
+          <Button type="submit" size="lg" disabled={loading} className="px-8">
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isEdit
+              ? "Simpan Perubahan"
+              : `Buat ${form.watch("enrollment_ids").length} Tugas`}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            onClick={() => router.push("/dashboard/assignments")}
+            disabled={loading}
+          >
+            Batal
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }

@@ -105,6 +105,10 @@ export interface Assignment {
   materi_modul?: { id: number; title: string } | null;
   title: string;
   instructions?: string | null;
+  attachment_type?: 'NONE' | 'FILE' | 'URL';
+  attachment_url?: string | null;
+  attachment_path?: string | null;
+  attachment_file_url?: string | null;
   due_at?: string | null;
   is_overdue?: boolean;
   status: AssignmentStatus;
@@ -123,6 +127,9 @@ export interface CreateAssignmentRequest {
   materi_modul_id?: number;
   title: string;
   instructions?: string;
+  attachment_type?: 'NONE' | 'FILE' | 'URL';
+  attachment_url?: string;
+  attachment_file?: File;
   due_at?: string;
 }
 
