@@ -14,6 +14,8 @@ import {
   ListChecks,
   School,
   Wallet,
+  Briefcase,
+  ClipboardList,
   ImageIcon,
 } from "lucide-react";
 import {
@@ -57,6 +59,18 @@ const hrNav = [
     label: "Karyawan",
     icon: UserCircle,
     permission: "employees.view",
+  },
+  {
+    href: "/job-vacancies",
+    label: "Lowongan Kerja",
+    icon: ClipboardList,
+    permission: "job_vacancy.view",
+  },
+  {
+    href: "/job-applications",
+    label: "Lamaran Kerja",
+    icon: Briefcase,
+    permission: "job_application.view",
   },
 ];
 
@@ -374,6 +388,8 @@ export function AppSidebar() {
             "absensi.view",
             "cuti.view",
             "pengaturan_cuti.view",
+            "job_application.view",
+            "job_vacancy.view",
           ])) && (
           <Collapsible defaultOpen className="group/collapsible">
             <SidebarGroup className="py-1">
