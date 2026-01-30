@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/select";
 import { ArrowLeft, Save } from "lucide-react";
 import { toast } from "sonner";
+import { assignmentRepository } from "@/modules/learning/infrastructure/assignment.repository";
+import { sesiRepository } from "@/modules/learning/infrastructure/sesi.repository";
+import { get } from "@/shared/infrastructure/api/httpClient";
 
 interface Assignment {
   id: number;
@@ -27,6 +30,29 @@ interface Student {
   enrollment_id: number;
   murid_nama: string;
   murid_id: number;
+}
+
+interface SesiDetail {
+  kelas?: {
+    enrollments?: Array<{
+      id: number;
+      murid_id: number;
+      murid?: {
+        nama_lengkap: string;
+      };
+    }>;
+  };
+  jadwalKerja?: {
+    kelas?: {
+      enrollments?: Array<{
+        id: number;
+        murid_id: number;
+        murid?: {
+          nama_lengkap: string;
+        };
+      }>;
+    };
+  };
 }
 
 export default function AssignTugasPage({
@@ -61,30 +87,18 @@ export default function AssignTugasPage({
 
   const fetchData = async () => {
     try {
-      const [assignmentRes, sesiRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/v2/assignments?per_page=100`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/v2/sesi/${sessionId}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }),
+      const [assignmentData, sesiData] = await Promise.all([
+        assignmentRepository.getList({ per_page: 100 }),
+        get<SesiDetail>(`sesi/${sessionId}`),
       ]);
-
-      if (!assignmentRes.ok || !sesiRes.ok) throw new Error("Failed to fetch");
-
-      const assignmentData = await assignmentRes.json();
-      const sesiData = await sesiRes.json();
 
       setAssignmentList(assignmentData.data || []);
       
       // Get students from kelas enrollments
-      const enrollments = sesiData.data?.kelas?.enrollments || [];
+      // Try jadwalKerja.kelas first (for scheduled sessions), fallback to kelas (for direct class sessions)
+      const enrollments = sesiData?.jadwalKerja?.kelas?.enrollments || sesiData?.kelas?.enrollments || [];
       setStudents(
-        enrollments.map((e: any) => ({
+        enrollments.map((e) => ({
           enrollment_id: e.id,
           murid_nama: e.murid?.nama_lengkap || "Unknown",
           murid_id: e.murid_id,
@@ -119,28 +133,12 @@ export default function AssignTugasPage({
 
     setSaving(true);
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/v2/sesi/${sessionId}/assign-assignment`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            assignment_id: parseInt(selectedAssignment),
-            enrollment_ids: selectedStudents,
-          }),
-        }
-      );
-
-      if (!response.ok) throw new Error("Failed to assign");
-
+      await sesiRepository.assignAssignment(sessionId, parseInt(selectedAssignment), selectedStudents);
       toast.success("Tugas berhasil di-assign");
       router.push(`/dashboard/kelas/${kelasId}/sesi/${sessionId}/materi-tugas`);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("Gagal assign tugas");
+      toast.error(error.message || "Gagal assign tugas");
     } finally {
       setSaving(false);
     }

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, FileText, Trash2, ExternalLink, CheckCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { sesiRepository } from "@/modules/learning/infrastructure/sesi.repository";
 
 interface MateriAssignment {
   materi_id: number;
@@ -50,23 +51,12 @@ export default function SesiMateriTugasPage({
 
   const fetchAssignments = async () => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/v2/sesi/${sessionId}/materi-assignments`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
-      if (!response.ok) throw new Error("Failed to fetch");
-
-      const data = await response.json();
-      setMateriAssignments(data.data.materi || []);
-      setAssignmentAssignments(data.data.assignments || []);
-    } catch (error) {
-      console.error(error);
-      toast.error("Gagal memuat data");
+      const data = await sesiRepository.getMateriAssignments(sessionId);
+      setMateriAssignments(data.materi || []);
+      setAssignmentAssignments(data.assignments || []);
+    } catch (error: any) {
+      console.error('Fetch error:', error);
+      toast.error(error.message || "Gagal memuat data");
     } finally {
       setLoading(false);
     }
