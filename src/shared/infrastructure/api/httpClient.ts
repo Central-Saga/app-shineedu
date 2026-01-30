@@ -331,6 +331,31 @@ export async function put<T>(path: string, body: unknown): Promise<T> {
   return request<T>("PUT", path, body);
 }
 
+/**
+ * POST with FormData (multipart). Do not set Content-Type so browser sets boundary.
+ */
+export async function postFormData<T>(path: string, formData: FormData): Promise<T> {
+  const url = `${BASE.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    ...getAuthHeaders(),
+  };
+  const res = await fetch(url, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  return handleResponse<T>(res);
+}
+
+/**
+ * PUT with FormData (multipart). Sends POST with _method=PUT for Laravel.
+ */
+export async function putFormData<T>(path: string, formData: FormData): Promise<T> {
+  formData.append("_method", "PUT");
+  return postFormData<T>(path, formData);
+}
+
 export async function del<T = void>(path: string): Promise<T> {
   return request<T>("DELETE", path);
 }

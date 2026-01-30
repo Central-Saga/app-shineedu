@@ -16,6 +16,7 @@ import {
   Wallet,
   Briefcase,
   ClipboardList,
+  FileText,
 } from "lucide-react";
 import {
   Collapsible,
@@ -70,6 +71,15 @@ const hrNav = [
     label: "Lamaran Kerja",
     icon: Briefcase,
     permission: "job_application.view",
+  },
+];
+
+const landingNav = [
+  {
+    href: "/blogs",
+    label: "Blog",
+    icon: FileText,
+    permission: "landing.blog.view",
   },
 ];
 
@@ -393,6 +403,41 @@ export function AppSidebar() {
                     <SidebarKehadiranToggle can={(k) => authStore.hasPermission(k)} />
                     <SidebarJadwalToggle can={(k) => authStore.hasPermission(k)} />
                     <SidebarPayrollToggle can={(k) => authStore.hasPermission(k)} />
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </CollapsibleContent>
+            </SidebarGroup>
+          </Collapsible>
+        )}
+
+        {landingNav.filter((n) => hasAny(n.permission)).length > 0 && (
+          <Collapsible defaultOpen className="group/collapsible">
+            <SidebarGroup className="py-1">
+              <SidebarGroupLabel asChild className="mb-0 h-7 px-2">
+                <CollapsibleTrigger className="flex w-full items-center justify-between hover:text-sidebar-foreground transition-colors">
+                  LANDING
+                  <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                </CollapsibleTrigger>
+              </SidebarGroupLabel>
+              <CollapsibleContent>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {landingNav
+                      .filter((n) => hasAny(n.permission))
+                      .map((item) => {
+                        const Icon = item.icon;
+                        const active = pathname === item.href || pathname.startsWith(item.href + "/");
+                        return (
+                          <SidebarMenuItem key={item.href}>
+                            <SidebarMenuButton asChild isActive={active}>
+                              <Link href={item.href} className="py-1">
+                                <Icon className="size-4 shrink-0" />
+                                <span>{item.label}</span>
+                              </Link>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        );
+                      })}
                   </SidebarMenu>
                 </SidebarGroupContent>
               </CollapsibleContent>
