@@ -22,10 +22,12 @@ export const assessmentRepository = {
     params: Record<string, unknown>
   ): Promise<{ data: CertificateTemplate[]; meta: PaginatedMeta }> => {
     const qs = buildQuery(params);
-    const res = await getResponse<CertificateTemplate[]>(
+    const res = await getResponse<any>(
       qs ? `${TEMPLATES_URL}?${qs}` : TEMPLATES_URL
     );
-    return { data: res.data || [], meta: res.meta || DEFAULT_META };
+    const data = res.data?.data ?? res.data ?? [];
+    const meta = res.meta ?? (res.data?.current_page ? res.data : DEFAULT_META);
+    return { data, meta };
   },
 
   getTemplate: async (id: number): Promise<CertificateTemplate> => {
@@ -52,10 +54,12 @@ export const assessmentRepository = {
     params: Record<string, unknown>
   ): Promise<{ data: AssessmentGrade[]; meta: PaginatedMeta }> => {
     const qs = buildQuery(params);
-    const res = await getResponse<AssessmentGrade[]>(
+    const res = await getResponse<any>(
       qs ? `${GRADES_URL}?${qs}` : GRADES_URL
     );
-    return { data: res.data || [], meta: res.meta || DEFAULT_META };
+    const data = res.data?.data ?? res.data ?? [];
+    const meta = res.meta ?? (res.data?.current_page ? res.data : DEFAULT_META);
+    return { data, meta };
   },
 
   getGrade: async (id: number): Promise<AssessmentGrade> => {
