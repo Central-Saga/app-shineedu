@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Image from "next/image";
 import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
 import { PageHeader } from "@/shared/presentation/components/PageHeader";
@@ -32,10 +32,9 @@ export default function TemplateDetailPage() {
 
   useEffect(() => {
     if (!allowed || !id) return;
-    setLoading(true);
     getTemplateUsecase(id)
       .then(setTemplate)
-      .catch((e) => toast.error("Gagal memuat detail template"))
+      .catch(() => toast.error("Gagal memuat detail template"))
       .finally(() => setLoading(false));
   }, [allowed, id]);
 
@@ -57,7 +56,7 @@ export default function TemplateDetailPage() {
       <PageHeader
         title={template.name}
         description={`Template tipe ${template.type}`}
-        showBackButton
+        backHref="/assessment/templates"
         actions={
             <Badge variant="outline" className="text-lg px-3 py-1 capitalize">
                 {template.type}
@@ -90,6 +89,7 @@ export default function TemplateDetailPage() {
                                 src={template.cover_image} 
                                 alt="Cover" 
                                 fill 
+                                unoptimized
                                 className="object-cover"
                             />
                         </div>
@@ -108,6 +108,7 @@ export default function TemplateDetailPage() {
                              src={template.result_image} 
                              alt="Result" 
                              fill 
+                             unoptimized
                              className="object-cover"
                          />
                      </div>
