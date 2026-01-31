@@ -63,8 +63,9 @@ export default function GradeDetailPage() {
         if (data.url) {
             window.open(data.url, "_blank");
         }
-    } catch (e: any) {
-        toast.error(e.message || "Failed to generate");
+    } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to generate";
+        toast.error(message);
         setGenerating(false);
     }
   };
@@ -91,11 +92,15 @@ export default function GradeDetailPage() {
         actions={
             <div className="flex gap-2">
                 {grade.certificate_no ? (
-                     <Button variant="outline" asChild>
-                         <Link href={`/api/v2/public/certificates/${grade.certificate_no}/download`} target="_blank">
-                             <Download className="mr-2 size-4" /> Download PDF
-                         </Link>
-                     </Button>
+                      <Button variant="outline" asChild>
+                          <a 
+                            href={`${process.env.NEXT_PUBLIC_API_BASE_URL}/public/certificates/${grade.certificate_no}/download`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                          >
+                              <Download className="mr-2 size-4" /> Download PDF
+                          </a>
+                      </Button>
                 ) : (
                     canManage && (
                         <Button onClick={handleGenerate} disabled={generating}>
