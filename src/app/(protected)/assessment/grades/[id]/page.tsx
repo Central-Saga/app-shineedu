@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
 import { PageHeader } from "@/shared/presentation/components/PageHeader";
@@ -21,7 +22,6 @@ export default function GradeDetailPage() {
   const { allowed } = usePermissionGuard("assessment.view");
   const params = useParams();
   const id = Number(params.id);
-  const router = useRouter();
   
   const { setItems } = useBreadcrumbStore();
   const [grade, setGrade] = useState<AssessmentGrade | null>(null);
@@ -38,18 +38,18 @@ export default function GradeDetailPage() {
     ]);
   }, [setItems, id]);
 
-  const loadData = () => {
-    setLoading(true);
+  const loadData = useCallback(() => {
+    if (!id) return;
     getGradeUsecase(id)
       .then(setGrade)
-      .catch((e) => toast.error("Gagal memuat grade"))
+      .catch(() => toast.error("Gagal memuat grade"))
       .finally(() => setLoading(false));
-  };
+  }, [id]);
 
   useEffect(() => {
     if (!allowed || !id) return;
     loadData();
-  }, [allowed, id]);
+  }, [allowed, id, loadData]);
 
   const handleGenerate = async () => {
     if (!grade) return;
@@ -87,7 +87,7 @@ export default function GradeDetailPage() {
       <PageHeader
         title={`Penilaian: ${grade.enrollment?.student?.nama_lengkap || "Unknown"}`}
         description={`Program: ${grade.enrollment?.program?.nama || "-"}`}
-        showBackButton
+        backHref="/assessment/grades"
         actions={
             <div className="flex gap-2">
                 {grade.certificate_no ? (
@@ -192,6 +192,7 @@ export default function GradeDetailPage() {
                                     src={grade.certificate_template.cover_image}
                                     alt="Template"
                                     fill
+                                    unoptimized
                                     className="object-cover"
                                 />
                             </div>
