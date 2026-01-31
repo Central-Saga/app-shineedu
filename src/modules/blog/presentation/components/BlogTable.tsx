@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import {
   Table,
   TableBody,
@@ -15,43 +16,40 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash } from "lucide-react";
-import type { Blog } from "../../domain/entities";
 import { ConfirmDeleteDialog } from "@/shared/presentation/components/ConfirmDeleteDialog";
+import { MoreHorizontal, Pencil, Trash, Eye, ImageOff } from "lucide-react";
 import { format } from "date-fns";
-import { id } from "date-fns/locale";
+import { id as idLocale } from "date-fns/locale";
+import type { BlogPost } from "../../domain/entities";
 
 interface BlogTableProps {
-  items: Blog[];
+  items: BlogPost[];
   loading: boolean;
-  onEdit: (item: Blog) => void;
-  onDelete: (item: Blog) => void;
+  onView: (item: BlogPost) => void;
+  onEdit: (item: BlogPost) => void;
+  onDelete: (item: BlogPost) => void;
   canUpdate: boolean;
   canDelete: boolean;
 }
 
-const CATEGORY_LABEL: Record<string, string> = {
-  tips: "Tips",
-  travel: "Travel",
-  trips: "Trips",
-};
-
 export function BlogTable({
   items,
   loading,
+  onView,
   onEdit,
   onDelete,
   canUpdate,
   canDelete,
 }: BlogTableProps) {
-  const [deleteItem, setDeleteItem] = useState<Blog | null>(null);
+  const [deleteData, setDeleteData] = useState<BlogPost | null>(null);
 
   if (loading) {
     return (
       <div className="p-8 text-center text-muted-foreground">
-        Memuat blog...
+        Memuat data...
       </div>
     );
   }
@@ -59,7 +57,7 @@ export function BlogTable({
   if (items.length === 0) {
     return (
       <div className="p-8 text-center text-muted-foreground">
-        Belum ada blog. Tambah blog untuk ditampilkan di halaman landing.
+        Tidak ada artikel blog ditemukan.
       </div>
     );
   }
@@ -67,83 +65,107 @@ export function BlogTable({
   return (
     <>
       <div className="rounded-md border overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Judul</TableHead>
-              <TableHead>Kategori</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Author</TableHead>
-              <TableHead>Tanggal</TableHead>
-              <TableHead className="w-[80px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {items.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium max-w-[280px] truncate">
-                  {item.title}
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">
-                    {CATEGORY_LABEL[item.category] ?? item.category}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={item.status === "published" ? "default" : "secondary"}>
-                    {item.status === "published" ? "Published" : "Draft"}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {item.author?.name ?? "-"}
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {item.created_at
-                    ? format(new Date(item.created_at), "d MMM yyyy", { locale: id })
-                    : "-"}
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {canUpdate && (
-                        <DropdownMenuItem onClick={() => onEdit(item)}>
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                      )}
-                      {canDelete && (
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onClick={() => setDeleteItem(item)}
-                        >
-                          <Trash className="mr-2 h-4 w-4" />
-                          Hapus
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+        <div className="min-w-[700px]">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[72px]">Gambar</TableHead>
+                <TableHead>Judul</TableHead>
+                <TableHead>Kategori</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Penulis</TableHead>
+                <TableHead>Tanggal</TableHead>
+                <TableHead className="w-[80px]"></TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {items.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="w-[72px] p-2">
+                    {item.featured_image_url ? (
+                      <div className="relative h-12 w-12 overflow-hidden rounded border bg-muted">
+                        <Image
+                          src={item.featured_image_url}
+                          alt=""
+                          fill
+                          className="object-cover"
+                          unoptimized
+                          sizes="48px"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex h-12 w-12 items-center justify-center rounded border bg-muted text-muted-foreground">
+                        <ImageOff className="h-5 w-5" />
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell className="font-medium">{item.title}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {item.category ?? "-"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={item.status === "published" ? "default" : "secondary"}
+                      className={item.status === "published" ? "bg-emerald-600" : ""}
+                    >
+                      {item.status === "published" ? "Published" : "Draft"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {item.author?.name ?? "-"}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {item.created_at
+                      ? format(new Date(item.created_at), "dd MMM yyyy", {
+                          locale: idLocale,
+                        })
+                      : "-"}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => onView(item)}>
+                          <Eye className="mr-2 h-4 w-4" /> Lihat
+                        </DropdownMenuItem>
+                        {canUpdate && (
+                          <DropdownMenuItem onClick={() => onEdit(item)}>
+                            <Pencil className="mr-2 h-4 w-4" /> Edit
+                          </DropdownMenuItem>
+                        )}
+                        {canDelete && (
+                          <DropdownMenuItem
+                            onClick={() => setDeleteData(item)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash className="mr-2 h-4 w-4" /> Hapus
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
+
       <ConfirmDeleteDialog
-        isOpen={!!deleteItem}
-        onOpenChange={(open) => !open && setDeleteItem(null)}
+        isOpen={!!deleteData}
+        onOpenChange={(open) => !open && setDeleteData(null)}
         onConfirm={() => {
-          if (deleteItem) {
-            onDelete(deleteItem);
-            setDeleteItem(null);
-          }
+          if (deleteData) onDelete(deleteData);
+          setDeleteData(null);
         }}
-        title="Hapus blog?"
-        description="Blog ini akan dihapus beserta semua gambar. Tindakan tidak dapat dibatalkan."
+        title="Hapus Artikel Blog?"
+        description={`Yakin menghapus artikel "${deleteData?.title ?? ""}"?`}
       />
     </>
   );

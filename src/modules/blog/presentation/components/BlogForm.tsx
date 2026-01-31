@@ -1,22 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -24,271 +14,251 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { ImagePlus, X } from "lucide-react";
 import {
-  createBlog,
-  updateBlog,
-  getBlog,
-  uploadBlogAsset,
-  deleteBlogAsset,
+  createBlogPost,
+  updateBlogPost,
 } from "../../infrastructure/blog.repository";
-import type { Blog as BlogType, BlogAsset } from "../../domain/entities";
+import type { BlogPost } from "../../domain/entities";
+import { ValidationError } from "@/shared/infrastructure/api/errors";
 
-const formSchema = z.object({
-  title: z.string().min(1, "Judul wajib diisi").max(255),
-  content: z.string().min(1, "Konten wajib diisi"),
-  status: z.enum(["published", "draft"]),
-  category: z.enum(["tips", "travel", "trips"], {
-    errorMap: () => ({ message: "Kategori wajib dipilih" }),
-  }),
-});
+const STATUS_OPTIONS = [
+  { value: "draft", label: "Draft" },
+  { value: "published", label: "Published" },
+];
 
-type FormValues = z.infer<typeof formSchema>;
+const ACCEPT_IMAGE = "image/jpeg,image/png,image/jpg,image/gif,image/webp";
 
 interface BlogFormProps {
-  initialData?: BlogType;
+  initialData?: BlogPost | null;
   isEdit?: boolean;
-}
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-
-function assetImageUrl(asset: BlogAsset): string {
-  if (asset.file_url?.startsWith("http")) return asset.file_url;
-  return `${API_BASE.replace(/\/api\/v2\/?$/, "")}/${asset.file_path}`.replace(/\/+/g, "/");
 }
 
 export function BlogForm({ initialData, isEdit = false }: BlogFormProps) {
   const router = useRouter();
-  const [existingAssets, setExistingAssets] = useState<BlogAsset[]>(
-    initialData?.assets ?? []
-  );
-  const [newFiles, setNewFiles] = useState<File[]>([]);
-  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [excerpt, setExcerpt] = useState("");
+  const [status, setStatus] = useState<"draft" | "published">("draft");
+  const [category, setCategory] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [removeImage, setRemoveImage] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: initialData?.title ?? "",
-      content: initialData?.content ?? "",
-      status: (initialData?.status as "published" | "draft") ?? "draft",
-      category: initialData?.category ?? "tips",
-    },
-  });
+  useEffect(() => {
+    if (initialData) {
+      setTitle(initialData.title ?? "");
+      setContent(initialData.content ?? "");
+      setExcerpt(initialData.excerpt ?? "");
+      setStatus((initialData.status as "draft" | "published") ?? "draft");
+      setCategory(initialData.category ?? "");
+    }
+  }, [initialData]);
 
-  async function onSubmit(values: FormValues) {
+  const currentImageUrl =
+    imagePreview ??
+    (removeImage ? null : (initialData?.featured_image_url?.trim() ? initialData.featured_image_url : null));
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+      setRemoveImage(false);
+    } else {
+      setImageFile(null);
+      setImagePreview(null);
+    }
+  };
+
+  const clearImage = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(null);
+    setImagePreview(null);
+    setRemoveImage(true);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) {
+      toast.error("Judul artikel wajib diisi");
+      return;
+    }
+    setSubmitting(true);
     try {
-      if (isEdit && initialData) {
-        await updateBlog(initialData.id, {
-          title: values.title,
-          content: values.content,
-          status: values.status,
-          category: values.category,
-        });
-        toast.success("Blog berhasil diperbarui");
+      const payload = {
+        title: title.trim(),
+        content: content.trim() || undefined,
+        excerpt: excerpt.trim() || undefined,
+        status,
+        category: category.trim() || undefined,
+      };
+      if (isEdit && initialData?.id) {
+        await updateBlogPost(initialData.id, payload, imageFile ?? undefined, removeImage);
+        toast.success("Artikel blog berhasil diperbarui");
       } else {
-        const blog = await createBlog({
-          title: values.title,
-          content: values.content,
-          status: values.status,
-          category: values.category,
-        });
-        toast.success("Blog berhasil ditambahkan");
-        if (newFiles.length > 0 && blog.id) {
-          setUploading(true);
-          for (const file of newFiles) {
-            await uploadBlogAsset(blog.id, { file });
-          }
-          setUploading(false);
-          setNewFiles([]);
-        }
-        router.push("/blogs");
-        return;
+        await createBlogPost(payload, imageFile ?? undefined);
+        toast.success("Artikel blog berhasil dibuat");
       }
-
-      if (isEdit && initialData && newFiles.length > 0) {
-        setUploading(true);
-        for (const file of newFiles) {
-          await uploadBlogAsset(initialData.id, { file });
-        }
-        setNewFiles([]);
-        setUploading(false);
-        const updated = await getBlog(initialData.id);
-        const updatedBlog = await getBlog(initialData.id);
-        setExistingAssets(updatedBlog.assets ?? []);
-      }
-
       router.push("/blogs");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Gagal menyimpan");
+    } catch (err) {
+      if (err instanceof ValidationError && err.validationErrors && Object.keys(err.validationErrors).length > 0) {
+        const [field, messages] = Object.entries(err.validationErrors)[0];
+        const msg = Array.isArray(messages) ? messages[0] : (messages as { message?: string })?.message;
+        const fieldLabel: Record<string, string> = {
+          title: "Judul",
+          content: "Konten",
+          excerpt: "Deskripsi/Ringkasan",
+          status: "Status",
+          category: "Kategori",
+          image: "Gambar",
+        };
+        const label = fieldLabel[field] ?? field;
+        toast.error(`${label}: ${msg ?? err.message}`);
+      } else {
+        toast.error(err instanceof Error ? err.message : "Gagal menyimpan artikel");
+      }
+    } finally {
+      setSubmitting(false);
     }
-  }
-
-  async function handleDeleteAsset(asset: BlogAsset) {
-    if (!initialData) return;
-    try {
-      await deleteBlogAsset(initialData.id, asset.id);
-      setExistingAssets((prev) => prev.filter((a) => a.id !== asset.id));
-      toast.success("Gambar dihapus");
-    } catch (e) {
-      toast.error("Gagal menghapus gambar");
-    }
-  }
-
-  function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = e.target.files;
-    if (files?.length) {
-      setNewFiles((prev) => [...prev, ...Array.from(files)]);
-    }
-    e.target.value = "";
-  }
+  };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit}>
+      <div className="space-y-6">
         <Card>
-          <CardHeader>
-            <CardTitle>{isEdit ? "Edit blog" : "Tambah blog"}</CardTitle>
+          <CardHeader className="border-b">
+            <CardTitle className="text-base">Informasi Artikel</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Judul</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Judul blog" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="published">Published</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Kategori</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih kategori" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="tips">Tips</SelectItem>
-                      <SelectItem value="travel">Travel</SelectItem>
-                      <SelectItem value="trips">Trips</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="content"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Konten</FormLabel>
-                  <FormControl>
-                    <RichTextEditor
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder="Konten blog..."
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
+          <CardContent className="pt-6 space-y-4">
             <div className="space-y-2">
-              <Label>Gambar blog (opsional)</Label>
-              {isEdit && existingAssets.length > 0 && (
-                <div className="flex flex-wrap gap-4 mt-2">
-                  {existingAssets.map((asset) => (
-                    <div
-                      key={asset.id}
-                      className="relative w-24 h-24 rounded border overflow-hidden bg-muted group"
-                    >
-                      <img
-                        src={assetImageUrl(asset)}
-                        alt={asset.title ?? ""}
-                        className="object-cover w-full h-full"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => handleDeleteAsset(asset)}
-                      >
-                        ×
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <Label htmlFor="title">Judul *</Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Judul artikel blog"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Gambar Utama</Label>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/gif,image/webp"
-                multiple
-                onChange={onFileChange}
-                className="block text-sm text-muted-foreground file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:text-primary-foreground"
+                accept={ACCEPT_IMAGE}
+                onChange={handleImageChange}
+                className="hidden"
               />
-              {newFiles.length > 0 && (
-                <p className="text-sm text-muted-foreground">
-                  {newFiles.length} file akan diunggah setelah simpan.
-                </p>
-              )}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <ImagePlus className="mr-2 h-4 w-4" />
+                    Pilih Gambar
+                  </Button>
+                  {currentImageUrl && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearImage}
+                      className="text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                {currentImageUrl && (
+                  <div className="relative h-40 w-64 overflow-hidden rounded-lg border bg-muted">
+                    <Image
+                      src={currentImageUrl}
+                      alt="Preview"
+                      fill
+                      className="object-cover"
+                      unoptimized
+                      sizes="256px"
+                    />
+                  </div>
+                )}
+              </div>
+              <p className="text-muted-foreground text-xs">
+                JPG, PNG, GIF atau WebP. Maks. 5 MB.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="excerpt">Deskripsi / Ringkasan (Excerpt)</Label>
+              <Textarea
+                id="excerpt"
+                value={excerpt}
+                onChange={(e) => setExcerpt(e.target.value)}
+                placeholder="Ringkasan singkat artikel untuk tampilan card/list (deskripsi)..."
+                rows={3}
+                maxLength={5000}
+              />
+              <p className="text-muted-foreground text-xs">
+                Maks. 5.000 karakter. {excerpt.length}/5000
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={status} onValueChange={(v) => setStatus(v as "draft" | "published")}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Kategori</Label>
+                <Input
+                  id="category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  placeholder="Contoh: tips, travel"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="content">Konten</Label>
+              <Textarea
+                id="content"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Isi artikel (HTML atau teks)..."
+                rows={12}
+                className="font-mono text-sm"
+              />
             </div>
           </CardContent>
         </Card>
 
         <div className="flex gap-2">
-          <Button
-            type="submit"
-            disabled={form.formState.isSubmitting || uploading}
-          >
-            {form.formState.isSubmitting || uploading
-              ? "Menyimpan..."
-              : "Simpan"}
+          <Button type="submit" disabled={submitting}>
+            {submitting ? "Menyimpan..." : isEdit ? "Simpan Perubahan" : "Buat Artikel"}
           </Button>
           <Button
             type="button"
@@ -298,7 +268,7 @@ export function BlogForm({ initialData, isEdit = false }: BlogFormProps) {
             Batal
           </Button>
         </div>
-      </form>
-    </Form>
+      </div>
+    </form>
   );
 }

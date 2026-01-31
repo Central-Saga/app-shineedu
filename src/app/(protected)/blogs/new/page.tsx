@@ -7,14 +7,14 @@ import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGua
 import { BlogForm } from "@/modules/blog/presentation/components/BlogForm";
 
 export default function BlogNewPage() {
-  const { allowed } = usePermissionGuard("blog.manage");
+  const { allowed } = usePermissionGuard("landing.blog.create");
   const { setItems } = useBreadcrumbStore();
 
   useEffect(() => {
     setItems([
       { label: "Dashboard", href: "/dashboard" },
       { label: "Blog", href: "/blogs" },
-      { label: "Tambah Blog" },
+      { label: "Tambah Artikel" },
     ]);
   }, [setItems]);
 
@@ -23,8 +23,8 @@ export default function BlogNewPage() {
   return (
     <div className="max-w-4xl">
       <PageHeader
-        title="Tambah Blog"
-        description="Buat artikel blog baru"
+        title="Tambah Artikel Blog"
+        description="Buat artikel blog baru (judul, konten, status, kategori)"
       />
       <BlogForm />
     </div>

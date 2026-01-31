@@ -1,4 +1,8 @@
-export interface Author {
+/**
+ * Blog post entity – aligned with API landing-blog and landing public/blogs.
+ */
+
+export interface BlogAuthor {
   id: number;
   name: string;
   email: string;
@@ -6,45 +10,41 @@ export interface Author {
 
 export interface BlogAsset {
   id: number;
-  blog_id: number;
   file_path: string;
   file_url: string;
   title?: string | null;
   description?: string | null;
   sort_order?: number | null;
-  created_at?: string | null;
-  updated_at?: string | null;
 }
 
-export interface Blog {
+export interface BlogPost {
   id: number;
-  author_id: number;
   title: string;
-  content: string;
+  content?: string | null;
+  excerpt?: string | null;
+  featured_image_path?: string | null;
+  featured_image_url?: string | null;
   status: string;
-  category: "tips" | "travel" | "trips";
+  category?: string | null;
+  author_id: number;
+  author?: BlogAuthor | null;
+  assets?: BlogAsset[];
   created_at?: string | null;
   updated_at?: string | null;
-  author?: Author | null;
-  assets?: BlogAsset[];
 }
 
-export interface CreateBlogPayload {
+export interface CreateBlogPostPayload {
   title: string;
-  content: string;
-  status: "published" | "draft";
-  category: "tips" | "travel" | "trips";
+  content?: string | null;
+  excerpt?: string | null;
+  status: "draft" | "published";
+  category?: string | null;
 }
 
-export interface UpdateBlogPayload {
+export interface UpdateBlogPostPayload {
   title?: string;
-  content?: string;
-  status?: "published" | "draft";
-  category?: "tips" | "travel" | "trips";
-}
-
-export interface CreateBlogAssetPayload {
-  file: File;
-  title?: string | null;
-  description?: string | null;
+  content?: string | null;
+  excerpt?: string | null;
+  status?: "draft" | "published";
+  category?: string | null;
 }
