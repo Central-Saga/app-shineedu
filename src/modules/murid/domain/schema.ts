@@ -18,6 +18,7 @@ export interface MuridFormValues {
   catatan_khusus: string | null;
   kebutuhan_khusus: string | null;
   status: "Aktif" | "Non Aktif";
+  password?: string | null;
 }
 
 export const muridSchema = z.object({
@@ -38,4 +39,5 @@ export const muridSchema = z.object({
   catatan_khusus: z.string().nullable().default(null),
   kebutuhan_khusus: z.string().nullable().default(null),
   status: z.enum(["Aktif", "Non Aktif"]),
+  password: z.string().optional().nullable(),
 });

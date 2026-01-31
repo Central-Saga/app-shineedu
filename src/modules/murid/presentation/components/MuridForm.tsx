@@ -34,6 +34,7 @@ import { muridSchema, type MuridFormValues } from "../../domain/schema";
 import { useRouter } from "next/navigation";
 import { format, parse, isValid } from "date-fns";
 import { RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 
 interface MuridFormProps {
   initialData?: MuridFormValues;
@@ -254,6 +255,71 @@ export function MuridForm({
               </AccordionContent>
             </AccordionItem>
 
+            {/* Akun & Keamanan */}
+            <AccordionItem value="akun-keamanan">
+              <AccordionTrigger description="Pengaturan akun login aplikasi">
+                Akun & Keamanan
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="col-span-1 md:col-span-2 p-4 bg-amber-50 rounded-lg text-amber-800 text-sm border border-amber-200 mb-2">
+                     Akun login akan dibuatkan otomatis jika Email diisi. Password dapat diisi manual atau digenerate.
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password Akun</FormLabel>
+                        <div className="flex gap-2">
+                            <FormControl>
+                              <Input 
+                                type="text" 
+                                placeholder={mode === 'edit' ? "Kosongkan jika tidak ingin mengubah password" : "Password untuk login"} 
+                                {...field} 
+                                value={field.value || ""} 
+                                disabled={isLoading} 
+                              />
+                            </FormControl>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+                                    let password = "";
+                                    for (let i = 0; i < 12; i++) {
+                                        password += chars.charAt(Math.floor(Math.random() * chars.length));
+                                    }
+                                    form.setValue("password", password);
+                                }}
+                                title="Generate Password"
+                            >
+                                Generate
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={() => {
+                                    if (field.value) {
+                                        navigator.clipboard.writeText(field.value);
+                                        toast.success("Password disalin ke clipboard!");
+                                    }
+                                }}
+                                disabled={!field.value}
+                                title="Copy Password"
+                            >
+                                Copy
+                            </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+            
             {/* Data Akademik */}
             <AccordionItem value="data-akademik">
               <AccordionTrigger description="Informasi jenjang dan sekolah">

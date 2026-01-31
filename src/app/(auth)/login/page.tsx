@@ -13,8 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Lock, Mail, ChevronRight } from "lucide-react";
 
 const schema = z.object({
-  email: z.string().min(1, "Email wajib diisi").email("Format email tidak valid"),
-  password: z.string().min(8, "Password minimal 8 karakter"),
+  email: z.string().min(1, "Email / Kode wajib diisi"),
+  password: z.string().min(1, "Password wajib diisi"),
 });
 
 type Form = z.infer<typeof schema>;
@@ -131,13 +131,13 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4.5">
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-foreground/70 font-bold text-[10px] uppercase tracking-wider ml-0.5">Alamat Email</Label>
+              <Label htmlFor="email" className="text-foreground/70 font-bold text-[10px] uppercase tracking-wider ml-0.5">Email / Kode</Label>
               <div className="relative group">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground group-focus-within:text-primary transition-colors duration-300" />
                 <Input
                   id="email"
-                  type="email"
-                  placeholder="admin@shineedu.com"
+                  type="text"
+                  placeholder="Email, Kode Murid, atau Kode Karyawan"
                   className="h-9 pl-9 bg-background border-input rounded-md focus-visible:ring-primary/10 focus-visible:border-primary/40 text-sm font-medium transition-all duration-300"
                   {...register("email")}
                 />
