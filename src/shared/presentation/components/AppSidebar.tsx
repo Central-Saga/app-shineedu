@@ -77,10 +77,16 @@ const hrNav = [
 
 const landingNav = [
   {
+    href: "/gallery-landing",
+    label: "Gallery Landing",
+    icon: ImageIcon,
+    permission: "landing.gallery.view",
+  },
+  {
     href: "/blogs",
     label: "Blog",
     icon: FileText,
-    permission: "landing.blog.view",
+    permission: "blog.view",
   },
 ];
 
@@ -324,7 +330,7 @@ export function AppSidebar() {
           </SidebarGroup>
         </Collapsible>
 
-        {(authStore.hasPermission("landing.gallery.view") || authStore.hasPermission("blog.view")) && (
+        {landingNav.filter((n) => hasAny(n.permission)).length > 0 && (
           <Collapsible defaultOpen className="group/collapsible">
             <SidebarGroup className="py-1">
               <SidebarGroupLabel asChild className="mb-0 h-7 px-2">
@@ -336,24 +342,22 @@ export function AppSidebar() {
               <CollapsibleContent>
                 <SidebarGroupContent>
                   <SidebarMenu>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={pathname.startsWith("/gallery-landing")}>
-                        <Link href="/gallery-landing" className="py-1">
-                          <ImageIcon className="size-4 shrink-0" />
-                          <span>Gallery Landing</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    {authStore.hasPermission("blog.view") && (
-                      <SidebarMenuItem>
-                        <SidebarMenuButton asChild isActive={pathname.startsWith("/blogs")}>
-                          <Link href="/blogs" className="py-1">
-                            <FileText className="size-4 shrink-0" />
-                            <span>Blog</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    )}
+                    {landingNav
+                      .filter((n) => hasAny(n.permission))
+                      .map((item) => {
+                        const Icon = item.icon;
+                        const active = pathname === item.href || pathname.startsWith(item.href + "/");
+                        return (
+                          <SidebarMenuItem key={item.href}>
+                            <SidebarMenuButton asChild isActive={active}>
+                              <Link href={item.href} className="py-1">
+                                <Icon className="size-4 shrink-0" />
+                                <span>{item.label}</span>
+                              </Link>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        );
+                      })}
                   </SidebarMenu>
                 </SidebarGroupContent>
               </CollapsibleContent>
@@ -468,40 +472,6 @@ export function AppSidebar() {
           </Collapsible>
         )}
 
-        {landingNav.filter((n) => hasAny(n.permission)).length > 0 && (
-          <Collapsible defaultOpen className="group/collapsible">
-            <SidebarGroup className="py-1">
-              <SidebarGroupLabel asChild className="mb-0 h-7 px-2">
-                <CollapsibleTrigger className="flex w-full items-center justify-between hover:text-sidebar-foreground transition-colors">
-                  LANDING
-                  <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                </CollapsibleTrigger>
-              </SidebarGroupLabel>
-              <CollapsibleContent>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {landingNav
-                      .filter((n) => hasAny(n.permission))
-                      .map((item) => {
-                        const Icon = item.icon;
-                        const active = pathname === item.href || pathname.startsWith(item.href + "/");
-                        return (
-                          <SidebarMenuItem key={item.href}>
-                            <SidebarMenuButton asChild isActive={active}>
-                              <Link href={item.href} className="py-1">
-                                <Icon className="size-4 shrink-0" />
-                                <span>{item.label}</span>
-                              </Link>
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>
-                        );
-                      })}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </CollapsibleContent>
-            </SidebarGroup>
-          </Collapsible>
-        )}
       </SidebarContent>
     </Sidebar>
   );
