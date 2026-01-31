@@ -27,9 +27,7 @@ import type { CreateTemplateInput } from "@/modules/assessment/domain/entities";
 
 const formSchema = z.object({
   name: z.string().min(3, "Nama minimal 3 karakter"),
-  type: z.enum(["english", "computer"], {
-    required_error: "Pilih tipe template",
-  }),
+  type: z.enum(["english", "computer"]),
   data_mapping: z.string().refine((val) => {
     try {
       JSON.parse(val);
@@ -145,6 +143,7 @@ export function TemplateForm({ loading, onSubmit }: TemplateFormProps) {
               <FormControl>
                 <Input id="result_image" type="file" accept="image/*" />
               </FormControl>
+              <FormDescription>Format PNG/JPG, resolusi A4 disarankan.</FormDescription>
             </FormItem>
         </div>
 
