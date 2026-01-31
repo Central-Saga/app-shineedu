@@ -120,6 +120,14 @@ export default function GradesPage() {
             searchValue={search}
             onSearchChange={setSearch}
             searchPlaceholder="Cari siswa/certificate..."
+            filters={[]}
+            sort={{
+              value: "created_at",
+              options: [{ label: "Dibuat", value: "created_at" }],
+              onChange: () => {}, // No-op for now or implement sort state
+              direction: "desc",
+              onToggleDirection: () => {}, // No-op
+            }}
           />
 
           <GradeTable

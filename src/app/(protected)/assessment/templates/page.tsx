@@ -132,6 +132,13 @@ export default function TemplatesPage() {
                 },
               },
             ]}
+            sort={{
+              value: "created_at",
+              options: [{ label: "Dibuat", value: "created_at" }],
+              onChange: () => {}, // No-op
+              direction: "desc",
+              onToggleDirection: () => {}, // No-op
+            }}
           />
 
           <TemplateTable
