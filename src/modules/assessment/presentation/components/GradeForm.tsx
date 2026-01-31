@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -55,7 +54,17 @@ export function GradeForm({ loading, onSubmit }: GradeFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       type: "english",
-      scores: {},
+      scores: {
+        grammar: "" as any,
+        reading: "" as any,
+        speaking: "" as any,
+        listening: "" as any,
+        writing: "" as any,
+        word: "" as any,
+        excel: "" as any,
+        powerpoint: "" as any,
+        internet: "" as any,
+      },
     },
   });
 
@@ -225,7 +234,8 @@ export function GradeForm({ loading, onSubmit }: GradeFormProps) {
                                         min={0} 
                                         max={100} 
                                         {...field} 
-                                        onChange={e => field.onChange(Number(e.target.value))}
+                                        value={field.value ?? ""}
+                                        onChange={e => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
                                     />
                                 </FormControl>
                                 <FormMessage />
