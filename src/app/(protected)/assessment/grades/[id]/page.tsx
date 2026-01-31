@@ -92,15 +92,28 @@ export default function GradeDetailPage() {
         actions={
             <div className="flex gap-2">
                 {grade.certificate_no ? (
-                      <Button variant="outline" asChild>
-                          <a 
-                            href={`${process.env.NEXT_PUBLIC_API_BASE_URL}/public/certificates/${grade.certificate_no}/download`} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
+                      <div className="flex gap-2">
+                        <Button variant="outline" asChild>
+                            <a 
+                              href={`${process.env.NEXT_PUBLIC_API_BASE_URL}/public/certificates/${grade.certificate_no}/download`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                            >
+                                <Download className="mr-2 size-4" /> Download PDF
+                            </a>
+                        </Button>
+                        {canManage && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={handleGenerate} 
+                            disabled={generating}
+                            title="Regenerate Certificate"
                           >
-                              <Download className="mr-2 size-4" /> Download PDF
-                          </a>
-                      </Button>
+                             <Wand2 className={`size-4 ${generating ? "animate-spin" : ""}`} />
+                          </Button>
+                        )}
+                      </div>
                 ) : (
                     canManage && (
                         <Button onClick={handleGenerate} disabled={generating}>
