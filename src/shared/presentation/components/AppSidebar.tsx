@@ -18,6 +18,8 @@ import {
   ClipboardList,
   ImageIcon,
   FileText,
+  Award,
+  FileBadge,
 } from "lucide-react";
 import {
   Collapsible,
@@ -260,6 +262,43 @@ export function AppSidebar() {
               </SidebarGroupContent>
             </CollapsibleContent>
           </SidebarGroup>
+        </Collapsible>
+
+        <Collapsible defaultOpen className="group/collapsible">
+            <SidebarGroup className="py-1">
+            <SidebarGroupLabel asChild className="mb-0 h-7 px-2">
+                <CollapsibleTrigger className="flex w-full items-center justify-between hover:text-sidebar-foreground transition-colors">
+                ASSESSMENT
+                <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                </CollapsibleTrigger>
+            </SidebarGroupLabel>
+            <CollapsibleContent>
+                <SidebarGroupContent>
+                <SidebarMenu>
+                    {authStore.hasPermission("assessment.view") && (
+                    <>
+                        <SidebarMenuItem>
+                        <SidebarMenuButton asChild isActive={pathname.startsWith("/assessment/grades")}>
+                            <Link href="/assessment/grades" className="py-1">
+                            <Award className="size-4 shrink-0" />
+                            <span>Grades/Nilai</span>
+                            </Link>
+                        </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                        <SidebarMenuButton asChild isActive={pathname.startsWith("/assessment/templates")}>
+                            <Link href="/assessment/templates" className="py-1">
+                            <FileBadge className="size-4 shrink-0" />
+                            <span>Templates</span>
+                            </Link>
+                        </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    </>
+                    )}
+                </SidebarMenu>
+                </SidebarGroupContent>
+            </CollapsibleContent>
+            </SidebarGroup>
         </Collapsible>
 
         <Collapsible defaultOpen className="group/collapsible">
