@@ -84,7 +84,7 @@ export default function TemplateDetailPage() {
                 <div>
                     <h4 className="text-sm font-medium mb-2">Cover Page</h4>
                     {template.cover_image ? (
-                        <div className="relative aspect-[1/1.414] w-full border rounded overflow-hidden">
+                        <div className="relative aspect-[1.414/1] w-full border rounded overflow-hidden bg-slate-50">
                             <Image 
                                 src={template.cover_image} 
                                 alt="Cover" 
@@ -103,7 +103,7 @@ export default function TemplateDetailPage() {
                 {template.result_image && (
                      <div>
                      <h4 className="text-sm font-medium mb-2">Result Page</h4>
-                     <div className="relative aspect-[1/1.414] w-full border rounded overflow-hidden">
+                     <div className="relative aspect-[1.414/1] w-full border rounded overflow-hidden bg-slate-50">
                          <Image 
                              src={template.result_image} 
                              alt="Result" 
