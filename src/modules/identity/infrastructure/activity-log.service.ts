@@ -4,6 +4,7 @@ export interface ActivityLog {
   id: number;
   description: string;
   event: string;
+  log_name: string;
   subject_type: string;
   subject_id: number;
   causer_type: string;
