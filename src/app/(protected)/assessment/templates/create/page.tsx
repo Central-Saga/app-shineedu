@@ -47,7 +47,7 @@ export default function CreateTemplatePage() {
       <PageHeader
         title="Buat Template Baru"
         description="Upload background sertifikat dan atur posisi text"
-        showBackButton
+        backHref="/assessment/templates"
       />
 
       <Card className="rounded-2xl shadow-sm mt-6">

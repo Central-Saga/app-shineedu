@@ -46,7 +46,7 @@ export default function CreateGradePage() {
       <PageHeader
         title="Input Nilai Assessment"
         description="Masukkan nilai siswa untuk kalkulasi sertifikat"
-        showBackButton
+        backHref="/assessment/grades"
       />
 
       <Card className="rounded-2xl shadow-sm mt-6">

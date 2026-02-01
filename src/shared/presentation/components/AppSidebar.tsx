@@ -54,6 +54,7 @@ const mainNav = [
 const identityNav = [
   { href: "/users", label: "Users", icon: Users, permission: "users.view" },
   { href: "/roles", label: "Roles", icon: Shield, permission: "roles.view" },
+  { href: "/activity-logs", label: "Activity Logs", icon: ListChecks, permission: "activity_logs.view" },
 ];
 
 const hrNav = [
