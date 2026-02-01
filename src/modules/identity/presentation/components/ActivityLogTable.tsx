@@ -65,7 +65,7 @@ export function ActivityLogTable() {
     fetchData();
   }, [fetchData]);
 
-  function getEventColor(event: string) {
+  function getEventColor(event: string | null) {
     switch (event) {
       case "created":
         return "bg-green-100 text-green-800 border-green-200";
@@ -73,6 +73,10 @@ export function ActivityLogTable() {
         return "bg-blue-100 text-blue-800 border-blue-200";
       case "deleted":
         return "bg-red-100 text-red-800 border-red-200";
+      case "login":
+        return "bg-indigo-100 text-indigo-800 border-indigo-200";
+      case "logout":
+        return "bg-orange-100 text-orange-800 border-orange-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
@@ -139,8 +143,8 @@ export function ActivityLogTable() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={getEventColor(log.event)}>
-                      {log.event}
+                    <Badge variant="outline" className={getEventColor(log.event || log.log_name)}>
+                      {log.event || log.log_name}
                     </Badge>
                   </TableCell>
                   <TableCell className="max-w-[300px] truncate" title={log.description}>
@@ -188,7 +192,7 @@ export function ActivityLogTable() {
       )}
 
       <Dialog open={!!selectedLog} onOpenChange={(o) => !o && setSelectedLog(null)}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detail Aktivitas</DialogTitle>
             <DialogDescription>
@@ -210,7 +214,9 @@ export function ActivityLogTable() {
                   </div>
                   <div>
                     <h4 className="font-semibold text-muted-foreground">Event</h4>
-                    <Badge variant="outline" className={getEventColor(selectedLog.event)}>{selectedLog.event}</Badge>
+                    <Badge variant="outline" className={getEventColor(selectedLog.event || selectedLog.log_name)}>
+                        {selectedLog.event || selectedLog.log_name}
+                    </Badge>
                   </div>
                   <div>
                     <h4 className="font-semibold text-muted-foreground">Subject</h4>
@@ -225,7 +231,7 @@ export function ActivityLogTable() {
 
                <div>
                  <h4 className="font-semibold text-muted-foreground mb-1 text-sm">Properties (Changes)</h4>
-                 <pre className="text-xs bg-slate-950 text-slate-50 p-4 rounded-md overflow-auto border max-h-[300px]">
+                 <pre className="text-xs bg-slate-950 text-slate-50 p-4 rounded-md overflow-x-auto whitespace-pre-wrap break-words max-h-[400px]">
                    {JSON.stringify(selectedLog.properties, null, 2)}
                  </pre>
                </div>
