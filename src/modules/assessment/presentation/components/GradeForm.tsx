@@ -123,7 +123,7 @@ export function GradeForm({ loading, onSubmit }: GradeFormProps) {
       <form onSubmit={form.handleSubmit(handleSubmit as any)} className="space-y-6">
         
         <FormField
-          control={form.control}
+          control={form.control as any}
           name="type"
           render={({ field }) => (
             <FormItem>
@@ -157,7 +157,7 @@ export function GradeForm({ loading, onSubmit }: GradeFormProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="enrollment_id"
               render={({ field }) => (
                 <FormItem>
@@ -174,7 +174,7 @@ export function GradeForm({ loading, onSubmit }: GradeFormProps) {
             />
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="certificate_template_id"
               render={({ field }) => (
                 <FormItem>
@@ -202,7 +202,7 @@ export function GradeForm({ loading, onSubmit }: GradeFormProps) {
         </div>
 
         <FormField
-            control={form.control}
+            control={form.control as any}
             name="teacher_karyawan_id"
             render={({ field }) => (
             <FormItem>
@@ -224,7 +224,7 @@ export function GradeForm({ loading, onSubmit }: GradeFormProps) {
                 {scoreFields.map(key => (
                     <FormField
                         key={key}
-                        control={form.control}
+                        control={form.control as any}
                         name={`scores.${key}`}
                         render={({ field }) => (
                             <FormItem>
