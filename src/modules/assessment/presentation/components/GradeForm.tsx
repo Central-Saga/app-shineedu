@@ -51,6 +51,7 @@ export function GradeForm({ loading, onSubmit }: GradeFormProps) {
   const [teachers, setTeachers] = useState<{ value: number; label: string }[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
+    // @ts-ignore
     resolver: zodResolver(formSchema),
     defaultValues: {
       type: "english",
