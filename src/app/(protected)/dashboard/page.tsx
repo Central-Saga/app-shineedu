@@ -19,11 +19,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { type DashboardData, fetchDashboardStats } from "@/modules/dashboard/infrastructure/dashboard.service";
 import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.store";
+
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
@@ -128,9 +129,13 @@ export default function DashboardPage() {
                 <Wallet className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">Rp -</div>
+                <div className="text-2xl font-bold">
+                    {data?.stats.estimasi_omset
+                        ? new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(data.stats.estimasi_omset)
+                        : "Rp 0"}
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Belum tersedia
+                  Bulan ini
                 </p>
               </CardContent>
             </Card>
@@ -138,6 +143,44 @@ export default function DashboardPage() {
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">
+               <CardHeader>
+                <CardTitle>Overview Pendapatan</CardTitle>
+                <CardDescription>
+                    Grafik pendapatan 6 bulan terakhir.
+                </CardDescription>
+               </CardHeader>
+               <CardContent className="pl-2">
+                    <ResponsiveContainer width="100%" height={350}>
+                        <BarChart data={data?.chart_data || []}>
+                            <XAxis
+                                dataKey="name"
+                                stroke="#888888"
+                                fontSize={12}
+                                tickLine={false}
+                                axisLine={false}
+                            />
+                            <YAxis
+                                stroke="#888888"
+                                fontSize={12}
+                                tickLine={false}
+                                axisLine={false}
+                                tickFormatter={(value) => `Rp${value}`}
+                            />
+                            <Tooltip 
+                                formatter={(value) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value as number)}
+                            />
+                            <Bar
+                                dataKey="total"
+                                fill="#adfa1d" // Neon Green/Yellow-ish
+                                radius={[4, 4, 0, 0]}
+                                className="fill-primary"
+                            />
+                        </BarChart>
+                    </ResponsiveContainer>
+               </CardContent>
+            </Card>
+
+            <Card className="col-span-3">
               <CardHeader>
                 <CardTitle>Pendaftaran Terbaru</CardTitle>
                 <CardDescription>
@@ -150,26 +193,20 @@ export default function DashboardPage() {
                         <TableRow>
                         <TableHead>Murid</TableHead>
                         <TableHead>Program</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Tanggal</TableHead>
+                        <TableHead className="text-right">Tgl</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {data?.latest_enrollments?.map((enrollment) => (
                             <TableRow key={enrollment.id}>
-                                <TableCell className="font-medium">{enrollment.murid_nama}</TableCell>
-                                <TableCell>{enrollment.program_nama}</TableCell>
-                                <TableCell>
-                                    <Badge variant={enrollment.status === 'Aktif' ? 'default' : 'secondary'}>
-                                        {enrollment.status}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="text-right">{enrollment.created_at}</TableCell>
+                                <TableCell className="font-medium text-xs">{enrollment.murid_nama}</TableCell>
+                                <TableCell className="text-xs">{enrollment.program_nama}</TableCell>
+                                <TableCell className="text-right text-xs">{enrollment.created_at}</TableCell>
                             </TableRow>
                         ))}
                         {(!data?.latest_enrollments || data.latest_enrollments.length === 0) && (
                             <TableRow>
-                                <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                                <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
                                     Belum ada data pendaftaran.
                                 </TableCell>
                             </TableRow>
@@ -178,7 +215,10 @@ export default function DashboardPage() {
                 </Table>
               </CardContent>
             </Card>
-            <Card className="col-span-3">
+          </div>
+          
+          <div className="grid gap-4 md:grid-cols-1">
+             <Card>
               <CardHeader>
                 <CardTitle>Aktivitas Terbaru</CardTitle>
                 <CardDescription>

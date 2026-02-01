@@ -23,10 +23,16 @@ export interface LatestEnrollment {
   created_at: string;
 }
 
+export interface ChartData {
+    name: string;
+    total: number;
+}
+
 export interface DashboardData {
     stats: DashboardStats;
     recent_activities: ActivityLog[];
     latest_enrollments: LatestEnrollment[];
+    chart_data: ChartData[];
 }
 
 export async function fetchDashboardStats(): Promise<DashboardData> {

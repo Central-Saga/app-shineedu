@@ -231,7 +231,7 @@ export function ActivityLogTable() {
 
                <div>
                  <h4 className="font-semibold text-muted-foreground mb-1 text-sm">Properties (Changes)</h4>
-                 <pre className="text-xs bg-slate-950 text-slate-50 p-4 rounded-md overflow-x-auto whitespace-pre-wrap break-words max-h-[400px]">
+                 <pre className="text-xs bg-slate-950 text-slate-50 p-4 rounded-md overflow-hidden whitespace-pre-wrap break-all max-h-[400px]">
                    {JSON.stringify(selectedLog.properties, null, 2)}
                  </pre>
                </div>
