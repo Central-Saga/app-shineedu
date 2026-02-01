@@ -120,7 +120,7 @@ export function GradeForm({ loading, onSubmit }: GradeFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit as any)} className="space-y-6">
         
         <FormField
           control={form.control}
