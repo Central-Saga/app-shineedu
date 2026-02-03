@@ -89,7 +89,14 @@ export default function UsersEditPage() {
     ])
       .then(([user, rolesRes]) => {
         setRoles(rolesRes.items);
-        const roleName = user.roles?.[0]?.name ?? "";
+        // Logic to determine which role to select initially:
+        // If user has [Superadmin, Teacher], we set the form to "Teacher" to mask Superadmin.
+        const roleName = (() => {
+           if (!user.roles || user.roles.length === 0) return "";
+           const nonSuper = user.roles.find(r => r.name.toLowerCase() !== "superadmin");
+           return nonSuper ? nonSuper.name : user.roles[0].name;
+        })();
+        
         reset({
           name: user.name,
           email: user.email,
@@ -216,7 +223,9 @@ export default function UsersEditPage() {
                     <SelectValue placeholder="Pilih role" />
                   </SelectTrigger>
                   <SelectContent>
-                    {roles.map((r) => (
+                    {roles
+                      .filter(r => r.name.toLowerCase() !== "superadmin")
+                      .map((r) => (
                       <SelectItem key={r.id} value={r.name}>
                         {r.name}
                       </SelectItem>
