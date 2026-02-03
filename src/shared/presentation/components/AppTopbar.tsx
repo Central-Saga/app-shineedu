@@ -25,7 +25,16 @@ export function AppTopbar() {
   const name = user?.name ?? "User";
   const email = user?.email ?? "";
   const initial = name.slice(0, 1).toUpperCase();
-  const roleName = user?.roles?.[0]?.name;
+  // Determine role to display: if multiple roles exist and one of them is NOT Superadmin, assume the user prefers to see that functional role (e.g., Teacher).
+  const roleName = user?.roles && user.roles.length > 0
+    ? (() => {
+        const roles = user.roles.map(r => r.name);
+        // Find any role that is NOT Superadmin
+        const nonSuper = roles.find(r => r.toLowerCase() !== "superadmin");
+        // If found, display it. Otherwise (if only Superadmin), display Superadmin.
+        return nonSuper || roles[0];
+      })()
+    : undefined;
   const { items } = useBreadcrumbStore();
 
   async function handleLogout() {
