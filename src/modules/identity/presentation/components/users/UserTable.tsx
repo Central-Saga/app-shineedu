@@ -35,7 +35,12 @@ export function UserTable({
   onStatusChange,
   canUpdate,
 }: UserTableProps) {
-  const role = (u: IdentityUser) => u.roles?.[0]?.name ?? "-";
+  const role = (u: IdentityUser) => {
+    if (!u.roles || u.roles.length === 0) return "-";
+    // Filter out Superadmin if other roles exist
+    const nonSuper = u.roles.find(r => r.name.toLowerCase() !== "superadmin");
+    return nonSuper ? nonSuper.name : u.roles[0].name;
+  };
   const hasActions = canUpdate;
   const colCount = hasActions ? 5 : 4;
 
