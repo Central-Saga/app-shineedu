@@ -37,9 +37,19 @@ export function UserTable({
 }: UserTableProps) {
   const role = (u: IdentityUser) => {
     if (!u.roles || u.roles.length === 0) return "-";
-    // Filter out Superadmin if other roles exist
-    const nonSuper = u.roles.find(r => r.name.toLowerCase() !== "superadmin");
-    return nonSuper ? nonSuper.name : u.roles[0].name;
+    
+    // Explicitly filter out Superadmin
+    const nonSuper = u.roles.filter(r => r.name.toLowerCase() !== "superadmin");
+    
+    // If we have other roles (e.g. Teacher), return the first one
+    if (nonSuper.length > 0) {
+      return nonSuper[0].name;
+    }
+    
+    // If user is ONLY Superadmin, maybe display "Admin" to be discreet as requested?
+    // Or just return the role name if no other choice.
+    // For now, let's stick to returning available role, but the filter above should handle Wira's case (Superadmin + Teacher -> Teacher)
+    return u.roles[0].name;
   };
   const hasActions = canUpdate;
   const colCount = hasActions ? 5 : 4;
