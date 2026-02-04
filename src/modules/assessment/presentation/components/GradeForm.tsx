@@ -97,11 +97,7 @@ export function GradeForm({ loading, onSubmit }: GradeFormProps) {
   useEffect(() => {
     getTemplatesUsecase({ type, per_page: 100 })
       .then((res) => setTemplates(res.items));
-      
-    // Reset inputs
-    form.setValue("certificate_template_id", 0);
-    form.setValue("scores", {});
-  }, [type, form.setValue]);
+  }, [type]);
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
     onSubmit({
@@ -135,8 +131,12 @@ export function GradeForm({ loading, onSubmit }: GradeFormProps) {
                     type="button" 
                     variant={field.value === "english" ? "default" : "outline"}
                     onClick={() => {
-                        field.onChange("english");
-                        setType("english");
+                        if (type !== "english") {
+                            field.onChange("english");
+                            setType("english");
+                            form.setValue("certificate_template_id", 0);
+                            form.setValue("scores", {});
+                        }
                     }}
                   >
                     English
@@ -145,8 +145,12 @@ export function GradeForm({ loading, onSubmit }: GradeFormProps) {
                     type="button" 
                     variant={field.value === "computer" ? "default" : "outline"}
                     onClick={() => {
-                        field.onChange("computer");
-                        setType("computer");
+                        if (type !== "computer") {
+                            field.onChange("computer");
+                            setType("computer");
+                            form.setValue("certificate_template_id", 0);
+                            form.setValue("scores", {});
+                        }
                     }}
                   >
                     Computer
