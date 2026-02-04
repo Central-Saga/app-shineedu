@@ -128,3 +128,22 @@ export async function listPermissions(): Promise<Permission[]> {
   const data = await get<Permission[]>("permissions");
   return (data ?? []) as Permission[];
 }
+
+// Password Reset
+export async function sendPasswordResetLink(userId: number): Promise<void> {
+  await post(`users/${userId}/send-password-reset`, {});
+}
+
+export async function validateResetToken(token: string, email: string): Promise<{ valid: boolean; email: string }> {
+  const data = await post<{ valid: boolean; email: string }>("password-reset/validate", { token, email });
+  return data as { valid: boolean; email: string };
+}
+
+export async function resetPassword(token: string, email: string, password: string, passwordConfirmation: string): Promise<void> {
+  await post("password-reset", {
+    token,
+    email,
+    password,
+    password_confirmation: passwordConfirmation,
+  });
+}

@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Pencil, Eye } from "lucide-react";
+import { SendPasswordResetButton } from "@/modules/identity/presentation/components/SendPasswordResetButton";
 
 function formatDate(s: string | null | undefined): string {
   if (!s) return "-";
@@ -163,6 +164,14 @@ export function EmployeeTable({
                       </TooltipTrigger>
                       <TooltipContent>Detail</TooltipContent>
                     </Tooltip>
+
+                    {canUpdate && em.user?.id && (
+                      <SendPasswordResetButton
+                        userId={em.user.id}
+                        userName={em.user.name ?? "-"}
+                        userEmail={em.user.email}
+                      />
+                    )}
 
                     {canUpdate && (
                       <Tooltip>

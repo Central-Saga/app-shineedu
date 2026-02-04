@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Pencil } from "lucide-react";
+import { SendPasswordResetButton } from "../SendPasswordResetButton";
 
 interface UserTableProps {
   users: IdentityUser[];
@@ -144,6 +145,13 @@ export function UserTable({
                           </TooltipTrigger>
                           <TooltipContent>Edit</TooltipContent>
                         </Tooltip>
+                      )}
+                      {canUpdate && (
+                        <SendPasswordResetButton
+                          userId={u.id}
+                          userName={u.name}
+                          userEmail={u.email}
+                        />
                       )}
                     </div>
                   </TableCell>
