@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -32,7 +32,28 @@ type Form = z.infer<typeof passwordSchema>;
 
 type PageState = "loading" | "valid" | "invalid" | "expired" | "success";
 
+// Loading fallback for Suspense
+function ResetPasswordLoading() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="text-center">
+        <Loader2 className="size-8 animate-spin text-primary mx-auto mb-4" />
+        <p className="text-muted-foreground">Memuat halaman...</p>
+      </div>
+    </div>
+  );
+}
+
+// Main page wrapped with Suspense
 export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<ResetPasswordLoading />}>
+      <ResetPasswordContent />
+    </Suspense>
+  );
+}
+
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
