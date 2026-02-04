@@ -18,6 +18,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import type { AssessmentGrade } from "@/modules/assessment/domain/entities";
+import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { assessmentRepository } from "@/modules/assessment/infrastructure/assessment.repository";
 
 export default function GradesPage() {
   const { allowed } = usePermissionGuard("assessment.view");
@@ -25,6 +28,7 @@ export default function GradesPage() {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [search, setSearch] = useState("");
+  const [courseType, setCourseType] = useState<string>("computer");
   const debouncedQ = useDebouncedValue(search, 400);
 
   const [grades, setGrades] = useState<AssessmentGrade[]>([]);
@@ -58,6 +62,7 @@ export default function GradesPage() {
       q: debouncedQ || undefined,
       sort_by: "created_at",
       sort_dir: "desc",
+      type: courseType,
     };
   }
 
@@ -82,7 +87,7 @@ export default function GradesPage() {
       setPage(1);
     }
     loadGrades(buildParams(searchJustChanged ? 1 : page));
-  }, [allowed, page, perPage, debouncedQ]);
+  }, [allowed, page, perPage, debouncedQ, courseType]);
 
   const handleGenerate = async (g: AssessmentGrade) => {
     if (!confirm("Generate sertifikat untuk siswa ini?")) return;
@@ -95,6 +100,17 @@ export default function GradesPage() {
     }
   };
 
+  const handleExport = async (format: string) => {
+    const params = buildParams();
+    // No pagination for export usually, or just pass current filters
+    const exportParams = {
+        ...params,
+        export: format,
+        per_page: -1 // All
+    };
+    await assessmentRepository.exportGrades(exportParams);
+  };
+
   if (!allowed) return null;
 
   return (
@@ -103,18 +119,79 @@ export default function GradesPage() {
         title="Assessment Grades"
         description="Data nilai dan sertifikat siswa"
         actions={
-          canManage && (
-            <Button asChild>
-              <Link href="/assessment/grades/create">
-                <Plus className="mr-2 size-4" />
-                Input Nilai
-              </Link>
-            </Button>
-          )
+
+          <div className="flex gap-2">
+            <ExportDropdown onExport={handleExport} />
+            {canManage && (
+                <Button asChild>
+                <Link href="/assessment/grades/create">
+                    <Plus className="mr-2 size-4" />
+                    Input Nilai
+                </Link>
+                </Button>
+            )}
+          </div>
         }
       />
 
-      <Card className="rounded-2xl shadow-sm mt-6">
+      <Tabs 
+        defaultValue="computer" 
+        className="mt-6" 
+        value={courseType} 
+        onValueChange={(v) => {
+            setCourseType(v);
+            setPage(1);
+        }}
+      >
+        <TabsList>
+            <TabsTrigger value="computer">Komputer</TabsTrigger>
+            <TabsTrigger value="english">English</TabsTrigger>
+        </TabsList>
+       
+        <TabsContent value="computer" className="mt-4">
+            <GradeTableContent 
+                search={search}
+                setSearch={setSearch}
+                grades={grades}
+                loading={loading}
+                meta={meta}
+                setPage={setPage}
+                router={router}
+                canManage={canManage}
+                handleGenerate={handleGenerate}
+            />
+        </TabsContent>
+        <TabsContent value="english" className="mt-4">
+            <GradeTableContent 
+                search={search}
+                setSearch={setSearch}
+                grades={grades}
+                loading={loading}
+                meta={meta}
+                setPage={setPage}
+                router={router}
+                canManage={canManage}
+                handleGenerate={handleGenerate}
+            />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function GradeTableContent({ 
+    search, 
+    setSearch, 
+    grades, 
+    loading, 
+    meta, 
+    setPage, 
+    router, 
+    canManage, 
+    handleGenerate 
+}: any) {
+    return (
+      <Card className="rounded-2xl shadow-sm">
         <CardContent className="space-y-4 pt-6">
           <DataTableToolbar
             searchValue={search}
@@ -124,9 +201,9 @@ export default function GradesPage() {
             sort={{
               value: "created_at",
               options: [{ label: "Dibuat", value: "created_at" }],
-              onChange: () => {}, // No-op for now or implement sort state
+              onChange: () => {}, 
               direction: "desc",
-              onToggleDirection: () => {}, // No-op
+              onToggleDirection: () => {}, 
             }}
           />
 
@@ -140,6 +217,5 @@ export default function GradesPage() {
           <DataTablePagination meta={meta} onPageChange={setPage} />
         </CardContent>
       </Card>
-    </div>
-  );
+    );
 }

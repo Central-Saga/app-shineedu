@@ -62,6 +62,13 @@ export const assessmentRepository = {
     return { data, meta };
   },
 
+  exportGrades: async (params: Record<string, unknown>) => {
+    // Uses the generic download helper
+    await import("@/shared/infrastructure/api/httpClient").then((mod) =>
+      mod.download(GRADES_URL + "/export", params)
+    );
+  },
+
   getGrade: async (id: number): Promise<AssessmentGrade> => {
     return await get<AssessmentGrade>(`${GRADES_URL}/${id}`);
   },
