@@ -55,6 +55,9 @@ export function GradeForm({ loading, onSubmit }: GradeFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       type: "english",
+      certificate_template_id: 0,
+      teacher_karyawan_id: undefined,
+      enrollment_id: undefined,
       scores: {
         grammar: "" as any,
         reading: "" as any,
@@ -97,9 +100,8 @@ export function GradeForm({ loading, onSubmit }: GradeFormProps) {
       
     // Reset inputs
     form.setValue("certificate_template_id", 0);
-    // form.setValue("scores", {}); // Keep scores if user switches back? Or reset. Reset is safer.
     form.setValue("scores", {});
-  }, [type, form]);
+  }, [type, form.setValue]);
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
     onSubmit({
