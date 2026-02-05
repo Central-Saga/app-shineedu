@@ -7,6 +7,7 @@ import { useBreadcrumbStore } from "@/shared/infrastructure/store/breadcrumb.sto
 import { PageHeader } from "@/shared/presentation/components/PageHeader";
 import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGuard";
 import { DataTablePagination } from "@/shared/presentation/components/table/DataTablePagination";
+import { StatsCard } from "@/shared/presentation/components/StatsCard";
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { CheckCircle2, Image as ImageIcon, Plus, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import {
   listLandingGallery,
@@ -90,6 +91,9 @@ export default function GalleryLandingPage() {
 
   if (!allowed) return null;
 
+  const activeCount = items.filter((item) => item.is_active).length;
+  const inactiveCount = items.filter((item) => !item.is_active).length;
+
   return (
     <div>
       <PageHeader
@@ -106,6 +110,30 @@ export default function GalleryLandingPage() {
           )
         }
       />
+
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatsCard
+          label="Total Item"
+          value={meta.total}
+          icon={ImageIcon}
+          variant="primary"
+          description="Seluruh item gallery"
+        />
+        <StatsCard
+          label="Aktif"
+          value={activeCount}
+          icon={CheckCircle2}
+          variant="success"
+          description="Di halaman ini"
+        />
+        <StatsCard
+          label="Nonaktif"
+          value={inactiveCount}
+          icon={XCircle}
+          variant="danger"
+          description="Di halaman ini"
+        />
+      </div>
 
       <Card className="rounded-2xl shadow-sm mt-6">
         <CardContent className="space-y-4 pt-6">

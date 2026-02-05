@@ -48,7 +48,7 @@ export default function GalleryLandingEditPage() {
   }
 
   return (
-    <div className="max-w-2xl">
+    <div className="w-full">
       <PageHeader
         title="Edit Item Gallery"
         description={`Edit: ${item.title}`}

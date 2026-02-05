@@ -43,7 +43,7 @@ export default function BlogEditPage() {
   if (!allowed || loading) return null;
 
   return (
-    <div className="max-w-4xl">
+    <div className="w-full">
       <PageHeader
         title="Edit Artikel Blog"
         description="Ubah judul, konten, status, dan kategori"

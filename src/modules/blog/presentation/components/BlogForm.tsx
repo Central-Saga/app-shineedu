@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import {
   Select,
   SelectContent,
@@ -14,7 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { toast } from "sonner";
 import { ImagePlus, X } from "lucide-react";
 import {
@@ -136,125 +142,170 @@ export function BlogForm({ initialData, isEdit = false }: BlogFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="space-y-6">
-        <Card>
-          <CardHeader className="border-b">
-            <CardTitle className="text-base">Informasi Artikel</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Judul *</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Judul artikel blog"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Gambar Utama</Label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={ACCEPT_IMAGE}
-                onChange={handleImageChange}
-                className="hidden"
-              />
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <ImagePlus className="mr-2 h-4 w-4" />
-                    Pilih Gambar
-                  </Button>
+    <div className="w-full">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <Accordion defaultValue="info" className="w-full">
+          <AccordionItem value="info">
+            <AccordionTrigger description="Judul, status, kategori, dan ringkasan artikel">
+              Informasi Artikel
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  <div className="space-y-2 lg:col-span-2">
+                    <Label htmlFor="title">Judul <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="title"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="Judul artikel blog"
+                      required
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      Gunakan judul yang jelas dan menarik
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select value={status} onValueChange={(v) => setStatus(v as "draft" | "published")}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STATUS_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-muted-foreground">
+                      Draft belum tampil ke publik
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Kategori</Label>
+                    <Input
+                      id="category"
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      placeholder="Contoh: tips, travel"
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      Pisahkan dengan koma jika lebih dari satu
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="excerpt">Deskripsi / Ringkasan (Excerpt)</Label>
+                  <Textarea
+                    id="excerpt"
+                    value={excerpt}
+                    onChange={(e) => setExcerpt(e.target.value)}
+                    placeholder="Ringkasan singkat artikel untuk tampilan card/list (deskripsi)..."
+                    rows={3}
+                    maxLength={5000}
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Maks. 5.000 karakter. {excerpt.length}/5000
+                  </p>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="media">
+            <AccordionTrigger description="Gambar utama untuk thumbnail artikel">
+              Gambar Utama
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={ACCEPT_IMAGE}
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+                <div
+                  className={`flex flex-col gap-4 rounded-xl border-2 border-dashed p-4 transition-colors ${
+                    currentImageUrl
+                      ? "border-primary/40 bg-primary/5"
+                      : "border-muted-foreground/25 hover:bg-muted/40"
+                  }`}
+                >
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
+                        <ImagePlus className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">
+                          {currentImageUrl ? "Gambar utama terpasang" : "Upload gambar utama"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          JPG, PNG, GIF atau WebP. Maks. 5 MB.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full sm:w-auto"
+                      >
+                        {currentImageUrl ? "Ganti Gambar" : "Pilih Gambar"}
+                      </Button>
+                      {currentImageUrl && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={clearImage}
+                          className="w-full sm:w-auto text-destructive"
+                        >
+                          <X className="mr-2 h-4 w-4" />
+                          Hapus
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                   {currentImageUrl && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={clearImage}
-                      className="text-destructive"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    <div className="relative h-56 w-full overflow-hidden rounded-lg border bg-muted">
+                      <Image
+                        src={currentImageUrl}
+                        alt="Preview"
+                        fill
+                        className="object-cover"
+                        unoptimized
+                        sizes="100vw"
+                      />
+                    </div>
                   )}
                 </div>
-                {currentImageUrl && (
-                  <div className="relative h-40 w-64 overflow-hidden rounded-lg border bg-muted">
-                    <Image
-                      src={currentImageUrl}
-                      alt="Preview"
-                      fill
-                      className="object-cover"
-                      unoptimized
-                      sizes="256px"
-                    />
-                  </div>
-                )}
               </div>
-              <p className="text-muted-foreground text-xs">
-                JPG, PNG, GIF atau WebP. Maks. 5 MB.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="excerpt">Deskripsi / Ringkasan (Excerpt)</Label>
-              <Textarea
-                id="excerpt"
-                value={excerpt}
-                onChange={(e) => setExcerpt(e.target.value)}
-                placeholder="Ringkasan singkat artikel untuk tampilan card/list (deskripsi)..."
-                rows={3}
-                maxLength={5000}
-              />
-              <p className="text-muted-foreground text-xs">
-                Maks. 5.000 karakter. {excerpt.length}/5000
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="content">
+            <AccordionTrigger description="Isi lengkap artikel menggunakan rich text editor">
+              Konten Artikel
+            </AccordionTrigger>
+            <AccordionContent>
               <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={status} onValueChange={(v) => setStatus(v as "draft" | "published")}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>
-                        {o.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="category">Kategori</Label>
-                <Input
-                  id="category"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  placeholder="Contoh: tips, travel"
+                <Label htmlFor="content">Konten</Label>
+                <RichTextEditor
+                  value={content}
+                  onChange={setContent}
+                  placeholder="Tulis isi artikel di sini..."
+                  className="min-h-[280px]"
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="content">Konten</Label>
-              <Textarea
-                id="content"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Isi artikel (HTML atau teks)..."
-                rows={12}
-                className="font-mono text-sm"
-              />
-            </div>
-          </CardContent>
-        </Card>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
         <div className="flex gap-2">
           <Button type="submit" disabled={submitting}>
@@ -268,7 +319,7 @@ export function BlogForm({ initialData, isEdit = false }: BlogFormProps) {
             Batal
           </Button>
         </div>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 }

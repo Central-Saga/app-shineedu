@@ -21,7 +21,7 @@ export default function BlogNewPage() {
   if (!allowed) return null;
 
   return (
-    <div className="max-w-4xl">
+    <div className="w-full">
       <PageHeader
         title="Tambah Artikel Blog"
         description="Buat artikel blog baru (judul, konten, status, kategori)"

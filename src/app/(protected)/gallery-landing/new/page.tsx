@@ -21,7 +21,7 @@ export default function GalleryLandingNewPage() {
   if (!allowed) return null;
 
   return (
-    <div className="max-w-2xl">
+    <div className="w-full">
       <PageHeader
         title="Tambah Item Gallery"
         description="Tambah foto baru ke gallery landing"
