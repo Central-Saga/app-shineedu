@@ -125,7 +125,7 @@ export function MuridForm({
                         <div className="flex gap-2">
                           <FormControl>
                             <Input 
-                              placeholder="Otomatis (Tgl Lahir + Unik)" 
+                              placeholder="Otomatis (Tgl Daftar + Unik)" 
                               {...field} 
                               value={field.value || ""} 
                               disabled={isLoading} 
