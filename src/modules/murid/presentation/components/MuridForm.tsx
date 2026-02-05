@@ -59,7 +59,7 @@ export function MuridForm({
       kode_murid: null,
       jenis_kelamin: null,
       tanggal_lahir: null,
-      no_hp: "",
+      no_hp: null,
       email: null,
       alamat: null,
       jenjang_id: null,
@@ -79,18 +79,13 @@ export function MuridForm({
     onSubmit(values);
   };
 
-  const generateCode = React.useCallback((dobValue?: string) => {
-    const dateStr = dobValue || form.getValues("tanggal_lahir");
-    if (!dateStr) return;
-
-    const d = new Date(dateStr);
-    if (!isValid(d)) return;
-
-    const dd = String(d.getDate()).padStart(2, "0");
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const yy = String(d.getFullYear()).slice(-2);
-    // Use 4 digit random for murid code
-    const random = Math.floor(1000 + Math.random() * 9000);
+  const generateCode = React.useCallback(() => {
+    // Generate Kode Murid: Registration Date (DDMMYY) + 4 Random Digits
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, "0");
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const yy = String(now.getFullYear()).slice(-2);
+    const random = String(Math.floor(Math.random() * 10000)).padStart(4, "0");
     form.setValue("kode_murid", `${dd}${mm}${yy}${random}`);
   }, [form]);
 
@@ -143,7 +138,7 @@ export function MuridForm({
                             variant="outline" 
                             size="icon" 
                             onClick={() => generateCode()}
-                            disabled={isLoading || !form.getValues("tanggal_lahir")}
+                            disabled={isLoading}
                             title="Generate Ulang Kode"
                           >
                             <RefreshCw className="size-4" />
@@ -160,9 +155,9 @@ export function MuridForm({
                       name="no_hp"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Nomor HP <span className="text-red-500">*</span></FormLabel>
+                          <FormLabel>Nomor HP</FormLabel>
                           <FormControl>
-                            <Input placeholder="62812..." {...field} disabled={isLoading} />
+                            <Input placeholder="62812..." {...field} value={field.value || ""} disabled={isLoading} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -225,8 +220,8 @@ export function MuridForm({
                               const formatted = date ? format(date, "yyyy-MM-dd") : null;
                               field.onChange(formatted);
                               // Auto-generate code when DOB is set in create mode
-                              if (mode === "create" && formatted) {
-                                generateCode(formatted);
+                              if (mode === "create" && !form.getValues("kode_murid")) {
+                                generateCode();
                               }
                             }}
                             placeholder="Pilih tanggal lahir"

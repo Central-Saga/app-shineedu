@@ -8,7 +8,7 @@ export const createEnrollmentSchema = z.object({
   
   murid_baru: z.object({
     nama_lengkap: z.string().min(1, "Nama lengkap wajib diisi"),
-    no_hp: z.string().min(1, "No HP wajib diisi"),
+    no_hp: z.string().optional().nullable(),
     jenis_kelamin: z.enum(["L", "P"]).optional().nullable(),
     tanggal_lahir: z.string().optional().nullable(),
     alamat: z.string().optional().nullable(),
@@ -49,13 +49,7 @@ export const createEnrollmentSchema = z.object({
         path: ["murid_baru", "nama_lengkap"],
       });
     }
-    if (!data.murid_baru?.no_hp) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "No HP wajib diisi",
-        path: ["murid_baru", "no_hp"],
-      });
-    }
+    // no_hp is now optional, no need to validate
   }
 });
 

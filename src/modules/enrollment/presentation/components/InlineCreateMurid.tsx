@@ -90,7 +90,7 @@ export function InlineCreateMurid() {
             <FormItem>
                 <FormLabel>No. HP (WhatsApp)</FormLabel>
                 <FormControl>
-                <Input placeholder="08..." {...field} />
+                <Input placeholder="08... (opsional)" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
             </FormItem>

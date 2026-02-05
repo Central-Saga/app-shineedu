@@ -5,7 +5,7 @@ export interface MuridFormValues {
   kode_murid: string | null;
   jenis_kelamin: "L" | "P" | null;
   tanggal_lahir: string | null;
-  no_hp: string;
+  no_hp: string | null;
   email: string | null;
   alamat: string | null;
   jenjang_id: number | null;
@@ -26,7 +26,7 @@ export const muridSchema = z.object({
   kode_murid: z.string().nullable().default(null),
   jenis_kelamin: z.preprocess((val) => (val === "" ? null : val), z.enum(["L", "P"]).nullable()).default(null),
   tanggal_lahir: z.preprocess((val) => (val === "" || val === undefined ? null : val), z.string().nullable()).default(null),
-  no_hp: z.string().min(8, "Nomor HP minimal 8 digit"),
+  no_hp: z.preprocess((val) => (val === "" ? null : val), z.string().min(8, "Nomor HP minimal 8 digit").nullable()).default(null),
   email: z.preprocess((val) => (val === "" ? null : val), z.string().email("Email tidak valid").nullable().or(z.literal(null))).default(null),
   alamat: z.string().nullable().default(null),
   jenjang_id: z.preprocess((val) => (val === "" ? null : Number(val)), z.number().nullable().default(null)),
