@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { programSchema, type ProgramFormValues } from "../schemas";
 import { createProgram, updateProgram } from "@/modules/catalog/infrastructure/catalog.repository";
@@ -45,6 +46,7 @@ export function ProgramForm({ initialData, jenjangOptions, mode }: ProgramFormPr
       nama: initialData?.nama || "",
       deskripsi: initialData?.deskripsi || "",
       status: (initialData?.status as "Aktif" | "Non Aktif") || "Aktif",
+      is_highlight: initialData?.is_highlight ?? false,
       jenjang_ids: initialData?.jenjangs?.map(j => j.id) || [],
     },
   });
@@ -191,11 +193,11 @@ export function ProgramForm({ initialData, jenjangOptions, mode }: ProgramFormPr
             </AccordionItem>
 
             <AccordionItem value="status-panel">
-              <AccordionTrigger description="Tentukan apakah program ini aktif digunakan">
+              <AccordionTrigger description="Tentukan apakah program ini aktif digunakan dan tampil di landing">
                 Status Operasional
               </AccordionTrigger>
               <AccordionContent>
-                <div className="max-w-md">
+                <div className="max-w-md space-y-6">
                   {mode === "create" ? (
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2 rounded-xl border px-4 py-3 bg-slate-50/50 cursor-not-allowed opacity-70">
@@ -229,6 +231,34 @@ export function ProgramForm({ initialData, jenjangOptions, mode }: ProgramFormPr
                       )}
                     />
                   )}
+
+                  <FormField
+                    control={form.control}
+                    name="is_highlight"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2 rounded-xl border px-4 py-3 bg-slate-50/50">
+                            <FormControl>
+                              <Switch
+                                id="is_highlight"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                disabled={isPending}
+                              />
+                            </FormControl>
+                            <span className="text-sm font-medium">
+                              {field.value ? "Tampil di landing (Program Unggulan)" : "Tidak tampil di landing"}
+                            </span>
+                          </div>
+                        </div>
+                        <FormDescription className="text-xs text-muted-foreground max-w-sm">
+                          Nyalakan agar program ini muncul di bagian &quot;Program Unggulan Kami&quot; pada halaman utama website landing.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </AccordionContent>
             </AccordionItem>

@@ -9,7 +9,7 @@ import { usePermissionGuard } from "@/shared/presentation/hooks/usePermissionGua
 import { DataTableToolbar } from "@/shared/presentation/components/table/DataTableToolbar";
 import { DataTablePagination } from "@/shared/presentation/components/table/DataTablePagination";
 import { useAuthStore } from "@/modules/auth/infrastructure/auth.store";
-import { listProgram, deleteProgram, exportProgram } from "@/modules/catalog/infrastructure/catalog.repository";
+import { listProgram, deleteProgram, exportProgram, updateProgram } from "@/modules/catalog/infrastructure/catalog.repository";
 import { ProgramTable } from "@/modules/catalog/presentation/components/ProgramTable";
 import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
 import { StatsCard } from "@/shared/presentation/components/StatsCard";
@@ -106,7 +106,7 @@ export default function ProgramPage() {
         nonAktif: nonAktifRes.meta.total,
       });
     } catch (error: any) {
-      toast.error(error.message || "Gagal memuat data program");
+      toast.error(error?.message || "Gagal memuat data program");
     } finally {
       setLoading(false);
     }
@@ -147,6 +147,16 @@ export default function ProgramPage() {
     }
   };
 
+  const handleHighlightChange = async (item: Program, value: boolean) => {
+    try {
+      await updateProgram(item.id, { is_highlight: value });
+      toast.success(value ? "Program ditampilkan di landing home" : "Program disembunyikan dari landing home");
+      fetchData();
+    } catch (error: any) {
+      toast.error(error?.message || "Gagal mengubah tampilan di landing");
+    }
+  };
+
   const handleExport = async (format: string) => {
     try {
       await exportProgram(format, {
@@ -155,6 +165,7 @@ export default function ProgramPage() {
         sort_by: sortBy,
         sort_dir: sortDir,
       });
+      toast.success("Export berhasil. File akan diunduh.");
     } catch (error: any) {
       toast.error(error.message || "Gagal melakukan export");
     }
@@ -278,6 +289,7 @@ export default function ProgramPage() {
             loading={loading}
             canEdit={!!canUpdate}
             canDelete={!!canDelete}
+            onHighlightChange={canUpdate ? handleHighlightChange : undefined}
             onEdit={(item) => router.push(`/dashboard/catalog/program/${item.id}/edit`)}
             onDelete={handleDelete}
           />

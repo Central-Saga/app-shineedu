@@ -13,6 +13,7 @@ export const programSchema = z.object({
   nama: z.string().min(1, "Nama wajib diisi"),
   deskripsi: z.string().optional(),
   status: z.enum(["Aktif", "Non Aktif"]),
+  is_highlight: z.boolean().default(false),
   jenjang_ids: z.array(z.number()).min(1, "Pilih minimal satu jenjang"),
 });
 

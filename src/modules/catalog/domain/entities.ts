@@ -13,6 +13,7 @@ export interface Program {
   nama: string;
   deskripsi?: string;
   status: "Aktif" | "Non Aktif";
+  is_highlight?: boolean;
   jenjangs?: Jenjang[];
   created_at: string;
   updated_at: string;
@@ -71,6 +72,7 @@ export interface CreateProgramPayload {
   nama: string;
   deskripsi?: string;
   status: "Aktif" | "Non Aktif";
+  is_highlight?: boolean;
   jenjang_ids?: number[];
 }
 

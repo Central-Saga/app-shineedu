@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { Program } from "../../domain/entities";
 import {
   Table,
@@ -12,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { Pencil, Trash2 } from "lucide-react";
 import {
   Tooltip,
@@ -24,6 +26,7 @@ interface ProgramTableProps {
   loading?: boolean;
   onEdit: (item: Program) => void;
   onDelete: (item: Program) => void;
+  onHighlightChange?: (item: Program, value: boolean) => Promise<void>;
   canEdit: boolean;
   canDelete: boolean;
 }
@@ -33,10 +36,12 @@ export function ProgramTable({
   loading = false,
   onEdit,
   onDelete,
+  onHighlightChange,
   canEdit,
   canDelete,
 }: ProgramTableProps) {
-  const colCount = 6;
+  const [togglingId, setTogglingId] = useState<number | null>(null);
+  const colCount = onHighlightChange ? 7 : 6;
 
   return (
     <div className="w-full overflow-x-auto">
@@ -47,6 +52,9 @@ export function ProgramTable({
             <TableHead>Nama</TableHead>
             <TableHead>Jenjang</TableHead>
             <TableHead>Status</TableHead>
+            {onHighlightChange && (
+              <TableHead className="text-center w-[100px]">Landing</TableHead>
+            )}
             <TableHead>Terakhir Update</TableHead>
             <TableHead className="w-[100px]">Aksi</TableHead>
           </TableRow>
@@ -59,6 +67,7 @@ export function ProgramTable({
                 <TableCell><Skeleton className="h-6 w-32" /></TableCell>
                 <TableCell><Skeleton className="h-6 w-40" /></TableCell>
                 <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                {onHighlightChange && <TableCell><Skeleton className="h-6 w-12" /></TableCell>}
                 <TableCell><Skeleton className="h-6 w-32" /></TableCell>
                 <TableCell><Skeleton className="h-6 w-20" /></TableCell>
               </TableRow>
@@ -101,6 +110,31 @@ export function ProgramTable({
                     {item.status}
                   </Badge>
                 </TableCell>
+                {onHighlightChange && (
+                  <TableCell className="text-center">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex justify-center">
+                          <Switch
+                            checked={!!item.is_highlight}
+                            disabled={togglingId === item.id}
+                            onCheckedChange={async (checked) => {
+                              setTogglingId(item.id);
+                              try {
+                                await onHighlightChange(item, checked);
+                              } finally {
+                                setTogglingId(null);
+                              }
+                            }}
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {item.is_highlight ? "Tampil di landing home" : "Tidak tampil di landing"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TableCell>
+                )}
                 <TableCell className="text-muted-foreground text-sm">
                   {new Date(item.updated_at).toLocaleDateString("id-ID")}
                 </TableCell>
