@@ -247,6 +247,13 @@ export default function JadwalKerjaPage() {
           <div className="flex items-center gap-2">
             <ExportDropdown onExport={handleExport} />
             {canCreate && (
+              <Button variant="outline" asChild>
+                <Link href="/jadwal-kerja/bulk-import">
+                  Bulk Import
+                </Link>
+              </Button>
+            )}
+            {canCreate && (
               <Button asChild>
                 <Link href="/jadwal-kerja/new">
                   <Plus className="mr-2 size-4" />

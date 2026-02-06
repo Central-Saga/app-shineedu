@@ -37,3 +37,38 @@ export interface CreateJadwalKerjaPayload {
 }
 
 export interface UpdateJadwalKerjaPayload extends Partial<CreateJadwalKerjaPayload> {}
+
+export interface BulkCreateJadwalKerjaItem {
+  kategori: JadwalKerjaKategori;
+  mata_pelajaran?: string | null;
+  hari: string;
+  nomor_sesi?: string | null;
+  jam_mulai: string;
+  jam_selesai: string;
+  tarif: number;
+  status: JadwalKerjaStatus;
+  ruangan_kelas?: string | null;
+  guru_pengajar_id: number;
+  kelas_id?: number | null;
+}
+
+export interface BulkCreateJadwalKerjaPayload {
+  items: BulkCreateJadwalKerjaItem[];
+  dry_run: boolean;
+}
+
+export interface BulkCreateJadwalKerjaResult {
+  index: number;
+  status: "created" | "valid" | "failed";
+  id?: number;
+  errors?: Record<string, string[]>;
+}
+
+export interface BulkCreateJadwalKerjaResponse {
+  total: number;
+  created: number;
+  failed: number;
+  valid: number;
+  dry_run: boolean;
+  results: BulkCreateJadwalKerjaResult[];
+}

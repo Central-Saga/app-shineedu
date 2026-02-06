@@ -13,6 +13,8 @@ import type {
   JadwalKerja,
   CreateJadwalKerjaPayload,
   UpdateJadwalKerjaPayload,
+  BulkCreateJadwalKerjaPayload,
+  BulkCreateJadwalKerjaResponse,
 } from "../domain/entities";
 
 export interface ListJadwalKerjaParams {
@@ -64,4 +66,11 @@ export async function deleteJadwalKerja(id: number): Promise<void> {
 
 export async function exportJadwalKerja(format: string, params?: ListJadwalKerjaParams): Promise<void> {
   return download("jadwal-kerja/export", { ...params, export: format });
+}
+
+export async function bulkCreateJadwalKerja(
+  payload: BulkCreateJadwalKerjaPayload
+): Promise<BulkCreateJadwalKerjaResponse> {
+  const data = await post<BulkCreateJadwalKerjaResponse>("jadwal-kerja/bulk", payload);
+  return data;
 }
