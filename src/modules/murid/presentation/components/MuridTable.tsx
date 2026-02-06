@@ -99,7 +99,7 @@ export function MuridTable({
                     </span>
                   </div>
                 </TableCell>
-                <TableCell>{item.no_hp}</TableCell>
+                <TableCell>{item.no_hp_display || "-"}</TableCell>
                 <TableCell>
                   {item.sekolah_asal || "-"}
                 </TableCell>

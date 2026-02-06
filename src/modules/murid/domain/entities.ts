@@ -5,6 +5,7 @@ export interface Murid {
   jenis_kelamin?: "L" | "P" | null;
   tanggal_lahir?: string | null;
   no_hp: string;
+  no_hp_display?: string | null; // Fallback to no_hp_wali if no_hp is empty
   email?: string | null;
   alamat?: string | null;
   
