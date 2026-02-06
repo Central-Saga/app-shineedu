@@ -10,7 +10,13 @@ import {
 } from "@/shared/infrastructure/api/httpClient";
 import { buildQuery } from "@/shared/lib/buildQuery";
 import type { PaginatedMeta } from "@/shared/domain/types";
-import type { Murid, CreateMuridPayload, UpdateMuridPayload } from "../domain/entities";
+import type {
+  Murid,
+  CreateMuridPayload,
+  UpdateMuridPayload,
+  BulkCreateMuridPayload,
+  BulkCreateResponse,
+} from "../domain/entities";
 
 export const DEFAULT_META = SHARED_DEFAULT_META;
 
@@ -62,3 +68,9 @@ export async function importMurids(file: File, updateExisting: boolean = false):
   return upload("murid/import", file, { update_existing: updateExisting ? 1 : 0 });
 }
 
+export async function bulkCreateMurids(
+  payload: BulkCreateMuridPayload
+): Promise<BulkCreateResponse> {
+  const data = await post<BulkCreateResponse>("murid/bulk", payload);
+  return data;
+}

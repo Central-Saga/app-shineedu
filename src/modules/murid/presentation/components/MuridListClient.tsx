@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Users, UserCheck, UserX } from "lucide-react";
+import { Plus, Users, UserCheck, UserX, FileUp } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { deleteMurid, updateMurid, exportMurids } from "@/modules/murid/infrastructure/murid.repository";
@@ -151,6 +151,14 @@ export function MuridListClient({ data, meta, stats }: MuridListClientProps) {
         actions={
           <div className="flex items-center gap-2">
             <ExportDropdown onExport={handleExport} />
+            {canCreate && (
+              <Button variant="outline" asChild>
+                <Link href="/dashboard/murid/bulk-import">
+                  <FileUp className="mr-2 size-4" />
+                  Import Bulk
+                </Link>
+              </Button>
+            )}
             {canCreate && (
                <Button asChild>
                   <Link href="/dashboard/murid/create">
