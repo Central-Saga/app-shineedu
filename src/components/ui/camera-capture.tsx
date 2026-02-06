@@ -62,14 +62,9 @@ export function CameraCapture({ onCapture, label = "Ambil Foto" }: CameraCapture
             <RefreshCw className="mr-2 size-4" /> Foto Ulang
           </Button>
         ) : (
-          <>
-            <Button onClick={switchCamera} variant="outline" size="icon">
-              <RefreshCw className="size-4" />
-            </Button>
-            <Button onClick={capture} className="w-full">
-              <Camera className="mr-2 size-4" /> {label}
-            </Button>
-          </>
+          <Button onClick={capture} className="w-full">
+            <Camera className="mr-2 size-4" /> {label}
+          </Button>
         )}
       </div>
     </div>
