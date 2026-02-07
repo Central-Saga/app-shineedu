@@ -45,3 +45,6 @@ next-env.d.ts
 
 # archives
 *.zip
+
+# build artifacts
+next-build.tgz

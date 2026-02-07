@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -39,6 +40,13 @@ const schema = z.object({
   status: z.enum(JADWAL_KERJA_STATUS_VALUES),
   ruangan_kelas: z.string().optional().nullable(),
   guru_pengajar_id: z.union([z.string(), z.number()]),
+  is_kosong: z.boolean().optional(),
+}).refine((data) => {
+  if (data.is_kosong) return true;
+  return data.mata_pelajaran && data.mata_pelajaran.length > 0;
+}, {
+  message: "Mata pelajaran wajib diisi jika bukan jadwal kosong",
+  path: ["mata_pelajaran"],
 });
 
 export type FormValues = z.infer<typeof schema>;
@@ -228,8 +236,29 @@ export function JadwalKerjaForm({
                 {errors.kategori && <p className="text-destructive text-sm">{errors.kategori.message}</p>}
               </div>
               <div className="space-y-2">
-                <Label>Mata Pelajaran</Label>
-                <Input {...register("mata_pelajaran")} placeholder="Contoh: Python Foundation" />
+                 <div className="flex items-center justify-between">
+                    <Label>Mata Pelajaran</Label>
+                    <div className="flex items-center gap-2">
+                        <Label htmlFor="is_kosong" className="text-xs text-muted-foreground font-normal cursor-pointer">Jadwal Kosong?</Label>
+                         <Switch
+                            id="is_kosong"
+                            checked={watch("is_kosong")}
+                            onCheckedChange={(c) => {
+                                setValue("is_kosong", c);
+                                if (c) {
+                                    setValue("mata_pelajaran", "");
+                                }
+                            }}
+                            className="scale-75"
+                        />
+                    </div>
+                 </div>
+                <Input 
+                    {...register("mata_pelajaran")} 
+                    placeholder="Contoh: Python Foundation" 
+                    disabled={watch("is_kosong")}
+                    className={watch("is_kosong") ? "bg-slate-100/50" : ""}
+                />
                 {errors.mata_pelajaran && <p className="text-destructive text-sm">{errors.mata_pelajaran.message}</p>}
               </div>
               <div className="space-y-2">

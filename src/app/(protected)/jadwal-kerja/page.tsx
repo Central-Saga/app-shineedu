@@ -16,13 +16,13 @@ import { deleteJadwalKerjaUsecase } from "@/modules/jadwal-kerja/application/use
 import { getEmployeesUsecase } from "@/modules/employees/application/usecases/getEmployees.usecase";
 import { StatsCard } from "@/shared/presentation/components/StatsCard";
 import { JadwalKerjaTable } from "@/modules/jadwal-kerja/presentation/components/JadwalKerjaTable";
+import { CalendarView } from "@/modules/jadwal-kerja/presentation/components/CalendarView";
 import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
+import { cn } from "@/lib/utils";
 import { ConfirmDeleteDialog } from "@/shared/presentation/components/ConfirmDeleteDialog";
 import { exportJadwalKerjaUsecase } from "@/modules/jadwal-kerja/application/usecases/exportJadwalKerja.usecase";
 import {
   ForbiddenError,
-  NotFoundError,
-  AppError,
 } from "@/shared/infrastructure/api/errors";
 import type { JadwalKerja } from "@/modules/jadwal-kerja/domain/entities";
 import type { Employee } from "@/modules/employees/domain/entities";
@@ -36,17 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Plus, Calendar, CheckCircle2, XCircle, Code, BookOpen } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, CheckCircle2, XCircle, Code, BookOpen, Upload, LayoutList } from "lucide-react";
 import { toast } from "sonner";
 
 const SORT_OPTIONS = [
@@ -105,6 +95,7 @@ export default function JadwalKerjaPage() {
     non_coding: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
   
   const [deleteItem, setDeleteItem] = useState<JadwalKerja | null>(null);
 
@@ -244,17 +235,45 @@ export default function JadwalKerjaPage() {
         title="Jadwal Kerja"
         description="Pengelolaan jadwal kerja guru"
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl mr-2 border border-slate-200 shadow-inner">
+                <Button 
+                    variant={viewMode === 'table' ? 'secondary' : 'ghost'} 
+                    size="sm" 
+                    onClick={() => setViewMode('table')}
+                    className={cn(
+                        "text-xs px-4 h-8 transition-all duration-200 rounded-lg", 
+                        viewMode === 'table' ? "bg-white shadow-sm border border-slate-200 text-slate-900" : "text-slate-500 hover:text-slate-700"
+                    )}
+                >
+                    <LayoutList className="size-3.5 mr-2" />
+                    Tabel
+                </Button>
+                <Button 
+                    variant={viewMode === 'calendar' ? 'secondary' : 'ghost'} 
+                    size="sm" 
+                    onClick={() => setViewMode('calendar')}
+                    className={cn(
+                        "text-xs px-4 h-8 transition-all duration-200 rounded-lg", 
+                        viewMode === 'calendar' ? "bg-white shadow-sm border border-slate-200 text-slate-900" : "text-slate-500 hover:text-slate-700"
+                    )}
+                >
+                    <CalendarIcon className="size-3.5 mr-2" />
+                    Calendar
+                </Button>
+            </div>
+
             <ExportDropdown onExport={handleExport} />
             {canCreate && (
-              <Button variant="outline" asChild>
+              <Button variant="outline" asChild className="rounded-xl">
                 <Link href="/jadwal-kerja/bulk-import">
+                  <Upload className="mr-2 size-4 text-emerald-600" />
                   Bulk Import
                 </Link>
               </Button>
             )}
             {canCreate && (
-              <Button asChild>
+              <Button asChild className="rounded-xl shadow-md">
                 <Link href="/jadwal-kerja/new">
                   <Plus className="mr-2 size-4" />
                   Tambah Jadwal
@@ -269,7 +288,7 @@ export default function JadwalKerjaPage() {
         <StatsCard
           label="Total Jadwal"
           value={stats.total}
-          icon={Calendar}
+          icon={CalendarIcon}
           variant="primary"
         />
         <StatsCard
@@ -300,102 +319,113 @@ export default function JadwalKerjaPage() {
 
       <Card className="rounded-2xl shadow-sm">
         <CardContent className="space-y-4 pt-6">
-          <DataTableToolbar
-            searchValue={search}
-            onSearchChange={setSearch}
-            searchPlaceholder="Cari mata pelajaran…"
-            filters={[
-              {
-                key: "status",
-                label: "Status",
-                options: [
-                  { label: "Semua Status", value: "__all__" },
-                  { label: "Aktif", value: "Aktif" },
-                  { label: "Non Aktif", value: "Non Aktif" },
-                ],
-                value: filterStatus,
-                onChange: setFilterStatus,
-              },
-              {
-                key: "kategori",
-                label: "Kategori",
-                options: [
-                  { label: "Semua Kategori", value: "__all__" },
-                  { label: "Coding", value: "coding" },
-                  { label: "Non Coding", value: "non_coding" },
-                ],
-                value: filterKategori,
-                onChange: setFilterKategori,
-              },
-              {
-                key: "hari",
-                label: "Hari",
-                options: [
-                  { label: "Semua Hari", value: "__all__" },
-                  ...HARI_OPTIONS,
-                ],
-                value: filterHari,
-                onChange: setFilterHari,
-              },
-              {
-                key: "guru",
-                label: "Guru",
-                options: [
-                  { label: "Semua Guru", value: "__all__" },
-                  ...employees.map(e => ({ label: e.user?.name || e.kode_karyawan, value: String(e.id) })),
-                ],
-                value: filterGuru,
-                onChange: setFilterGuru,
-              },
-            ]}
-            sort={{
-              value: sortKey,
-              options: SORT_OPTIONS.map((o) => ({ label: o.label, value: o.value })),
-              onChange: (v) => setSortKey(v as SortKey),
-              direction: sortDir,
-              onToggleDirection: () => setSortDir((d) => (d === "asc" ? "desc" : "asc")),
-              defaultValue: "created_at",
-              defaultDirection: "desc",
-              onDirectionChange: setSortDir,
-            }}
-          />
-
-          <div className="flex items-center gap-2">
-            <Label className="text-muted-foreground text-sm whitespace-nowrap">
-              Per halaman
-            </Label>
-            <Select
-              value={String(perPage)}
-              onValueChange={(v) => {
-                setPerPage(Number(v));
-                setPage(1);
+           <DataTableToolbar
+              searchValue={search}
+              onSearchChange={setSearch}
+              searchPlaceholder="Cari mata pelajaran…"
+              filters={[
+                {
+                  key: "status",
+                  label: "Status",
+                  options: [
+                    { label: "Semua Status", value: "__all__" },
+                    { label: "Aktif", value: "Aktif" },
+                    { label: "Non Aktif", value: "Non Aktif" },
+                  ],
+                  value: filterStatus,
+                  onChange: setFilterStatus,
+                },
+                {
+                  key: "kategori",
+                  label: "Kategori",
+                  options: [
+                    { label: "Semua Kategori", value: "__all__" },
+                    { label: "Coding", value: "coding" },
+                    { label: "Non Coding", value: "non_coding" },
+                  ],
+                  value: filterKategori,
+                  onChange: setFilterKategori,
+                },
+                {
+                  key: "hari",
+                  label: "Hari",
+                  options: [
+                    { label: "Semua Hari", value: "__all__" },
+                    ...HARI_OPTIONS,
+                  ],
+                  value: filterHari,
+                  onChange: setFilterHari,
+                },
+                {
+                  key: "guru",
+                  label: "Guru",
+                  options: [
+                    { label: "Semua Guru", value: "__all__" },
+                    ...employees.map(e => ({ label: e.user?.name || e.kode_karyawan, value: String(e.id) })),
+                  ],
+                  value: filterGuru,
+                  onChange: setFilterGuru,
+                },
+              ]}
+              sort={{
+                value: sortKey,
+                options: SORT_OPTIONS.map((o) => ({ label: o.label, value: o.value })),
+                onChange: (v) => setSortKey(v as SortKey),
+                direction: sortDir,
+                onToggleDirection: () => setSortDir((d) => (d === "asc" ? "desc" : "asc")),
+                defaultValue: "created_at",
+                defaultDirection: "desc",
+                onDirectionChange: setSortDir,
               }}
-            >
-              <SelectTrigger className="h-9 w-[100px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PER_PAGE_OPTIONS.map((n) => (
-                  <SelectItem key={n} value={String(n)}>
-                    {n}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            />
+          
 
-          <JadwalKerjaTable
-            items={items}
-            loading={loading}
-            onView={(item) => router.push(`/jadwal-kerja/${item.id}`)}
-            onEdit={(item) => router.push(`/jadwal-kerja/${item.id}/edit`)}
-            onDelete={(item) => setDeleteItem(item)}
-            onStatusChange={handleStatusChange}
-            canUpdate={canUpdate}
-            canDelete={canDelete}
-          />
+          {viewMode === 'table' ? (
+              <>
+                <div className="flex items-center gap-2">
+                    <Label className="text-muted-foreground text-sm whitespace-nowrap">
+                    Per halaman
+                    </Label>
+                    <Select
+                    value={String(perPage)}
+                    onValueChange={(v) => {
+                        setPerPage(Number(v));
+                        setPage(1);
+                    }}
+                    >
+                    <SelectTrigger className="h-9 w-[100px]">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {PER_PAGE_OPTIONS.map((n) => (
+                        <SelectItem key={n} value={String(n)}>
+                            {n}
+                        </SelectItem>
+                        ))}
+                    </SelectContent>
+                    </Select>
+                </div>
 
-          <DataTablePagination meta={meta} onPageChange={(p) => setPage(p)} />
+                <JadwalKerjaTable
+                    items={items}
+                    loading={loading}
+                    onView={(item) => router.push(`/jadwal-kerja/${item.id}`)}
+                    onEdit={(item) => router.push(`/jadwal-kerja/${item.id}/edit`)}
+                    onDelete={(item) => setDeleteItem(item)}
+                    onStatusChange={handleStatusChange}
+                    canUpdate={canUpdate}
+                    canDelete={canDelete}
+                />
+
+                <DataTablePagination meta={meta} onPageChange={(p) => setPage(p)} />
+              </>
+          ) : (
+             <CalendarView 
+                items={items} 
+                onSelectEvent={(item) => router.push(`/jadwal-kerja/${item.id}`)}
+             />
+          )}
+
         </CardContent>
       </Card>
 
