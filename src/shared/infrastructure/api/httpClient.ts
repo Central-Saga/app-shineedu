@@ -26,8 +26,9 @@ export function setOnUnauthorized(fn: () => void): void {
 
 function getAuthHeaders(): Record<string, string> {
   const t = tokenGetter?.() ?? null;
-  if (!t) return {};
-  return { Authorization: `Bearer ${t}` };
+  const token = typeof t === "string" ? t.trim() : "";
+  if (!token) return {};
+  return { Authorization: `Bearer ${token}` };
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {

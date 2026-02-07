@@ -39,7 +39,8 @@ export const authStore = {
   hydrate(): void {
     if (typeof window === "undefined") return;
     const t = localStorage.getItem(STORAGE_KEY);
-    useAuthStore.setState({ token: t ? t : null });
+    const token = typeof t === "string" ? t.trim() : "";
+    useAuthStore.setState({ token: token || null });
   },
 
   clearSession(): void {
@@ -56,12 +57,13 @@ export const authStore = {
 
   async login(email: string, password: string): Promise<void> {
     const { user, token } = await usecases.loginUsecase(email, password);
-    if (typeof window !== "undefined") {
-        localStorage.setItem(STORAGE_KEY, token);
-        document.cookie = `auth_token=${token}; path=/; max-age=86400; SameSite=Lax`;
+    const tokenStr = typeof token === "string" ? token.trim() : String(token ?? "");
+    if (typeof window !== "undefined" && tokenStr) {
+      localStorage.setItem(STORAGE_KEY, tokenStr);
+      document.cookie = `auth_token=${tokenStr}; path=/; max-age=86400; SameSite=Lax`;
     }
     useAuthStore.setState({
-      token,
+      token: tokenStr || null,
       user,
       permissionsSet: buildPermissionsSet(user),
     });

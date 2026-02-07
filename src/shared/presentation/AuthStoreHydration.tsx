@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import {
   setTokenGetter,
   setOnUnauthorized,
@@ -8,11 +8,14 @@ import {
 import { authStore } from "@/modules/auth/infrastructure/auth.store";
 
 export function AuthStoreHydration() {
-  useEffect(() => {
-    // Hydrate token once on mount
+  // useLayoutEffect: hydrate + setTokenGetter BEFORE paint and before any child useEffect.
+  // This prevents useAuthGuard from seeing token=null and redirecting before token is restored from localStorage.
+  useLayoutEffect(() => {
     authStore.hydrate();
-    
-    setTokenGetter(() => authStore.getState().token);
+    setTokenGetter(() => {
+      const t = authStore.getState().token;
+      return typeof t === "string" && t.trim() !== "" ? t.trim() : null;
+    });
     setOnUnauthorized(() => {
       authStore.clearSession();
       if (typeof window !== "undefined") window.location.href = "/login";
