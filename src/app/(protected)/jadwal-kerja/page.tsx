@@ -16,7 +16,7 @@ import { deleteJadwalKerjaUsecase } from "@/modules/jadwal-kerja/application/use
 import { getEmployeesUsecase } from "@/modules/employees/application/usecases/getEmployees.usecase";
 import { StatsCard } from "@/shared/presentation/components/StatsCard";
 import { JadwalKerjaTable } from "@/modules/jadwal-kerja/presentation/components/JadwalKerjaTable";
-import { CalendarView } from "@/modules/jadwal-kerja/presentation/components/CalendarView";
+import { JadwalKerjaBoard } from "@/modules/jadwal-kerja/presentation/components/JadwalKerjaBoard";
 import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
 import { cn } from "@/lib/utils";
 import { ConfirmDeleteDialog } from "@/shared/presentation/components/ConfirmDeleteDialog";
@@ -36,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Calendar as CalendarIcon, CheckCircle2, XCircle, Code, BookOpen, Upload, LayoutList } from "lucide-react";
+import { Plus, CheckCircle2, XCircle, Code, BookOpen, Upload, LayoutList, Kanban } from "lucide-react";
 import { toast } from "sonner";
 
 const SORT_OPTIONS = [
@@ -95,7 +95,8 @@ export default function JadwalKerjaPage() {
     non_coding: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
+  const [viewMode, setViewMode] = useState<"table" | "board">("table");
+  const [boardGroupBy, setBoardGroupBy] = useState<"hari" | "ruangan">("hari");
   
   const [deleteItem, setDeleteItem] = useState<JadwalKerja | null>(null);
 
@@ -121,9 +122,14 @@ export default function JadwalKerjaPage() {
   }, [allowed]);
 
   function buildParams(overridePage?: number) {
+    // If in board mode, fetch all items on one page essentially, or just rely on regular pagination?
+    // User probably wants to see *all* items for the week in board view.
+    // So we might force per_page high if viewMode is board.
+    const effectivePerPage = viewMode === 'board' ? 100 : perPage;
+    
     return {
       page: overridePage ?? page,
-      per_page: perPage,
+      per_page: effectivePerPage,
       q: debouncedQ || undefined,
       status: filterStatus as any || undefined,
       kategori: filterKategori as any || undefined,
@@ -152,6 +158,11 @@ export default function JadwalKerjaPage() {
   useEffect(() => {
     if (!allowed) return;
     setLoading(true);
+    
+    // Reset page if view mode changes to board to see all items
+    if (viewMode === 'board' && page !== 1) {
+        setPage(1);
+    }
     
     const searchJustChanged = prevDebouncedQ.current !== debouncedQ;
     if (searchJustChanged) {
@@ -192,6 +203,7 @@ export default function JadwalKerjaPage() {
     filterGuru,
     sortKey,
     sortDir,
+    viewMode, // reload when view mode changes
   ]);
 
   function handleStatusChange(item: JadwalKerja, newStatus: "Aktif" | "Non Aktif") {
@@ -250,18 +262,45 @@ export default function JadwalKerjaPage() {
                     Tabel
                 </Button>
                 <Button 
-                    variant={viewMode === 'calendar' ? 'secondary' : 'ghost'} 
+                    variant={viewMode === 'board' ? 'secondary' : 'ghost'} 
                     size="sm" 
-                    onClick={() => setViewMode('calendar')}
+                    onClick={() => setViewMode('board')}
                     className={cn(
                         "text-xs px-4 h-8 transition-all duration-200 rounded-lg", 
-                        viewMode === 'calendar' ? "bg-white shadow-sm border border-slate-200 text-slate-900" : "text-slate-500 hover:text-slate-700"
+                        viewMode === 'board' ? "bg-white shadow-sm border border-slate-200 text-slate-900" : "text-slate-500 hover:text-slate-700"
                     )}
                 >
-                    <CalendarIcon className="size-3.5 mr-2" />
-                    Calendar
+                    <Kanban className="size-3.5 mr-2" />
+                    Board
                 </Button>
             </div>
+
+            {viewMode === 'board' && (
+                <div className="flex items-center gap-1 bg-indigo-100/50 p-1 rounded-xl mr-2 border border-indigo-200/60 shadow-inner">
+                    <Button 
+                        variant={boardGroupBy === 'hari' ? 'secondary' : 'ghost'} 
+                        size="sm" 
+                        onClick={() => setBoardGroupBy('hari')}
+                        className={cn(
+                            "text-[10px] uppercase tracking-wider font-bold px-3 h-7 transition-all duration-200 rounded-lg", 
+                            boardGroupBy === 'hari' ? "bg-white shadow-sm text-indigo-700" : "text-indigo-400 hover:text-indigo-600"
+                        )}
+                    >
+                        Hari
+                    </Button>
+                    <Button 
+                        variant={boardGroupBy === 'ruangan' ? 'secondary' : 'ghost'} 
+                        size="sm" 
+                        onClick={() => setBoardGroupBy('ruangan')}
+                        className={cn(
+                            "text-[10px] uppercase tracking-wider font-bold px-3 h-7 transition-all duration-200 rounded-lg", 
+                            boardGroupBy === 'ruangan' ? "bg-white shadow-sm text-indigo-700" : "text-indigo-400 hover:text-indigo-600"
+                        )}
+                    >
+                        Ruangan
+                    </Button>
+                </div>
+            )}
 
             <ExportDropdown onExport={handleExport} />
             {canCreate && (
@@ -288,7 +327,7 @@ export default function JadwalKerjaPage() {
         <StatsCard
           label="Total Jadwal"
           value={stats.total}
-          icon={CalendarIcon}
+          icon={LayoutList}
           variant="primary"
         />
         <StatsCard
@@ -317,8 +356,8 @@ export default function JadwalKerjaPage() {
         />
       </div>
 
-      <Card className="rounded-2xl shadow-sm">
-        <CardContent className="space-y-4 pt-6">
+      <Card className="rounded-2xl bg-transparent border-none shadow-none">
+        <CardContent className="space-y-4 pt-0 px-0">
            <DataTableToolbar
               searchValue={search}
               onSearchChange={setSearch}
@@ -367,7 +406,7 @@ export default function JadwalKerjaPage() {
                   onChange: setFilterGuru,
                 },
               ]}
-              sort={{
+              sort={viewMode === 'table' ? {
                 value: sortKey,
                 options: SORT_OPTIONS.map((o) => ({ label: o.label, value: o.value })),
                 onChange: (v) => setSortKey(v as SortKey),
@@ -376,13 +415,13 @@ export default function JadwalKerjaPage() {
                 defaultValue: "created_at",
                 defaultDirection: "desc",
                 onDirectionChange: setSortDir,
-              }}
+              } : undefined}
             />
           
 
           {viewMode === 'table' ? (
-              <>
-                <div className="flex items-center gap-2">
+              <div className="bg-white rounded-xl border shadow-sm p-4">
+                <div className="flex items-center gap-2 mb-4">
                     <Label className="text-muted-foreground text-sm whitespace-nowrap">
                     Per halaman
                     </Label>
@@ -418,10 +457,11 @@ export default function JadwalKerjaPage() {
                 />
 
                 <DataTablePagination meta={meta} onPageChange={(p) => setPage(p)} />
-              </>
+              </div>
           ) : (
-             <CalendarView 
+             <JadwalKerjaBoard
                 items={items} 
+                groupBy={boardGroupBy}
                 onSelectEvent={(item) => router.push(`/jadwal-kerja/${item.id}`)}
              />
           )}

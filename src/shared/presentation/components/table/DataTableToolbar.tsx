@@ -37,18 +37,19 @@ export interface DataTableToolbarProps {
   onSearchChange: (v: string) => void;
   searchPlaceholder?: string;
   filters: DataTableFilterConfig[];
-  sort: DataTableSortConfig;
+  sort?: DataTableSortConfig;
   rightSlot?: ReactNode;
 }
 
 function isAtDefaults(
   searchValue: string,
   filters: DataTableFilterConfig[],
-  sort: DataTableSortConfig
+  sort?: DataTableSortConfig
 ): boolean {
   if (searchValue !== "") return false;
   if (filters.some((f) => f.value != null)) return false;
   if (
+    sort &&
     sort.defaultValue != null &&
     (sort.value !== sort.defaultValue ||
       (sort.defaultDirection != null && sort.direction !== sort.defaultDirection))
@@ -58,7 +59,6 @@ function isAtDefaults(
 }
 
 export function DataTableToolbar({
-  title,
   searchValue,
   onSearchChange,
   searchPlaceholder = "Cari…",
@@ -71,9 +71,11 @@ export function DataTableToolbar({
   function handleReset() {
     onSearchChange("");
     filters.forEach((f) => f.onChange(null));
-    sort.onChange(sort.defaultValue ?? sort.options[0]?.value ?? "");
-    if (sort.onDirectionChange && sort.defaultDirection != null) {
-      sort.onDirectionChange(sort.defaultDirection);
+    if (sort) {
+        sort.onChange(sort.defaultValue ?? sort.options[0]?.value ?? "");
+        if (sort.onDirectionChange && sort.defaultDirection != null) {
+        sort.onDirectionChange(sort.defaultDirection);
+        }
     }
   }
 
@@ -114,29 +116,33 @@ export function DataTableToolbar({
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <Select value={sort.value} onValueChange={sort.onChange}>
-          <SelectTrigger className="h-9 w-[130px]">
-            <SelectValue placeholder="Urutkan" />
-          </SelectTrigger>
-          <SelectContent>
-            {sort.options.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="size-9 shrink-0"
-          onClick={sort.onToggleDirection}
-          title={sort.direction === "asc" ? "Urut naik" : "Urut turun"}
-        >
-          <ArrowUpDown className="size-4" />
-          <span className="sr-only">Toggle urutan</span>
-        </Button>
+        {sort && (
+            <>
+                <Select value={sort.value} onValueChange={sort.onChange}>
+                <SelectTrigger className="h-9 w-[130px]">
+                    <SelectValue placeholder="Urutkan" />
+                </SelectTrigger>
+                <SelectContent>
+                    {sort.options.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                    </SelectItem>
+                    ))}
+                </SelectContent>
+                </Select>
+                <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="size-9 shrink-0"
+                onClick={sort.onToggleDirection}
+                title={sort.direction === "asc" ? "Urut naik" : "Urut turun"}
+                >
+                <ArrowUpDown className="size-4" />
+                <span className="sr-only">Toggle urutan</span>
+                </Button>
+            </>
+        )}
 
         {showReset && (
           <Button

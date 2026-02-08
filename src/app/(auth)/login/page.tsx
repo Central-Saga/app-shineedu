@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Lock, Mail, ChevronRight } from "lucide-react";
+import loginIllustration from "@/assets/images/login.svg";
+import shineLogo from "@/assets/images/shine-logo.png";
 
 const schema = z.object({
   email: z.string().min(1, "Email / Kode wajib diisi"),
@@ -81,7 +83,7 @@ export default function LoginPage() {
           {/* Official Logo Integration */}
           <div className="mb-4">
              <Image 
-               src="/shine-logo.png" 
+               src={shineLogo} 
                alt="Shine Education Logo" 
                width={160} 
                height={60} 
@@ -94,7 +96,7 @@ export default function LoginPage() {
           <div className="relative w-full max-w-md aspect-square flex items-center justify-center">
             <div className="absolute inset-0 bg-primary/5 rounded-full blur-3xl" />
             <Image 
-              src="/login.svg" 
+              src={loginIllustration} 
               alt="Login Illustration" 
               fill
               className="object-contain relative z-10"
