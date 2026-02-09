@@ -498,7 +498,11 @@ export function AppSidebar() {
                       .filter((n) => hasAny(n.permission))
                       .filter((n) => {
                         if (!isTeacher) return true;
-                        return n.permission !== "job_vacancy.view" && n.permission !== "job_application.view";
+                        return (
+                          n.permission !== "employees.view" &&
+                          n.permission !== "job_vacancy.view" &&
+                          n.permission !== "job_application.view"
+                        );
                       })
                       .map((item) => {
                         const Icon = item.icon;
