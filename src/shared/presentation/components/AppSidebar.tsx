@@ -26,7 +26,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { authStore } from "@/modules/auth/infrastructure/auth.store";
+import { authStore, useAuthStore } from "@/modules/auth/infrastructure/auth.store";
 import {
   Sidebar,
   SidebarContent,
@@ -208,6 +208,12 @@ export function SidebarJadwalToggle({ can }: { can: (key: string) => boolean }) 
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const user = useAuthStore((s) => s.user);
+  const isTeacher = (user?.roles ?? []).some((role) => {
+    const name = role?.name;
+    if (typeof name !== "string") return false;
+    return name.toLowerCase().replace(/\s+/g, "") === "teacher";
+  });
   const hasAny = (p: string | null) => !p || authStore.hasAnyPermission([p]);
 
   return (
@@ -363,14 +369,14 @@ export function AppSidebar() {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   )}
-                  <SidebarCatalogToggle can={(k) => authStore.hasPermission(k)} />
+                  {!isTeacher && <SidebarCatalogToggle can={(k) => authStore.hasPermission(k)} />}
                 </SidebarMenu>
               </SidebarGroupContent>
             </CollapsibleContent>
           </SidebarGroup>
         </Collapsible>
 
-        {landingNav.filter((n) => hasAny(n.permission)).length > 0 && (
+        {!isTeacher && landingNav.filter((n) => hasAny(n.permission)).length > 0 && (
           <Collapsible defaultOpen className="group/collapsible">
             <SidebarGroup className="py-1">
               <SidebarGroupLabel asChild className="mb-0 h-7 px-2">
@@ -405,7 +411,7 @@ export function AppSidebar() {
           </Collapsible>
         )}
 
-        {authStore.hasPermission("kas.view") && (
+        {!isTeacher && authStore.hasPermission("kas.view") && (
           <Collapsible defaultOpen className="group/collapsible">
             <SidebarGroup className="py-1">
               <SidebarGroupLabel asChild className="mb-0 h-7 px-2">
@@ -432,38 +438,40 @@ export function AppSidebar() {
           </Collapsible>
         )}
 
-        <Collapsible defaultOpen className="group/collapsible">
-          <SidebarGroup className="py-1">
-            <SidebarGroupLabel asChild className="mb-0 h-7 px-2">
-              <CollapsibleTrigger className="flex w-full items-center justify-between hover:text-sidebar-foreground transition-colors">
-                IDENTITY
-                <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-              </CollapsibleTrigger>
-            </SidebarGroupLabel>
-            <CollapsibleContent>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {identityNav
-                    .filter((n) => hasAny(n.permission))
-                    .map((item) => {
-                      const Icon = item.icon;
-                      const active = pathname === item.href;
-                      return (
-                        <SidebarMenuItem key={item.href}>
-                          <SidebarMenuButton asChild isActive={active}>
-                            <Link href={item.href} className="py-1">
-                              <Icon className="size-4 shrink-0" />
-                              <span>{item.label}</span>
-                            </Link>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      );
-                    })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </CollapsibleContent>
-          </SidebarGroup>
-        </Collapsible>
+        {!isTeacher && (
+          <Collapsible defaultOpen className="group/collapsible">
+            <SidebarGroup className="py-1">
+              <SidebarGroupLabel asChild className="mb-0 h-7 px-2">
+                <CollapsibleTrigger className="flex w-full items-center justify-between hover:text-sidebar-foreground transition-colors">
+                  IDENTITY
+                  <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                </CollapsibleTrigger>
+              </SidebarGroupLabel>
+              <CollapsibleContent>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {identityNav
+                      .filter((n) => hasAny(n.permission))
+                      .map((item) => {
+                        const Icon = item.icon;
+                        const active = pathname === item.href;
+                        return (
+                          <SidebarMenuItem key={item.href}>
+                            <SidebarMenuButton asChild isActive={active}>
+                              <Link href={item.href} className="py-1">
+                                <Icon className="size-4 shrink-0" />
+                                <span>{item.label}</span>
+                              </Link>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        );
+                      })}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </CollapsibleContent>
+            </SidebarGroup>
+          </Collapsible>
+        )}
 
         {(hrNav.filter((n) => hasAny(n.permission)).length > 0 ||
           authStore.hasAnyPermission([
@@ -488,6 +496,10 @@ export function AppSidebar() {
                   <SidebarMenu>
                     {hrNav
                       .filter((n) => hasAny(n.permission))
+                      .filter((n) => {
+                        if (!isTeacher) return true;
+                        return n.permission !== "job_vacancy.view" && n.permission !== "job_application.view";
+                      })
                       .map((item) => {
                         const Icon = item.icon;
                         const active = pathname === item.href;
