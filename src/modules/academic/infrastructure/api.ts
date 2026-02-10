@@ -48,25 +48,25 @@ export const academicApi = {
   },
 
   getPrograms: async () => {
-      return getResponse<{id: number, nama: string, jenjangs: {id: number, nama: string}[]}[]>(`catalog/program?per_page=100`);
+    return getResponse<{ id: number, nama: string, jenjangs: { id: number, nama: string }[] }[]>(`public/catalog/program?per_page=100`);
   },
 
   getJenjangs: async () => {
-      return getResponse<{id: number, nama: string}[]>(`catalog/jenjang`);
+    return getResponse<{ id: number, nama: string }[]>(`public/catalog/jenjang`);
   },
 
   getAvailableSchedules: async (params: Record<string, any> = {}) => {
-      const queryString = buildQuery({ ...params, kelas_id: 'null' });
-      return getResponse<any[]>(`jadwal-kerja?${queryString}`);
+    const queryString = buildQuery({ ...params, kelas_id: 'null' });
+    return getResponse<any[]>(`jadwal-kerja?${queryString}`);
   },
 
   linkScheduleToKelas: async (jadwalId: number, kelasId: number) => {
-      // We update the schedule to have this kelas_id
-      return put(`jadwal-kerja/${jadwalId}`, { kelas_id: kelasId });
+    // We update the schedule to have this kelas_id
+    return put(`jadwal-kerja/${jadwalId}`, { kelas_id: kelasId });
   },
 
   exportKelas: async (format: string, params: Record<string, any> = {}) => {
-      return download(`kelas/export`, { ...params, export: format });
+    return download(`kelas/export`, { ...params, export: format });
   }
 };
 
