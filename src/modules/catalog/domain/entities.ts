@@ -12,6 +12,7 @@ export interface Program {
   kode: string;
   nama: string;
   deskripsi?: string;
+  image?: string | null;
   status: "Aktif" | "Non Aktif";
   is_highlight?: boolean;
   jenjangs?: Jenjang[];
@@ -71,6 +72,7 @@ export interface CreateProgramPayload {
   kode: string;
   nama: string;
   deskripsi?: string;
+  image?: string | null;
   status: "Aktif" | "Non Aktif";
   is_highlight?: boolean;
   jenjang_ids?: number[];

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import type { Program } from "../../domain/entities";
 import {
   Table,
@@ -14,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, ImageIcon } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -41,13 +42,14 @@ export function ProgramTable({
   canDelete,
 }: ProgramTableProps) {
   const [togglingId, setTogglingId] = useState<number | null>(null);
-  const colCount = onHighlightChange ? 7 : 6;
+  const colCount = onHighlightChange ? 8 : 7;
 
   return (
     <div className="w-full overflow-x-auto">
       <Table className="min-w-[800px]">
         <TableHeader>
           <TableRow>
+            <TableHead className="w-[72px]">Gambar</TableHead>
             <TableHead>Kode</TableHead>
             <TableHead>Nama</TableHead>
             <TableHead>Jenjang</TableHead>
@@ -63,6 +65,7 @@ export function ProgramTable({
           {loading ? (
             Array.from({ length: 5 }).map((_, i) => (
               <TableRow key={i}>
+                <TableCell><Skeleton className="h-10 w-14" /></TableCell>
                 <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                 <TableCell><Skeleton className="h-6 w-32" /></TableCell>
                 <TableCell><Skeleton className="h-6 w-40" /></TableCell>
@@ -81,6 +84,24 @@ export function ProgramTable({
           ) : (
             data.map((item) => (
               <TableRow key={item.id}>
+                <TableCell>
+                  {item.image ? (
+                    <div className="relative w-12 h-10 rounded overflow-hidden bg-muted shrink-0">
+                      <Image
+                        src={item.image}
+                        alt=""
+                        fill
+                        className="object-cover"
+                        unoptimized={item.image.startsWith("http")}
+                        sizes="48px"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-12 h-10 rounded bg-muted flex items-center justify-center shrink-0">
+                      <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  )}
+                </TableCell>
                 <TableCell className="font-medium">{item.kode}</TableCell>
                 <TableCell>
                     <div className="flex flex-col">
