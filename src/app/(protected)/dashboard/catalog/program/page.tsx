@@ -149,7 +149,15 @@ export default function ProgramPage() {
 
   const handleHighlightChange = async (item: Program, value: boolean) => {
     try {
-      await updateProgram(item.id, { is_highlight: value });
+      await updateProgram(item.id, { 
+        kode: item.kode,
+        nama: item.nama,
+        deskripsi: item.deskripsi,
+        status: item.status,
+        image: item.image,
+        is_highlight: value,
+        jenjang_ids: item.jenjangs?.map(j => j.id) || []
+      });
       toast.success(value ? "Program ditampilkan di landing home" : "Program disembunyikan dari landing home");
       fetchData();
     } catch (error: any) {
