@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -29,15 +29,15 @@ import { ValidationError } from "@/shared/infrastructure/api/errors";
 import { applyValidationErrors } from "@/shared/lib/applyValidationErrors";
 import { createEmployeeUsecase } from "@/modules/employees/application/usecases/createEmployee.usecase";
 import { getEmployeesUsecase } from "@/modules/employees/application/usecases/getEmployees.usecase";
-import { createUserUsecase } from "@/modules/identity/application/usecases/users.usecase";
 import { getRolesUsecase } from "@/modules/identity/application/usecases/roles.usecase";
+import type { CreateEmployeePayload } from "@/modules/employees/domain/entities";
 import type { Role } from "@/modules/identity/domain/entities";
 import { toast } from "sonner";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 import { RefreshCw } from "lucide-react";
 
-type UserMode = "existing" | "create";
+
 
 const STATUS_OPTIONS = ["aktif", "nonaktif"] as const;
 
@@ -67,7 +67,7 @@ function toNum(v: string | number | undefined): number | null {
 
 function toEmployeePayload(
   v: EmployeeFormValues
-): Omit<Parameters<typeof createEmployeeUsecase>[0], "user_id"> {
+): CreateEmployeePayload["employee"] {
   return {
     kode_karyawan: v.kode_karyawan,
     kategori_karyawan: v.kategori_karyawan,
@@ -187,39 +187,60 @@ export default function EmployeesNewPage() {
     const userValues = getUserValues();
 
     try {
-      // 1. Create User
-      const createdUser = await createUserUsecase({
-        ...userValues,
-        status: "Aktif"
+      // Create User and Employee in ONE request (Atomic)
+      await createEmployeeUsecase({
+        user: {
+          user_name: userValues.name,
+          user_email: userValues.email,
+          user_password: userValues.password,
+          user_role: userValues.role,
+        },
+        employee: toEmployeePayload(values),
       });
 
-      try {
-        // 2. Create Employee
-        await createEmployeeUsecase({
-          ...toEmployeePayload(values),
-          user_id: createdUser.id,
-          status: "aktif",
-        });
-        toast.success("User dan Karyawan berhasil ditambahkan");
-        router.replace("/employees");
-      } catch (e) {
-        toast.error("User berhasil dibuat, tetapi karyawan gagal disimpan.");
-        if (e instanceof ValidationError && e.validationErrors) {
-          applyValidationErrors(
-            setError as (a: string, b: { type?: string; message: string }) => void,
-            e.validationErrors
-          );
-        }
-      }
+      toast.success("User dan Karyawan berhasil ditambahkan");
+      router.replace("/employees");
     } catch (e) {
       if (e instanceof ValidationError && e.validationErrors) {
-        applyValidationErrors(
-          setUserError as (a: string, b: { type?: string; message: string }) => void,
-          e.validationErrors
-        );
-        toast.error("Gagal membuat akun user. Cek kembali form Akun User.");
+        // Map backend errors like "user.user_email" back to form structure if possible
+        // but for now, we just apply them.
+        
+        // Split errors for the two forms
+        const employeeErrors: Record<string, string[]> = {};
+        const userFormErrors: Record<string, string[]> = {};
+
+        Object.entries(e.validationErrors).forEach(([key, msgs]) => {
+          const messages = Array.isArray(msgs) ? msgs : [(msgs as any).message];
+          
+          if (key.startsWith("user.")) {
+            // Map "user.user_name" to "name" in user form
+            const field = key.replace("user.user_", "").replace("user.", "");
+            userFormErrors[field] = messages;
+          } else if (key.startsWith("employee.")) {
+            const field = key.replace("employee.", "");
+            employeeErrors[field] = messages;
+          } else {
+            employeeErrors[key] = messages;
+          }
+        });
+
+        if (Object.keys(userFormErrors).length > 0) {
+          applyValidationErrors(
+            setUserError as (a: string, b: { type?: string; message: string }) => void,
+            userFormErrors
+          );
+          toast.error("Gagal membuat akun user. Cek kembali form Akun User.");
+        }
+
+        if (Object.keys(employeeErrors).length > 0) {
+          applyValidationErrors(
+            setError as (a: string, b: { type?: string; message: string }) => void,
+            employeeErrors
+          );
+          toast.error("Gagal menyimpan data karyawan.");
+        }
       } else {
-        toast.error(e instanceof Error ? e.message : "Gagal membuat user");
+        toast.error(e instanceof Error ? e.message : "Gagal menyimpan data");
       }
     }
   }

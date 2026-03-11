@@ -30,19 +30,27 @@ export interface Employee {
 }
 
 export interface CreateEmployeePayload {
-  kode_karyawan: string;
-  user_id: number;
-  kategori_karyawan: string;
-  subtipe_kontrak?: string | null;
-  tipe_gaji?: string | null;
-  gaji_pokok?: number | null;
-  bank_nama?: string | null;
-  bank_no_rekening?: string | null;
-  nomor_hp?: string | null;
-  alamat?: string | null;
-  tanggal_lahir?: string | null;
-  status: "aktif" | "nonaktif";
-  divisi?: string | null;
+  user: {
+    user_id?: number | null;
+    user_name?: string | null;
+    user_email?: string | null;
+    user_password?: string | null;
+    user_role?: string | null;
+  };
+  employee: {
+    kode_karyawan: string;
+    kategori_karyawan: string;
+    subtipe_kontrak?: string | null;
+    tipe_gaji?: string | null;
+    gaji_pokok?: number | null;
+    bank_nama?: string | null;
+    bank_no_rekening?: string | null;
+    nomor_hp?: string | null;
+    alamat?: string | null;
+    tanggal_lahir?: string | null;
+    status: "aktif" | "nonaktif";
+    divisi?: string | null;
+  };
 }
 
 export interface UpdateEmployeePayload {
