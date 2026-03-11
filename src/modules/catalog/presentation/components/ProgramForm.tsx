@@ -22,11 +22,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { programSchema, type ProgramFormValues } from "../schemas";
-import { createProgram, updateProgram } from "@/modules/catalog/infrastructure/catalog.repository";
+import { createProgram, updateProgram, uploadProgramImage } from "@/modules/catalog/infrastructure/catalog.repository";
 import type { Program, Jenjang } from "@/modules/catalog/domain/entities";
-import { useTransition } from "react";
+import { useTransition, useState } from "react";
+import Image from "next/image";
+import { ImageIcon, Loader2, X } from "lucide-react";
 
 interface ProgramFormProps {
   initialData?: Program;
@@ -38,13 +41,18 @@ export function ProgramForm({ initialData, jenjangOptions, mode }: ProgramFormPr
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  const [uploadPreviewUrl, setUploadPreviewUrl] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
   const form = useForm<ProgramFormValues>({
     resolver: zodResolver(programSchema) as any,
     defaultValues: {
       kode: initialData?.kode || "",
       nama: initialData?.nama || "",
       deskripsi: initialData?.deskripsi || "",
+      image: initialData?.image ?? undefined,
       status: (initialData?.status as "Aktif" | "Non Aktif") || "Aktif",
+      is_highlight: initialData?.is_highlight ?? false,
       jenjang_ids: initialData?.jenjangs?.map(j => j.id) || [],
     },
   });
@@ -52,11 +60,12 @@ export function ProgramForm({ initialData, jenjangOptions, mode }: ProgramFormPr
   const onSubmit = (values: ProgramFormValues) => {
     startTransition(async () => {
       try {
+        const payload = { ...values, image: values.image || undefined };
         if (mode === "edit" && initialData) {
-          await updateProgram(initialData.id, values);
+          await updateProgram(initialData.id, payload);
           toast.success("Program berhasil diperbarui");
         } else {
-          await createProgram(values);
+          await createProgram(payload);
           toast.success("Program berhasil ditambahkan");
         }
         router.push("/dashboard/catalog/program");
@@ -70,6 +79,26 @@ export function ProgramForm({ initialData, jenjangOptions, mode }: ProgramFormPr
       }
     });
   };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const { path, image_url } = await uploadProgramImage(file);
+      form.setValue("image", path);
+      setUploadPreviewUrl(image_url);
+      toast.success("Gambar diunggah");
+    } catch {
+      toast.error("Gagal mengunggah gambar");
+    } finally {
+      setUploadingImage(false);
+      e.target.value = "";
+    }
+  };
+
+  const imageValue = form.watch("image");
+  const previewUrl = uploadPreviewUrl || (imageValue && (imageValue.startsWith("http") ? imageValue : null));
 
   return (
     <div className="w-full">
@@ -128,6 +157,59 @@ export function ProgramForm({ initialData, jenjangOptions, mode }: ProgramFormPr
                             className="min-h-[100px]" 
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="image"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Gambar katalog (landing)</FormLabel>
+                        <FormDescription className="text-[11px]">
+                          Gambar untuk katalog program di halaman landing. Maks. 5 MB (JPG, PNG, GIF, WebP).
+                        </FormDescription>
+                        <div className="flex flex-col gap-3">
+                          {previewUrl ? (
+                            <div className="relative inline-block w-40 h-28 rounded-lg overflow-hidden border bg-muted">
+                              <Image
+                                src={previewUrl}
+                                alt="Preview"
+                                fill
+                                className="object-cover"
+                                unoptimized={previewUrl.startsWith("http")}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  form.setValue("image", undefined);
+                                  setUploadPreviewUrl(null);
+                                }}
+                                className="absolute top-1 right-1 rounded-full bg-black/60 p-1 text-white hover:bg-black/80"
+                                aria-label="Hapus gambar"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 rounded-xl border border-dashed p-4 bg-slate-50/50 w-64">
+                              <ImageIcon className="h-8 w-8 text-muted-foreground shrink-0" />
+                              <span className="text-sm text-muted-foreground">Belum ada gambar</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="file"
+                              accept="image/jpeg,image/png,image/gif,image/webp"
+                              onChange={handleImageChange}
+                              disabled={uploadingImage || isPending}
+                              className="cursor-pointer max-w-xs"
+                            />
+                            {uploadingImage && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                          </div>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -191,11 +273,11 @@ export function ProgramForm({ initialData, jenjangOptions, mode }: ProgramFormPr
             </AccordionItem>
 
             <AccordionItem value="status-panel">
-              <AccordionTrigger description="Tentukan apakah program ini aktif digunakan">
+              <AccordionTrigger description="Tentukan apakah program ini aktif digunakan dan tampil di landing">
                 Status Operasional
               </AccordionTrigger>
               <AccordionContent>
-                <div className="max-w-md">
+                <div className="max-w-md space-y-6">
                   {mode === "create" ? (
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2 rounded-xl border px-4 py-3 bg-slate-50/50 cursor-not-allowed opacity-70">
@@ -229,6 +311,34 @@ export function ProgramForm({ initialData, jenjangOptions, mode }: ProgramFormPr
                       )}
                     />
                   )}
+
+                  <FormField
+                    control={form.control}
+                    name="is_highlight"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2 rounded-xl border px-4 py-3 bg-slate-50/50">
+                            <FormControl>
+                              <Switch
+                                id="is_highlight"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                disabled={isPending}
+                              />
+                            </FormControl>
+                            <span className="text-sm font-medium">
+                              {field.value ? "Tampil di landing (Program Unggulan)" : "Tidak tampil di landing"}
+                            </span>
+                          </div>
+                        </div>
+                        <FormDescription className="text-xs text-muted-foreground max-w-sm">
+                          Nyalakan agar program ini muncul di bagian &quot;Program Unggulan Kami&quot; pada halaman utama website landing.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </AccordionContent>
             </AccordionItem>

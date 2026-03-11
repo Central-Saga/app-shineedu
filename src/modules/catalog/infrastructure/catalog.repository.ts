@@ -3,6 +3,7 @@ import {
   getResponse,
   post,
   put,
+  postFormData,
   del,
   download,
   DEFAULT_META,
@@ -88,6 +89,13 @@ export async function createProgram(payload: CreateProgramPayload): Promise<Prog
 
 export async function updateProgram(id: number, payload: UpdateProgramPayload): Promise<Program> {
   return await put<Program>(`catalog/program/${id}`, payload);
+}
+
+/** Upload gambar katalog program; mengembalikan path untuk disimpan di field image. */
+export async function uploadProgramImage(file: File): Promise<{ path: string; image_url: string }> {
+  const formData = new FormData();
+  formData.append("image", file);
+  return await postFormData<{ path: string; image_url: string }>("catalog/program/upload-image", formData);
 }
 
 export async function deleteProgram(id: number): Promise<void> {
