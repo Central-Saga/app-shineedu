@@ -125,7 +125,7 @@ export default function JadwalKerjaPage() {
     // If in board mode, fetch all items on one page essentially, or just rely on regular pagination?
     // User probably wants to see *all* items for the week in board view.
     // So we might force per_page high if viewMode is board.
-    const effectivePerPage = viewMode === 'board' ? 100 : perPage;
+    const effectivePerPage = viewMode === 'board' ? 1000 : perPage;
     
     return {
       page: overridePage ?? page,
@@ -157,20 +157,19 @@ export default function JadwalKerjaPage() {
 
   useEffect(() => {
     if (!allowed) return;
+
     setLoading(true);
-    
-    // Reset page if view mode changes to board to see all items
-    if (viewMode === 'board' && page !== 1) {
-        setPage(1);
-    }
-    
+
     const searchJustChanged = prevDebouncedQ.current !== debouncedQ;
     if (searchJustChanged) {
       prevDebouncedQ.current = debouncedQ;
-      setPage(1);
+      if (page !== 1) {
+        setPage(1);
+        return;
+      }
     }
-    const pageToUse = searchJustChanged ? 1 : page;
-    const params = buildParams(pageToUse);
+
+    const params = buildParams();
 
     Promise.all([
       loadData(params),
@@ -203,8 +202,16 @@ export default function JadwalKerjaPage() {
     filterGuru,
     sortKey,
     sortDir,
-    viewMode, // reload when view mode changes
+    viewMode,
   ]);
+
+  function handleViewModeChange(mode: "table" | "board") {
+    if (mode === viewMode) return;
+    if (mode === "board") {
+      setPage(1);
+    }
+    setViewMode(mode);
+  }
 
   function handleStatusChange(item: JadwalKerja, newStatus: "Aktif" | "Non Aktif") {
     const prev = item.status;
@@ -252,7 +259,7 @@ export default function JadwalKerjaPage() {
                 <Button 
                     variant={viewMode === 'table' ? 'secondary' : 'ghost'} 
                     size="sm" 
-                    onClick={() => setViewMode('table')}
+                    onClick={() => handleViewModeChange('table')}
                     className={cn(
                         "text-xs px-4 h-8 transition-all duration-200 rounded-lg", 
                         viewMode === 'table' ? "bg-white shadow-sm border border-slate-200 text-slate-900" : "text-slate-500 hover:text-slate-700"
@@ -264,7 +271,7 @@ export default function JadwalKerjaPage() {
                 <Button 
                     variant={viewMode === 'board' ? 'secondary' : 'ghost'} 
                     size="sm" 
-                    onClick={() => setViewMode('board')}
+                    onClick={() => handleViewModeChange('board')}
                     className={cn(
                         "text-xs px-4 h-8 transition-all duration-200 rounded-lg", 
                         viewMode === 'board' ? "bg-white shadow-sm border border-slate-200 text-slate-900" : "text-slate-500 hover:text-slate-700"
