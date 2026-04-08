@@ -17,6 +17,8 @@ import { getEmployeesUsecase } from "@/modules/employees/application/usecases/ge
 import { getJadwalKerjaListUsecase } from "@/modules/jadwal-kerja/application/usecases/getJadwalKerjaList.usecase";
 import { StatsCard } from "@/shared/presentation/components/StatsCard";
 import { RealisasiJadwalTable } from "@/modules/realisasi-jadwal-kerja/presentation/components/RealisasiJadwalTable";
+import { RealisasiJadwalBoard } from "@/modules/realisasi-jadwal-kerja/presentation/components/RealisasiJadwalBoard";
+import { cn } from "@/lib/utils";
 import { ExportDropdown } from "@/shared/presentation/components/ExportDropdown";
 import { exportRealisasiJadwalKerjaUsecase } from "@/modules/realisasi-jadwal-kerja/application/usecases/exportRealisasiJadwalKerja.usecase";
 import { updateRealisasiJadwalUsecase } from "@/modules/realisasi-jadwal-kerja/application/usecases/updateRealisasiJadwal.usecase";
@@ -46,7 +48,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { RefreshCw, ClipboardCheck, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { RefreshCw, ClipboardCheck, Clock, CheckCircle2, XCircle, LayoutList, Kanban } from "lucide-react";
 import { toast } from "sonner";
 
 const SORT_OPTIONS = [
@@ -95,6 +97,8 @@ export default function RealisasiJadwalPage() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<"table" | "board">("table");
+  const [boardGroupBy, setBoardGroupBy] = useState<"tanggal" | "status">("tanggal");
   
   const [deleteItem, setDeleteItem] = useState<RealisasiJadwal | null>(null);
 
@@ -124,9 +128,10 @@ export default function RealisasiJadwalPage() {
   }, [allowed]);
 
   function buildParams(overridePage?: number) {
+    const effectivePerPage = viewMode === 'board' ? 1000 : perPage;
     return {
       page: overridePage ?? page,
-      per_page: perPage,
+      per_page: effectivePerPage,
       q: debouncedQ || undefined,
       status: filterStatus as any || undefined,
       tanggal: filterTanggal || undefined,
@@ -258,7 +263,61 @@ export default function RealisasiJadwalPage() {
         title="Realisasi Jadwal Kerja"
         description="Pencatatan realisasi jadwal kerja guru"
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl mr-2 border border-slate-200 shadow-inner">
+                <Button 
+                    variant={viewMode === 'table' ? 'secondary' : 'ghost'} 
+                    size="sm" 
+                    onClick={() => setViewMode('table')}
+                    className={cn(
+                        "text-xs px-4 h-8 transition-all duration-200 rounded-lg", 
+                        viewMode === 'table' ? "bg-white shadow-sm border border-slate-200 text-slate-900" : "text-slate-500 hover:text-slate-700"
+                    )}
+                >
+                    <LayoutList className="size-3.5 mr-2" />
+                    Tabel
+                </Button>
+                <Button 
+                    variant={viewMode === 'board' ? 'secondary' : 'ghost'} 
+                    size="sm" 
+                    onClick={() => setViewMode('board')}
+                    className={cn(
+                        "text-xs px-4 h-8 transition-all duration-200 rounded-lg", 
+                        viewMode === 'board' ? "bg-white shadow-sm border border-slate-200 text-slate-900" : "text-slate-500 hover:text-slate-700"
+                    )}
+                >
+                    <Kanban className="size-3.5 mr-2" />
+                    Board
+                </Button>
+            </div>
+
+            {viewMode === 'board' && (
+                <div className="flex items-center gap-1 bg-indigo-100/50 p-1 rounded-xl mr-2 border border-indigo-200/60 shadow-inner">
+                    <Button 
+                        variant={boardGroupBy === 'tanggal' ? 'secondary' : 'ghost'} 
+                        size="sm" 
+                        onClick={() => setBoardGroupBy('tanggal')}
+                        className={cn(
+                            "text-[10px] uppercase tracking-wider font-bold px-3 h-7 transition-all duration-200 rounded-lg", 
+                            boardGroupBy === 'tanggal' ? "bg-white shadow-sm text-indigo-700" : "text-indigo-400 hover:text-indigo-600"
+                        )}
+                    >
+                        Tanggal
+                    </Button>
+                    <Button 
+                        variant={boardGroupBy === 'status' ? 'secondary' : 'ghost'} 
+                        size="sm" 
+                        onClick={() => setBoardGroupBy('status')}
+                        className={cn(
+                            "text-[10px] uppercase tracking-wider font-bold px-3 h-7 transition-all duration-200 rounded-lg", 
+                            boardGroupBy === 'status' ? "bg-white shadow-sm text-indigo-700" : "text-indigo-400 hover:text-indigo-600"
+                        )}
+                    >
+                        Status
+                    </Button>
+                </div>
+            )}
+
             <ExportDropdown onExport={handleExport} />
             {canCreate && (
               <Button onClick={handleSync} disabled={syncing}>
@@ -373,19 +432,28 @@ export default function RealisasiJadwalPage() {
             </Select>
           </div>
 
-          <RealisasiJadwalTable
-            items={items}
-            loading={loading}
-            onView={(item) => router.push(`/realisasi-jadwal-kerja/${item.id}`)}
-            onEdit={(item) => router.push(`/realisasi-jadwal-kerja/${item.id}/edit`)}
-            onDelete={(item) => setDeleteItem(item)}
-            onStatusChange={handleStatusChange}
-            updatingId={updatingId}
-            canUpdate={canUpdate}
-            canDelete={canDelete}
-          />
-
-          <DataTablePagination meta={meta} onPageChange={(p) => setPage(p)} />
+          {viewMode === 'table' ? (
+            <>
+              <RealisasiJadwalTable
+                items={items}
+                loading={loading}
+                onView={(item) => router.push(`/realisasi-jadwal-kerja/${item.id}`)}
+                onEdit={(item) => router.push(`/realisasi-jadwal-kerja/${item.id}/edit`)}
+                onDelete={(item) => setDeleteItem(item)}
+                onStatusChange={handleStatusChange}
+                updatingId={updatingId}
+                canUpdate={canUpdate}
+                canDelete={canDelete}
+              />
+              <DataTablePagination meta={meta} onPageChange={(p) => setPage(p)} />
+            </>
+          ) : (
+            <RealisasiJadwalBoard
+              items={items}
+              groupBy={boardGroupBy}
+              onSelectEvent={(item) => router.push(`/realisasi-jadwal-kerja/${item.id}`)}
+            />
+          )}
         </CardContent>
       </Card>
 
