@@ -41,7 +41,7 @@ import { saldoPertemuanApi } from "@/lib/api/saldo-pertemuan";
 // Schema for form
 const formSchema = z.object({
   action: z.enum(["ADD", "SUBTRACT", "EXPIRE"]),
-  qty: z.number().min(0, "Jumlah harus lebih dari 0"),
+  qty: z.coerce.number().min(0, "Jumlah harus lebih dari 0"),
   reason: z.string().min(3, "Alasan wajib diisi (min 3 karakter)"),
 });
 

@@ -68,6 +68,8 @@ export interface CreateEnrollmentRequest {
   biaya_pendaftaran_amount?: number;
   biaya_pendaftaran_status?: string;
   biaya_pendaftaran_due_date?: string;
+  sumber?: 'INTERNAL' | 'ISELLER' | 'IMPORT';
+  saldo_override?: number | null;
 }
 
 export interface UpdateEnrollmentRequest {

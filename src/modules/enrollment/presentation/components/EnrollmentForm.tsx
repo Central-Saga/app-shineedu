@@ -91,6 +91,8 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
       catatan: "",
       biaya_pendaftaran_amount: 0,
       biaya_pendaftaran_status: "WAIVED",
+      sumber: "INTERNAL",
+      saldo_override: null,
     },
   });
 
@@ -633,7 +635,6 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
                                         {...field}
                                         onChange={e => {
                                           field.onChange(e);
-                                          // Auto-set status logic
                                           const val = Number(e.target.value);
                                           if (val > 0) form.setValue("biaya_pendaftaran_status", "UNPAID");
                                           else form.setValue("biaya_pendaftaran_status", "WAIVED");
@@ -696,6 +697,63 @@ export function EnrollmentForm({ initialData, isEdit = false }: EnrollmentFormPr
                   </div>
                 </AccordionContent>
              </AccordionItem>
+
+             {!isEdit && (
+               <AccordionItem value="data-sumber-saldo">
+                 <AccordionTrigger>Sumber Data & Saldo Awal</AccordionTrigger>
+                 <AccordionContent className="pt-4">
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <FormField
+                       control={form.control}
+                       name="sumber"
+                       render={({ field }) => (
+                         <FormItem>
+                           <FormLabel>Sumber Data</FormLabel>
+                           <Select onValueChange={field.onChange} value={field.value}>
+                             <FormControl>
+                               <SelectTrigger><SelectValue placeholder="Pilih sumber" /></SelectTrigger>
+                             </FormControl>
+                             <SelectContent>
+                               <SelectItem value="INTERNAL">Internal (Sistem)</SelectItem>
+                               <SelectItem value="ISELLER">iSeller (Legacy)</SelectItem>
+                               <SelectItem value="IMPORT">Import External</SelectItem>
+                             </SelectContent>
+                           </Select>
+                           <FormDescription>Pilih iSeller untuk data lama dari sistem iSeller</FormDescription>
+                           <FormMessage />
+                         </FormItem>
+                       )}
+                     />
+
+                     <FormField
+                       control={form.control}
+                       name="saldo_override"
+                       render={({ field }) => (
+                         <FormItem>
+                           <FormLabel>Saldo Awal (Override)</FormLabel>
+                           <FormControl>
+                             <Input 
+                               type="number" 
+                               {...field}
+                               value={field.value ?? ''}
+                               onChange={e => {
+                                 const val = e.target.value === '' ? null : Number(e.target.value);
+                                 field.onChange(val);
+                               }}
+                               placeholder="Kosongkan untuk sistem ledger"
+                             />
+                           </FormControl>
+                           <FormDescription>
+                             Kosongkan = pakai sistem ledger. -1 = unlimited. Angka = saldo manual.
+                           </FormDescription>
+                           <FormMessage />
+                         </FormItem>
+                       )}
+                     />
+                   </div>
+                 </AccordionContent>
+               </AccordionItem>
+             )}
           </Accordion>
 
           <div className="flex items-center gap-3 pt-6">

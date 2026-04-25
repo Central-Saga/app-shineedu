@@ -29,10 +29,11 @@ export const createEnrollmentSchema = z.object({
   
   catatan: z.string().optional(),
 
-  // Registration Fee
   biaya_pendaftaran_amount: z.coerce.number().min(0).default(0),
-  biaya_pendaftaran_status: z.enum(['UNPAID', 'PAID', 'WAIVED']).optional(), // Computed usually, but allow override if needed
+  biaya_pendaftaran_status: z.enum(['UNPAID', 'PAID', 'WAIVED']).optional(),
   biaya_pendaftaran_due_date: z.string().optional().nullable(),
+  sumber: z.enum(['INTERNAL', 'ISELLER', 'IMPORT']).optional().default('INTERNAL'),
+  saldo_override: z.coerce.number().optional().nullable(),
 }).superRefine((data, ctx) => {
   if (data.mode_murid === "existing" && !data.murid_id) {
     ctx.addIssue({
