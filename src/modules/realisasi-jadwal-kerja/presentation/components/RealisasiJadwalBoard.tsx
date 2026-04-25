@@ -44,7 +44,11 @@ export function RealisasiJadwalBoard({ items, onSelectEvent, groupBy = "tanggal"
     }
 
     Object.keys(g).forEach((key) => {
-      g[key].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      g[key].sort((a, b) => {
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return dateB - dateA;
+      });
     });
 
     return { groups: g, columns: cols };
@@ -115,7 +119,7 @@ export function RealisasiJadwalBoard({ items, onSelectEvent, groupBy = "tanggal"
                   <CardContent className="p-3 space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <h4 className="font-medium text-slate-900 text-sm line-clamp-2 flex-1">
-                        {item.jadwalKerja?.mata_pelajaran || "-"}
+                        {item.jadwal_kerja?.mata_pelajaran || "-"}
                       </h4>
                       <Badge 
                         variant="outline" 
@@ -141,7 +145,7 @@ export function RealisasiJadwalBoard({ items, onSelectEvent, groupBy = "tanggal"
                     <div className="flex items-center gap-1 text-xs text-slate-600">
                       <User className="size-3 text-slate-400" />
                       <span className="truncate">
-                        {item.guruPengajar?.user?.name || item.jadwalKerja?.guru?.user?.name || "-"}
+                        {item.guru_pengajar?.user?.name || item.jadwal_kerja?.guru_pengajar?.user?.name || "-"}
                       </span>
                     </div>
                   </CardContent>

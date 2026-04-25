@@ -9,6 +9,7 @@ export interface PayrollParams {
   bulan: number;
   tahun: number;
   status?: string;
+  karyawan_id?: string;
 }
 
 export interface Payroll {
