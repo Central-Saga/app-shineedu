@@ -12,6 +12,7 @@ type State = {
   token: string | null;
   user: User | null;
   permissionsSet: Set<string>;
+  isHydrated: boolean; // NEW: track hydration state
 };
 
 function buildPermissionsSet(user: User): Set<string> {
@@ -30,6 +31,7 @@ export const useAuthStore = create<State>(() => ({
   token: null,
   user: null,
   permissionsSet: new Set(),
+  isHydrated: false, // NEW
 }));
 
 export const authStore = {
@@ -40,7 +42,10 @@ export const authStore = {
     if (typeof window === "undefined") return;
     const t = localStorage.getItem(STORAGE_KEY);
     const token = typeof t === "string" ? t.trim() : "";
-    useAuthStore.setState({ token: token || null });
+    useAuthStore.setState({ 
+      token: token || null,
+      isHydrated: true, // NEW: mark as hydrated
+    });
   },
 
   clearSession(): void {
@@ -52,6 +57,7 @@ export const authStore = {
       token: null,
       user: null,
       permissionsSet: new Set(),
+      isHydrated: true, // Keep as hydrated even when cleared
     });
   },
 
@@ -66,6 +72,7 @@ export const authStore = {
       token: tokenStr || null,
       user,
       permissionsSet: buildPermissionsSet(user),
+      isHydrated: true,
     });
   },
 

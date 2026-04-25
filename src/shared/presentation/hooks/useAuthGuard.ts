@@ -11,8 +11,14 @@ export function useAuthGuard(): GuardState {
   const [state, setState] = useState<GuardState>("loading");
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
+  const isHydrated = useAuthStore((s) => s.isHydrated); // NEW
 
   useEffect(() => {
+    // NEW: Wait for hydration before checking token
+    if (!isHydrated) {
+      return;
+    }
+
     if (!token) {
       router.replace("/login");
       return;
@@ -28,7 +34,7 @@ export function useAuthGuard(): GuardState {
       return;
     }
     setState("ready"); // eslint-disable-line react-hooks/set-state-in-effect
-  }, [token, user, router]);
+  }, [token, user, isHydrated, router]);
 
   return state;
 }
